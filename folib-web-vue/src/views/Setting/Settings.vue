@@ -1349,15 +1349,15 @@ export default {
         this.serverSettings.corsConfigurationForm.corsAllowAll = allowedOrigins &&
             allowedOrigins.length === 1 &&
             allowedOrigins[0] === '*';
-        if(this.serverSettings.alarmConfigurationForm){
-            if(this.serverSettings.alarmConfigurationForm.storageThreshold && this.serverSettings.alarmConfigurationForm.storageThreshold > 0){
-                this.platformStorageThreshold = this.getStorageThreshold(this.serverSettings.alarmConfigurationForm.storageThreshold);
-            }
-        }
+        // if(this.serverSettings.alarmConfigurationForm){
+        //     if(this.serverSettings.alarmConfigurationForm.storageThreshold && this.serverSettings.alarmConfigurationForm.storageThreshold > 0){
+        //         this.platformStorageThreshold = this.getStorageThreshold(this.serverSettings.alarmConfigurationForm.storageThreshold);
+        //     }
+        // }
       })
     },
     saveServerSettings() {
-        this.serverSettings.alarmConfigurationForm.storageThreshold =  this.setStorageThreshold(this.platformStorageThreshold);
+        // this.serverSettings.alarmConfigurationForm.storageThreshold =  this.setStorageThreshold(this.platformStorageThreshold);
       postServerSettings(this.serverSettings).then(res => {
         setTimeout(() => {
           this.$notification.success({

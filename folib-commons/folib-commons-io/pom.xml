@@ -137,8 +137,8 @@
 
     <distributionManagement>
         <repository>
-            <id>folib-local-maven</id>
-            <url>https://public.folib.com/storages/folib/folib-maven-local</url>
+            <id>folib-oss-local</id>
+            <url>https://public.folib.com/storages/oss/folib-oss-local</url>
         </repository>
     </distributionManagement>
 

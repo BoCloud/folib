@@ -1457,36 +1457,14 @@ export default {
       this.storagePrefix = null
     },
     createHandleView() {
-      checkMachineCode().then(res => {
-        if (res.haveError) {
-          setTimeout(() => {
-            this.$notification.open({
-              class: 'ant-notification-warning',
-              message: this.$t('Storage.LicenseError'),
-              description: this.$t('Storage.CheckLicense'),
-            });
-          }, 1000);
-        } else {
-          if (res.dalyOut) {
-            setTimeout(() => {
-              this.$notification.open({
-                class: 'ant-notification-warning',
-                message: this.$t('Storage.LicenseExpired'),
-                description: this.$t('Storage.AddWarehouseAfterRenewal'),
-              });
-            }, 1000);
-          } else {
-            this.storageMaxSize = 0
-            this.showsTorageFormModal = true
-            this.storagePrefix = null
-            this.customStorage = false
-            if (this.$refs.storageCreate) {
-              this.$refs.storageCreate.resetFields()
-            }
-            this.getUsersList()
-          }
-        }
-      })
+      this.storageMaxSize = 0
+      this.showsTorageFormModal = true
+      this.storagePrefix = null
+      this.customStorage = false
+      if (this.$refs.storageCreate) {
+        this.$refs.storageCreate.resetFields()
+      }
+      this.getUsersList()
     },
     updateHandleView() {
       this.getStorage(this.currentStorage.id)
@@ -1856,53 +1834,25 @@ export default {
       this.isTrashView = !this.isTrashView
     },
     folibVisibleShow() {
-      checkMachineCode().then(res => {
-        if (res.haveError) {
-          setTimeout(() => {
-            this.$notification.open({
-              class: 'ant-notification-warning',
-              message: this.$t('Storage.LicenseError'),
-              description:  this.$t('Storage.CheckLicense'),
-            });
-          }, 1000);
-        } else {
-
-          if (res.dalyOut) {
-            setTimeout(() => {
-              this.$notification.open({
-                class: 'ant-notification-warning',
-                message: this.$t('Storage.LicenseExpired'),
-                description: this.$t('Storage.AddWarehouseAfterRenewal'),
-              });
-            }, 1000);
-          } else {
-
-
-            if (this.currentStorage.id) {
-              this.resetFolibRepository()
-              this.folibRepositoryEditDisabled = false
-              this.layoutChecked = null
-              this.layoutCheckedNow = null
-              this.layoutName = null
-              this.step = 0
-              this.enableHostProxy = false
-              this.folibRepositoryIds = ""
-              this.folibVisible = true
-            } else {
-              setTimeout(() => {
-                this.$notification.open({
-                  class: 'ant-notification-warning',
-                  message: this.$t('Storage.OperationIncorrect'),
-                  description: this.$t('Storage.selectSpace'),
-                });
-              }, 1000);
-            }
-          }
-
-        }
-
-      })
-
+      if (this.currentStorage.id) {
+        this.resetFolibRepository()
+        this.folibRepositoryEditDisabled = false
+        this.layoutChecked = null
+        this.layoutCheckedNow = null
+        this.layoutName = null
+        this.step = 0
+        this.enableHostProxy = false
+        this.folibRepositoryIds = ""
+        this.folibVisible = true
+      } else {
+        setTimeout(() => {
+          this.$notification.open({
+            class: 'ant-notification-warning',
+            message: this.$t('Storage.OperationIncorrect'),
+            description: this.$t('Storage.selectSpace'),
+          });
+        }, 1000);
+      }
     },
 
     moveStep(distance) {

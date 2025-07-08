@@ -249,6 +249,9 @@ public class CommonComponent {
         return springSecurityUser.getUsername();
     }
 
+    public void handlerRole(String roleInfo) {
+        authorizationConfigService.handlerRole(roleInfo);
+    }
 
     public ThreadPoolTaskExecutor buildThreadPoolTaskExecutor(Integer corePoolSize, Integer maxPoolSize, Integer queueCapacity, Integer keepAliveSeconds, String threadNamePrefix, Integer awaitTerminationSeconds, RejectedExecutionHandler rejectedExecutionHandler) {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();

@@ -203,22 +203,22 @@ public class NugetArtifactController
         feed.setId(feedId);
         feed.setUpdated(new Date());
         feed.setTitle("Packages");
-        List<PackageEntry> packageEntrys = new ArrayList<>();
-        for (Nupkg nupkg : files)
-        {
-            try
-            {
-                PackageEntry entry = createPackageEntry(feedId, (PathNupkg) nupkg);
-                calculateFeedEntryProperties((PathNupkg) nupkg, entry.getProperties());
-                packageEntrys.add(entry);
-            }
-            catch (NoSuchAlgorithmException | IOException | NugetFormatException e)
-            {
-                logger.error("Failed to parse package {}", nupkg, e);
-            }
-        }
-        logger.info("Got {} packages", new Object[] { packageEntrys.size() });
-        feed.setEntries(packageEntrys);
+//        List<PackageEntry> packageEntrys = new ArrayList<>();
+//        for (Nupkg nupkg : files)
+//        {
+//            try
+//            {
+//                PackageEntry entry = createPackageEntry(feedId, (PathNupkg) nupkg);
+//                calculateFeedEntryProperties((PathNupkg) nupkg, entry.getProperties());
+//                packageEntrys.add(entry);
+//            }
+//            catch (NoSuchAlgorithmException | IOException | NugetFormatException e)
+//            {
+//                logger.error("Failed to parse package {}", nupkg, e);
+//            }
+//        }
+//        logger.info("Got {} packages", new Object[] { packageEntrys.size() });
+//        feed.setEntries(packageEntrys);
         return feed;
     }
 
@@ -253,21 +253,21 @@ public class NugetArtifactController
 
     }
 
-    private PackageEntry createPackageEntry(String feedId,
-                                            PathNupkg nupkg)
-        throws NoSuchAlgorithmException,
-        IOException,
-        NugetFormatException
-    {
-        return new PackageEntry(nupkg){
-
-            @Override
-            protected String getRootUri()
-            {
-                return feedId;
-            }
-        };
-    }
+//    private PackageEntry createPackageEntry(String feedId,
+//                                            PathNupkg nupkg)
+//        throws NoSuchAlgorithmException,
+//        IOException,
+//        NugetFormatException
+//    {
+//        return new PackageEntry(nupkg){
+//
+//            @Override
+//            protected String getRootUri()
+//            {
+//                return feedId;
+//            }
+//        };
+//    }
 
     @GetMapping(path = { "{storageId}/{repositoryId}/FindPackagesById()" }, produces = MediaType.APPLICATION_XML)
     public ResponseEntity<?> searchPackageById(@RepositoryMapping Repository repository,

@@ -627,7 +627,7 @@ public class EntryProperties
         this.releaseNotes = "";
         this.language = "";
         this.price = Double.valueOf(0);
-        setDependenciesList(nuspecFile.getDependencies());
+//        setDependenciesList(nuspecFile.getDependencies());
         this.externalPackageUri = "";
         this.categories = "";
         this.copyright = nuspecFile.getCopyright();
@@ -1003,44 +1003,44 @@ public class EntryProperties
      * @param dependencies
      *            list of dependencies
      */
-    public void setDependenciesList(List<Dependency> dependencies)
-    {
-        // TODO Understand Dependency Groups
-        if (dependencies == null || dependencies.isEmpty())
-        {
-            this.dependencies = "";
-        }
-        else
-        {
-            Joiner joiner = Joiner.on(",").skipNulls();
-            this.dependencies = joiner.join(dependencies);
-        }
-    }
+//    public void setDependenciesList(List<Dependency> dependencies)
+//    {
+//        // TODO Understand Dependency Groups
+//        if (dependencies == null || dependencies.isEmpty())
+//        {
+//            this.dependencies = "";
+//        }
+//        else
+//        {
+//            Joiner joiner = Joiner.on(",").skipNulls();
+//            this.dependencies = joiner.join(dependencies);
+//        }
+//    }
 
     /**
      * @return package dependency list
      * @throws NugetFormatException
      *             version format error
      */
-    public List<Dependency> getDependenciesList()
-        throws NugetFormatException
-    {
-        ArrayList<Dependency> list = new ArrayList<>();
-        if (dependencies == null || dependencies.isEmpty())
-        {
-            return list;
-        }
-        String cleanDependencies = dependencies.replaceAll("", "");
-        for (String dependencyString : cleanDependencies.split("[\\ |]"))
-        {
-            Dependency dependency = Dependency.parseString(dependencyString);
-            if (dependency != null)
-            {
-                list.add(dependency);
-            }
-        }
-        return list;
-    }
+//    public List<Dependency> getDependenciesList()
+//        throws NugetFormatException
+//    {
+//        ArrayList<Dependency> list = new ArrayList<>();
+//        if (dependencies == null || dependencies.isEmpty())
+//        {
+//            return list;
+//        }
+//        String cleanDependencies = dependencies.replaceAll("", "");
+//        for (String dependencyString : cleanDependencies.split("[\\ |]"))
+//        {
+//            Dependency dependency = Dependency.parseString(dependencyString);
+//            if (dependency != null)
+//            {
+//                list.add(dependency);
+//            }
+//        }
+//        return list;
+//    }
 
     /**
      * Extracts the integer content of an element

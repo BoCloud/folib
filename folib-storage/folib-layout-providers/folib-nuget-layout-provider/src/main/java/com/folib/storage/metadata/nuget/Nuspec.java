@@ -351,23 +351,23 @@ public class Nuspec implements Serializable
     /**
      * @return dependencies of packages, including those in groups
      */
-    public List<Dependency> getDependencies()
-    {
-        if (getMetadata().dependencies == null)
-        {
-            return new ArrayList<>();
-        }
-        return getMetadata().dependencies.getDependencies();
-    }
+//    public List<Dependency> getDependencies()
+//    {
+//        if (getMetadata().dependencies == null)
+//        {
+//            return new ArrayList<>();
+//        }
+//        return getMetadata().dependencies.getDependencies();
+//    }
 
     /**
      *
      * @return dependency groups, including root
      */
-    public List<DependenciesGroup> getDependenciesGroups()
-    {
-        return getMetadata().dependencies.getGroups();
-    }
+//    public List<DependenciesGroup> getDependenciesGroups()
+//    {
+//        return getMetadata().dependencies.getGroups();
+//    }
 
     /**
      * @return depending on the assemblies that come with the .NET package

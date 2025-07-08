@@ -349,8 +349,8 @@ create table if not exists affected_version_attribution
 (
     id                  bigint auto_increment
     primary key,
-    first_seen          timestamp    not null,
-    last_seen           timestamp    not null,
+    first_seen          timestamp    not null default current_timestamp on update current_timestamp,
+    `last_seen`           timestamp    not null default current_timestamp,
     source              varchar(255) null,
     uuid                varchar(36)  not null,
     vulnerability       varchar(128) not null,

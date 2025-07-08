@@ -343,7 +343,7 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
 
     public Long countByStorageIdAndRepositoryId(List<String> storageIdAndRepositoryIdList, String layout) {
         if ("Docker".equals(layout)) {
-            EntityTraversal<Vertex, Vertex> entityTraversal = g().V().hasLabel(Vertices.ARTIFACT).has(Properties.UUID, Text.textNotContains("blobs/sha256")).has(Properties.UUID, Text.textNotContains("manifest/sha256")).has(Properties.ARTIFACT_FILE_EXISTS, true);
+            EntityTraversal<Vertex, Vertex> entityTraversal = g().V().hasLabel(Vertices.ARTIFACT).has(Properties.ARTIFACT_FILE_EXISTS, true);
             if (CollectionUtils.isNotEmpty(storageIdAndRepositoryIdList)) {
                 entityTraversal = entityTraversal.has(Properties.STORAGE_ID_AND_REPOSITORY_ID, P.within(storageIdAndRepositoryIdList));
             }
@@ -600,12 +600,8 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
         if (StringUtils.isNotBlank(artifactName)) {
             if (Boolean.TRUE.equals(regex)) {
                 entityTraversal = entityTraversal.has(Properties.UUID, Text.textRegex(artifactName));
-                entityTraversal = entityTraversal.has(Properties.UUID, Text.textNotContains("blobs/sha256"));
-                entityTraversal = entityTraversal.has(Properties.UUID, Text.textNotContains("manifest/sha256"));
             } else {
                 entityTraversal = entityTraversal.has(Properties.UUID, Text.textContains(artifactName));
-                entityTraversal = entityTraversal.has(Properties.UUID, Text.textNotContains("blobs/sha256"));
-                entityTraversal = entityTraversal.has(Properties.UUID, Text.textNotContains("manifest/sha256"));
             }
         }
         if (StringUtils.isNotBlank(query)) {
@@ -648,8 +644,6 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
 
     public EntityTraversal<Vertex, Vertex> buildEntityTraversalByAql(String storageId, String repositoryId, List<String> storageIdAndRepositoryIdList, ArtifactSearchCondition artifactSearchCondition) {
         EntityTraversal<Vertex, Vertex> entityTraversal = g().V().hasLabel(Vertices.ARTIFACT);
-        entityTraversal = entityTraversal.has(Properties.ARTIFACT_PATH, Text.textNotContains("blobs/sha256"));
-        entityTraversal = entityTraversal.has(Properties.ARTIFACT_PATH, Text.textNotContains("manifest/sha256"));
         entityTraversal = entityTraversal.has(Properties.ARTIFACT_FILE_EXISTS, true);
         if (StringUtils.isNotBlank(storageId)) {
             entityTraversal = entityTraversal.has(Properties.STORAGE_ID, storageId);
@@ -705,9 +699,9 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
                                         searchValue = searchValue + "/.*";
                                     }
                                 }
-                                orEntityTraversalList.add(__.has(artifactCondition.getSearchKey(), searchValue.equals(artifactCondition.getSearchValue()) ? Text.textNotPrefix(searchValue) : Text.textNotRegex(searchValue)));
+//                                orEntityTraversalList.add(__.has(artifactCondition.getSearchKey(), searchValue.equals(artifactCondition.getSearchValue()) ? Text.textNotPrefix(searchValue) : Text.textNotRegex(searchValue)));
                             } else {
-                                orEntityTraversalList.add(__.has(artifactCondition.getSearchKey(), searchValue.equals(artifactCondition.getSearchValue()) ? Text.textNotContains(searchValue) : Text.textNotRegex(searchValue)));
+//                                orEntityTraversalList.add(__.has(artifactCondition.getSearchKey(), searchValue.equals(artifactCondition.getSearchValue()) ? Text.textNotContains(searchValue) : Text.textNotRegex(searchValue)));
                             }
                         } else if (ArtifactSearchConditionTypeEnum.EQ.equals(artifactCondition.getArtifactSearchConditionTypeEnum())) {
                             orEntityTraversalList.add(__.has(artifactCondition.getSearchKey(), searchValue));
@@ -724,7 +718,7 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
                         if (ArtifactSearchConditionTypeEnum.MATCH.equals(artifactNameCondition.getArtifactSearchConditionTypeEnum())) {
                             orEntityTraversalList.add(__.has(Properties.ARTIFACT_NAME, searchValue.equals(artifactNameCondition.getSearchValue()) ? Text.textContains(searchValue) : Text.textRegex(searchValue)));
                         } else if (ArtifactSearchConditionTypeEnum.N_MATCH.equals(artifactNameCondition.getArtifactSearchConditionTypeEnum())) {
-                            orEntityTraversalList.add(__.has(Properties.ARTIFACT_NAME, searchValue.equals(artifactNameCondition.getSearchValue()) ? Text.textNotContains(searchValue) : Text.textNotRegex(searchValue)));
+//                            orEntityTraversalList.add(__.has(Properties.ARTIFACT_NAME, searchValue.equals(artifactNameCondition.getSearchValue()) ? Text.textNotContains(searchValue) : Text.textNotRegex(searchValue)));
                         } else if (ArtifactSearchConditionTypeEnum.EQ.equals(artifactNameCondition.getArtifactSearchConditionTypeEnum())) {
                             orEntityTraversalList.add(__.has(Properties.ARTIFACT_NAME, searchValue));
                         } else if (ArtifactSearchConditionTypeEnum.NE.equals(artifactNameCondition.getArtifactSearchConditionTypeEnum())) {
@@ -743,7 +737,7 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
                             orEntityTraversalList.add(__.has(Properties.METADATA, Text.textRegex(regex)));
                         } else if (ArtifactSearchConditionTypeEnum.NE.equals(artifactMetadataCondition.getArtifactSearchConditionTypeEnum())) {
                             regex = String.format(regex, artifactMetadataCondition.getMedataKey(), artifactMetadataCondition.getMedataValue());
-                            orEntityTraversalList.add(__.has(Properties.METADATA, Text.textNotRegex(regex)));
+//                            orEntityTraversalList.add(__.has(Properties.METADATA, Text.textNotRegex(regex)));
                         } else if (ArtifactSearchConditionTypeEnum.MATCH.equals(artifactMetadataCondition.getArtifactSearchConditionTypeEnum())) {
                             metadataValue = metadataValue.replaceAll(asterisk, ".*");
                             regex = String.format(regex, artifactMetadataCondition.getMedataKey(), metadataValue);
@@ -751,7 +745,7 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
                         } else if (ArtifactSearchConditionTypeEnum.N_MATCH.equals(artifactMetadataCondition.getArtifactSearchConditionTypeEnum())) {
                             metadataValue = metadataValue.replaceAll(asterisk, ".*");
                             regex = String.format(regex, artifactMetadataCondition.getMedataKey(), metadataValue);
-                            orEntityTraversalList.add(__.has(Properties.METADATA, Text.textNotRegex(regex)));
+//                            orEntityTraversalList.add(__.has(Properties.METADATA, Text.textNotRegex(regex)));
                         }
                     }
                 }
@@ -793,9 +787,9 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
                                         searchValue = searchValue + "/.*";
                                     }
                                 }
-                                entityTraversal = entityTraversal.has(artifactCondition.getSearchKey(), searchValue.equals(artifactCondition.getSearchValue()) ? Text.textNotPrefix(searchValue) : Text.textNotRegex(searchValue));
+//                                entityTraversal = entityTraversal.has(artifactCondition.getSearchKey(), searchValue.equals(artifactCondition.getSearchValue()) ? Text.textNotPrefix(searchValue) : Text.textNotRegex(searchValue));
                             } else {
-                                entityTraversal = entityTraversal.has(artifactCondition.getSearchKey(), searchValue.equals(artifactCondition.getSearchValue()) ? Text.textNotContains(searchValue) : Text.textNotRegex(searchValue));
+//                                entityTraversal = entityTraversal.has(artifactCondition.getSearchKey(), searchValue.equals(artifactCondition.getSearchValue()) ? Text.textNotContains(searchValue) : Text.textNotRegex(searchValue));
                             }
                         } else if (ArtifactSearchConditionTypeEnum.EQ.equals(artifactCondition.getArtifactSearchConditionTypeEnum())) {
                             entityTraversal = entityTraversal.has(artifactCondition.getSearchKey(), searchValue);
@@ -826,7 +820,7 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
                         if (ArtifactSearchConditionTypeEnum.MATCH.equals(artifactNameCondition.getArtifactSearchConditionTypeEnum())) {
                             entityTraversal = entityTraversal.has(Properties.ARTIFACT_NAME, searchValue.equals(artifactNameCondition.getSearchValue()) ? Text.textContains(searchValue) : Text.textRegex(searchValue));
                         } else if (ArtifactSearchConditionTypeEnum.N_MATCH.equals(artifactNameCondition.getArtifactSearchConditionTypeEnum())) {
-                            entityTraversal = entityTraversal.has(Properties.ARTIFACT_NAME, searchValue.equals(artifactNameCondition.getSearchValue()) ? Text.textNotContains(searchValue) : Text.textNotRegex(searchValue));
+//                            entityTraversal = entityTraversal.has(Properties.ARTIFACT_NAME, searchValue.equals(artifactNameCondition.getSearchValue()) ? Text.textNotContains(searchValue) : Text.textNotRegex(searchValue));
                         } else if (ArtifactSearchConditionTypeEnum.EQ.equals(artifactNameCondition.getArtifactSearchConditionTypeEnum())) {
                             entityTraversal = entityTraversal.has(Properties.ARTIFACT_NAME, searchValue);
                         } else if (ArtifactSearchConditionTypeEnum.NE.equals(artifactNameCondition.getArtifactSearchConditionTypeEnum())) {
@@ -845,7 +839,7 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
                             entityTraversal = entityTraversal.has(Properties.METADATA, Text.textRegex(regex));
                         } else if (ArtifactSearchConditionTypeEnum.NE.equals(artifactMetadataCondition.getArtifactSearchConditionTypeEnum())) {
                             regex = String.format(regex, artifactMetadataCondition.getMedataKey(), artifactMetadataCondition.getMedataValue());
-                            entityTraversal = entityTraversal.has(Properties.METADATA, Text.textNotRegex(regex));
+//                            entityTraversal = entityTraversal.has(Properties.METADATA, Text.textNotRegex(regex));
                         } else if (ArtifactSearchConditionTypeEnum.MATCH.equals(artifactMetadataCondition.getArtifactSearchConditionTypeEnum())) {
                             metadataValue = metadataValue.replaceAll(asterisk, ".*");
                             regex = String.format(regex, artifactMetadataCondition.getMedataKey(), metadataValue);
@@ -853,7 +847,7 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
                         } else if (ArtifactSearchConditionTypeEnum.N_MATCH.equals(artifactMetadataCondition.getArtifactSearchConditionTypeEnum())) {
                             metadataValue = metadataValue.replaceAll(asterisk, ".*");
                             regex = String.format(regex, artifactMetadataCondition.getMedataKey(), metadataValue);
-                            entityTraversal = entityTraversal.has(Properties.METADATA, Text.textNotRegex(regex));
+//                            entityTraversal = entityTraversal.has(Properties.METADATA, Text.textNotRegex(regex));
                         }
                     }
                 }
@@ -864,8 +858,6 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
 
     public EntityTraversal<Vertex, Vertex> buildEntityTraversalForThirdParty(String searchKeyword) {
         EntityTraversal<Vertex, Vertex> entityTraversal = g().V().hasLabel(Vertices.ARTIFACT);
-        entityTraversal = entityTraversal.has(Properties.ARTIFACT_PATH, Text.textNotContains("blobs/sha256"));
-        entityTraversal = entityTraversal.has(Properties.ARTIFACT_PATH, Text.textNotContains("manifest/sha256"));
         entityTraversal = entityTraversal.has(Properties.ARTIFACT_FILE_EXISTS, true);
         if (StringUtils.isNotBlank(searchKeyword)) {
             entityTraversal = entityTraversal.has(Properties.ARTIFACT_PATH, Text.textContains(searchKeyword));
@@ -1061,9 +1053,9 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
     }
 
     public Long countDockerArtifactRelation(String storageId, String repositoryId, String uuid, String keyword, Integer type) {
-        EntityTraversal<Vertex, Vertex> entityTraversal = g().V().hasLabel(Vertices.ARTIFACT).has(Properties.STORAGE_ID, storageId).has(Properties.REPOSITORY_ID, repositoryId).has(Properties.UUID, Text.textNotPrefix(uuid));
+        EntityTraversal<Vertex, Vertex> entityTraversal = g().V().hasLabel(Vertices.ARTIFACT).has(Properties.STORAGE_ID, storageId).has(Properties.REPOSITORY_ID, repositoryId).has(Properties.UUID, P.neq(uuid));
         if (type == 1) {
-            entityTraversal = entityTraversal.has(Properties.UUID, Text.textContains(keyword)).has(Properties.UUID, Text.textNotContains("blobs/sha256")).has(Properties.UUID, Text.textNotContains("manifest/sha256")).has(Properties.ARTIFACT_FILE_EXISTS, true);
+            entityTraversal = entityTraversal.has(Properties.UUID, Text.textContains(keyword)).has(Properties.ARTIFACT_FILE_EXISTS, true);
         } else if (type == 2) {
             entityTraversal = entityTraversal.has(Properties.UUID, Text.textContains(keyword)).has(Properties.UUID, Text.textContains("manifest/sha256")).has(Properties.ARTIFACT_FILE_EXISTS, true);
         } else if (type == 3) {
