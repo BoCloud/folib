@@ -1,0 +1,124 @@
+package com.folib.services.impl;
+
+import com.folib.artifact.ArtifactNotFoundException;
+import com.folib.configuration.ConfigurationManager;
+import com.folib.providers.io.RepositoryPath;
+import com.folib.providers.io.RepositoryPathResolver;
+import com.folib.providers.io.RepositoryStreamSupport;
+import com.folib.providers.repository.RepositoryProvider;
+import com.folib.providers.repository.RepositoryProviderRegistry;
+import com.folib.service.ProxyRepositoryConnectionPoolConfigurationService;
+import com.folib.services.ArtifactResolutionService;
+import com.folib.storage.ArtifactStorageException;
+import com.folib.storage.Storage;
+import com.folib.storage.repository.Repository;
+import com.folib.storage.validation.resource.ArtifactOperationsValidator;
+import org.springframework.context.annotation.Lazy;
+import org.springframework.stereotype.Component;
+
+import jakarta.inject.Inject;
+import java.io.IOException;
+import java.security.NoSuchAlgorithmException;
+
+/**
+ * @author veadan
+ */
+@Component
+public class ArtifactResolutionServiceImpl
+        implements ArtifactResolutionService {
+
+    @Lazy
+    @Inject
+    private ConfigurationManager configurationManager;
+    @Lazy
+    @Inject
+    private ArtifactOperationsValidator artifactOperationsValidator;
+    @Lazy
+    @Inject
+    private RepositoryProviderRegistry repositoryProviderRegistry;
+    @Lazy
+    @Inject
+    private RepositoryPathResolver repositoryPathResolver;
+    @Lazy
+    @Inject
+    private ProxyRepositoryConnectionPoolConfigurationService proxyRepositoryConnectionPoolConfigurationService;
+
+    @Override
+    public RepositoryStreamSupport.RepositoryInputStream getInputStream(RepositoryPath path)
+            throws IOException {
+        Repository repository = path.getFileSystem().getRepository();
+//        artifactOperationsValidator.validate(path);
+
+        RepositoryProvider repositoryProvider = repositoryProviderRegistry.getProvider(repository.getType());
+        return (RepositoryStreamSupport.RepositoryInputStream) repositoryProvider.getInputStream(path);
+    }
+
+    @Override
+    public RepositoryStreamSupport.RepositoryStoreIndexInputStream getStoreIndexInputStream(RepositoryPath path) throws IOException {
+        Repository repository = path.getFileSystem().getRepository();
+        artifactOperationsValidator.validate(path);
+
+        RepositoryProvider repositoryProvider = repositoryProviderRegistry.getProvider(repository.getType());
+        return (RepositoryStreamSupport.RepositoryStoreIndexInputStream) repositoryProvider.getStoreIndexInputStream(path);
+    }
+
+    @Override
+    public RepositoryStreamSupport.RepositoryOutputStream getOutputStream(RepositoryPath repositoryPath)
+            throws IOException,
+            NoSuchAlgorithmException {
+        artifactOperationsValidator.validate(repositoryPath);
+
+        Repository repository = repositoryPath.getRepository();
+        RepositoryProvider repositoryProvider = repositoryProviderRegistry.getProvider(repository.getType());
+
+        RepositoryStreamSupport.RepositoryOutputStream os = (RepositoryStreamSupport.RepositoryOutputStream) repositoryProvider.getOutputStream(repositoryPath);
+        if (os == null) {
+            throw new ArtifactStorageException("Artifact " + repositoryPath + " cannot be stored.");
+        }
+        return os;
+    }
+
+    public Storage getStorage(String storageId) {
+        return configurationManager.getConfiguration().getStorage(storageId);
+    }
+
+    @Override
+    public RepositoryPath resolvePath(String storageId,
+                                      String repositoryId,
+                                      String artifactPath)
+            throws IOException {
+        RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
+        Repository repository = repositoryPath.getRepository();
+        RepositoryProvider repositoryProvider = repositoryProviderRegistry.getProvider(repository.getType());
+        try {
+            return (RepositoryPath) repositoryProvider.fetchPath(repositoryPath);
+        } catch (ArtifactNotFoundException e) {
+            return null;
+        }
+    }
+
+    @Override
+    public RepositoryPath resolvePath(String storageId, String repositoryId, String targetUrl, String artifactPath) throws IOException {
+        RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
+        repositoryPath.setTargetUrl(targetUrl);
+        Repository repository = repositoryPath.getRepository();
+        RepositoryProvider repositoryProvider = repositoryProviderRegistry.getProvider(repository.getType());
+        try {
+            return (RepositoryPath) repositoryProvider.fetchPath(repositoryPath);
+        } catch (ArtifactNotFoundException e) {
+            return null;
+        }
+    }
+
+    @Override
+    public RepositoryPath resolvePath(RepositoryPath repositoryPath) throws IOException {
+        Repository repository = repositoryPath.getRepository();
+        RepositoryProvider repositoryProvider = repositoryProviderRegistry.getProvider(repository.getType());
+        try {
+            return (RepositoryPath) repositoryProvider.fetchPath(repositoryPath);
+        } catch (ArtifactNotFoundException e) {
+            return null;
+        }
+    }
+
+}

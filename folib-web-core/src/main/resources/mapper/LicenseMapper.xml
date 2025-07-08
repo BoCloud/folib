@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
-<mapper namespace="com.veadan.folib.mapper.LicenseMapper">
+<mapper namespace="com.folib.mapper.LicenseMapper">
 
-    <resultMap id="licenseResultMap" type="com.veadan.folib.entity.License">
+    <resultMap id="licenseResultMap" type="com.folib.entity.License">
         <id property="id" column="id"/>
         <result property="createTime" column="create_time"/>
         <result property="licenseId" column="license_id"/>

@@ -1,0 +1,149 @@
+package com.folib.domain;
+
+import java.net.URL;
+import java.util.Date;
+import java.util.Objects;
+
+public class FileContent
+{
+    private String name;
+
+    private Long size;
+
+    private Date lastModified;
+
+    private String storageId;
+
+    private String repositoryId;
+
+    private String artifactPath;
+
+    private String layout;
+
+    private URL url;
+
+    private String path;
+
+    private String description;
+
+    public FileContent()
+    {
+
+    }
+
+    public FileContent(String name)
+    {
+        setName(name);
+    }
+
+    public String getName()
+    {
+        return name;
+    }
+
+    public Long getSize()
+    {
+        return size;
+    }
+
+    public Date getLastModified()
+    {
+        return lastModified;
+    }
+
+    public String getStorageId()
+    {
+        return storageId;
+    }
+
+    public String getRepositoryId()
+    {
+        return repositoryId;
+    }
+
+    public String getArtifactPath()
+    {
+        return artifactPath;
+    }
+
+    public void setName(String name)
+    {
+        this.name = name;
+    }
+
+    public void setSize(Long size)
+    {
+        this.size = size;
+    }
+
+    public void setLastModified(Date lastModified)
+    {
+        this.lastModified = lastModified;
+    }
+
+    public void setStorageId(String storageId)
+    {
+        this.storageId = storageId;
+    }
+
+    public void setRepositoryId(String repositoryId)
+    {
+        this.repositoryId = repositoryId;
+    }
+
+    public void setArtifactPath(String artifactPath)
+    {
+        this.artifactPath = artifactPath;
+    }
+
+    public URL getUrl()
+    {
+        return url;
+    }
+
+    public void setUrl(URL url)
+    {
+        this.url = url;
+    }
+
+    public String getLayout() {
+        return layout;
+    }
+
+    public void setLayout(String layout) {
+        this.layout = layout;
+    }
+
+    public String getPath() {
+        return path;
+    }
+
+    public void setPath(String path) {
+        this.path = path;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof FileContent)){
+            return false;
+        }
+        FileContent that = (FileContent) o;
+        return artifactPath.equals(that.artifactPath);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(artifactPath);
+    }
+}

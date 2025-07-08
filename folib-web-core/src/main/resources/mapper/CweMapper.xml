@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.veadan.folib.mapper.CweMapper">
-    <resultMap type="com.veadan.folib.scanner.vulnerability.model.Cwe" id="CweMap">
+<mapper namespace="com.folib.mapper.CweMapper">
+    <resultMap type="com.folib.scanner.vulnerability.model.Cwe" id="CweMap">
         <result property="id" column="id"/>
         <result property="cweId" column="cweid"/>
         <result property="name" column="name"/>

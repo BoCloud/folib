@@ -1,0 +1,26 @@
+package com.folib.yaml.configuration.repository;
+
+import com.fasterxml.jackson.annotation.JsonTypeName;
+import com.folib.providers.layout.HuggingFaceLayoutProvider;
+import com.folib.yaml.repository.CustomRepositoryConfiguration;
+import com.folib.providers.layout.HuggingFaceLayoutProvider;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import jakarta.xml.bind.annotation.XmlAccessType;
+import jakarta.xml.bind.annotation.XmlAccessorType;
+
+import javax.annotation.concurrent.Immutable;
+
+@Immutable
+@XmlAccessorType(XmlAccessType.FIELD)
+@SuppressFBWarnings(value = "AJCIP_FIELD_ISNT_FINAL_IN_IMMUTABLE_CLASS")
+@JsonTypeName(HuggingFaceLayoutProvider.ALIAS)
+public class HuggingFaceRepositoryConfigurationData  extends CustomRepositoryConfiguration{
+
+    public HuggingFaceRepositoryConfigurationData(){}
+
+    public HuggingFaceRepositoryConfigurationData(final HuggingFaceRepositoryConfigurationDto delegate)
+    {
+        // maybe one day I'll have some implementation here :)
+    }
+}
+

@@ -6,10 +6,10 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>com.veadan.folib</groupId>
+        <groupId>com.folib</groupId>
         <artifactId>folib-server</artifactId>
         <version>3.0-SNAPSHOT</version>
-        <relativePath/>
+        <relativePath>../pom.xml</relativePath>
     </parent>
 
     <artifactId>folib-web-core</artifactId>
@@ -82,7 +82,7 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <configuration>
-                    <mainClass>com.veadan.folib.app.FolibSpringBootApplication</mainClass>
+                    <mainClass>com.folib.app.FolibSpringBootApplication</mainClass>
                     <systemPropertyVariables>
                         <folib.basedir>${project.build.directory}</folib.basedir>
                         <logging.config>${project.build.directory}/folib/etc/logback-spring.xml</logging.config>
@@ -103,7 +103,7 @@
 
                         <configuration>
                             <classifier>spring-boot</classifier>
-                            <mainClass>com.veadan.folib.app.FolibSpringBootApplication</mainClass>
+                            <mainClass>com.folib.app.FolibSpringBootApplication</mainClass>
                         </configuration>
                     </execution>
                 </executions>
@@ -125,7 +125,7 @@
 
     <dependencies>
         <dependency>
-            <groupId>com.veadan.folib</groupId>
+            <groupId>com.folib</groupId>
             <artifactId>folib-core</artifactId>
             <version>${project.version}</version>
         </dependency>
@@ -161,7 +161,7 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>com.veadan.folib</groupId>
+            <groupId>com.folib</groupId>
             <artifactId>folib-ldap-authentication-provider</artifactId>
             <version>${project.version}</version>
         </dependency>
@@ -297,7 +297,7 @@
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
-            <artifactId>folib-common-resources</artifactId>
+            <artifactId>folib-commons-resources</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
@@ -326,7 +326,7 @@
             <scope>test</scope>
         </dependency>
 <!--        <dependency>-->
-<!--            <groupId>com.veadan.folib</groupId>-->
+<!--            <groupId>com.folib</groupId>-->
 <!--            <artifactId>strongbox-web-ui</artifactId>-->
 <!--            <version>${project.version}</version>-->
 <!--            <type>zip</type>-->
@@ -504,7 +504,7 @@
         </dependency>
 
         <dependency>
-            <groupId>com.veadan.folib.commons</groupId>
+            <groupId>com.folib</groupId>
             <artifactId>folib-commons-io</artifactId>
             <version>${project.version}</version>
         </dependency>

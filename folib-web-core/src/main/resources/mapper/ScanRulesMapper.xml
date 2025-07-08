@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
-<mapper namespace="com.veadan.folib.scanner.mapper.ScanRulesMapper">
+<mapper namespace="com.folib.scanner.mapper.ScanRulesMapper">
 
 	<!-- 可根据自己的需求，是否要使用 -->
-    <resultMap type="com.veadan.folib.scanner.entity.ScanRules" id="scanRulesMap">
+    <resultMap type="com.folib.scanner.entity.ScanRules" id="scanRulesMap">
         <result property="id" column="id"/>
         <result property="repository" column="repository"/>
         <result property="storage" column="storage"/>

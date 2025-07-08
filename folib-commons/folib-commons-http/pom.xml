@@ -4,12 +4,11 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>com.veadan.folib</groupId>
+        <groupId>com.folib</groupId>
         <artifactId>folib-commons</artifactId>
         <version>3.0-SNAPSHOT</version>
-        <relativePath/>
+        <relativePath>../pom.xml</relativePath>
     </parent>
-    <groupId>com.veadan.folib.commons</groupId>
     <artifactId>folib-commons-http</artifactId>
     <name>Folib: Commons Http</name>
     <packaging>jar</packaging>

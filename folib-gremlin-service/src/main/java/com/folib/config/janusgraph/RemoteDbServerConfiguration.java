@@ -1,0 +1,47 @@
+package com.folib.config.janusgraph;
+
+import com.veadan.folib.db.schema.FolibSchema;
+import org.janusgraph.core.JanusGraph;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Condition;
+import org.springframework.context.annotation.ConditionContext;
+import org.springframework.context.annotation.Conditional;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.core.env.ConfigurableEnvironment;
+import org.springframework.core.type.AnnotatedTypeMetadata;
+import org.folib.db.server.JanusGraphConfiguration;
+import org.folib.db.server.JanusGraphServer;
+import org.folib.db.server.JanusGraphWithRemoteCassandra;
+
+/**
+ * @author veadan
+ */
+@Configuration
+@Conditional(RemoteDbServerConfiguration.class)
+public class RemoteDbServerConfiguration implements Condition
+{
+
+    @Bean
+    JanusGraphServer embeddedDbServer(DelegatingIdBlockQueueSupplier idBlockQueueSupplier, JanusGraphConfiguration janusGraphConfiguration)
+    {
+        return new JanusGraphWithRemoteCassandra(janusGraphConfiguration, idBlockQueueSupplier);
+    }
+
+    @Bean
+    JanusGraph JanusGraph(JanusGraphServer server)
+        throws Exception
+    {
+        return new FolibSchema().createSchema(server.getJanusGraph());
+    }
+
+    @Override
+    public boolean matches(ConditionContext conditionContext,
+                           AnnotatedTypeMetadata metadata)
+
+    {
+        JanusGraphDbProfile profile = JanusGraphDbProfile.resolveProfile((ConfigurableEnvironment) conditionContext.getEnvironment());
+
+        return profile.getName().equals(JanusGraphDbProfile.PROFILE_REMOTE);
+    }
+
+}

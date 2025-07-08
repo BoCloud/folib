@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
-<mapper namespace="com.veadan.folib.scanner.mapper.FolibScannerMapper">
+<mapper namespace="com.folib.scanner.mapper.FolibScannerMapper">
 
     <!-- 可根据自己的需求，是否要使用 -->
-    <resultMap type="com.veadan.folib.scanner.entity.FolibScanner" id="folibScannerMap">
+    <resultMap type="com.folib.scanner.entity.FolibScanner" id="folibScannerMap">
         <result property="path" column="path"/>
         <result property="repository" column="repository"/>
         <result property="storage" column="storage"/>
@@ -58,7 +58,7 @@
         WHERE scan_status = 'SCANING'
           AND on_scan = 1
     </update>
-    <select id="getScanSum" resultType="com.veadan.folib.scanner.entity.ScanSumVo">
+    <select id="getScanSum" resultType="com.folib.scanner.entity.ScanSumVo">
         SELECT IFNULL(SUM(a.dependency_count), 0)     AS denpendencySum,
                IFNULL(SUM(a.vulnerable_count), 0)     AS vulnerableSum,
                IFNULL(SUM(a.vulnerabilites_count), 0) AS vulnerabilitesSum,
@@ -70,7 +70,7 @@
         </where>
     </select>
 
-    <select id="getScannerSumDifVoList" resultType="com.veadan.folib.scanner.entity.ScannerSumDifVo">
+    <select id="getScannerSumDifVoList" resultType="com.folib.scanner.entity.ScannerSumDifVo">
         SELECT DISTINCT r.id,r.`storage`,
             r.`repository`,
             r.layout,
@@ -102,7 +102,7 @@
     </select>
 
 
-    <select id="weekDayCount" resultType="com.veadan.folib.scanner.entity.ScanSumByDate">
+    <select id="weekDayCount" resultType="com.folib.scanner.entity.ScanSumByDate">
         SELECT
         DATE_FORMAT(d.date,'%m-%d') as date,
         IFNULL( T.countFolib, 0 ) AS countFolib,
@@ -148,7 +148,7 @@
         GROUP BY
         d.date
     </select>
-    <select id="mounthDayCount"  resultType="com.veadan.folib.scanner.entity.ScanSumByDate">
+    <select id="mounthDayCount"  resultType="com.folib.scanner.entity.ScanSumByDate">
         SELECT DISTINCT date(a.scan_time) as date, IFNULL( COUNT( a.path ), 0 ) AS countFolib,IFNULL(
         SUM(a.dependency_count) ,0) AS denpendencySum ,
         IFNULL( SUM(a.vulnerable_count) ,0) AS vulnerableSum,
@@ -162,7 +162,7 @@
         </where>
     </select>
 
-    <select id="getCountByDayOne" resultType="com.veadan.folib.scanner.entity.ScanSumByDate">
+    <select id="getCountByDayOne" resultType="com.folib.scanner.entity.ScanSumByDate">
         SELECT  IFNULL( COUNT( a.path ), 0 ) AS countFolib,IFNULL(
         SUM(a.dependency_count) ,0) AS denpendencySum ,
         IFNULL( SUM(a.vulnerable_count) ,0) AS vulnerableSum,
@@ -187,7 +187,7 @@
             </if>
         </where>
     </select>
-    <select id="selectDockerList" resultType="com.veadan.folib.scanner.entity.FolibScannerDockerTableVO">
+    <select id="selectDockerList" resultType="com.folib.scanner.entity.FolibScannerDockerTableVO">
         SELECT
             a.`repository`,
             a.`storage`,
@@ -211,7 +211,7 @@
         </where>
         GROUP BY versionPath
     </select>
-    <select id="selectDockerChildList" resultType="com.veadan.folib.scanner.entity.FolibScanner">
+    <select id="selectDockerChildList" resultType="com.folib.scanner.entity.FolibScanner">
         SELECT
             a.`repository`,
             a.`storage`,

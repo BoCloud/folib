@@ -1,0 +1,41 @@
+package com.folib.event;
+
+import com.folib.domain.Artifact;
+import com.folib.enums.DeltaIndexEventType;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+/**
+ * @author veadan
+ * @since 2024-09-03 14:59
+ */
+@Data
+@NoArgsConstructor
+public class DebianIndexEvent {
+
+    private Artifact artifact;
+    private String distribution;
+    private String component;
+    private String architecture;
+    private DeltaIndexEventType eventType;
+
+    public DebianIndexEvent( Artifact artifact,DeltaIndexEventType eventType, String distribution,String component, String architecture) {
+        this.artifact=artifact;
+        this.eventType = eventType;
+        this.distribution = distribution;
+        this.component = component;
+        this.architecture = architecture;
+    }
+
+    public String componentArchitectureGroup() {
+        return this.component + ":" + this.architecture;
+    }
+
+    public String distributionComponentGroup() {
+        return this.distribution + ":" + this.component;
+    }
+
+    public DebianIndexEvent(DebianIndexEvent other, String newArchitecture) {
+        this(other.getArtifact(),other.getEventType(), other.getDistribution(), other.getComponent(), newArchitecture);
+    }
+}

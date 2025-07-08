@@ -1,0 +1,47 @@
+package com.folib.services;
+
+import com.alibaba.fastjson.JSONObject;
+import com.folib.domain.PubPackageVersionMetadata;
+import com.folib.storage.repository.Repository;
+
+/**
+ * @author veadan
+ **/
+public interface PubProvider {
+
+    /**
+     * 注册
+     */
+    void register();
+
+    /**
+     * pub inspectVersion
+     *
+     * @param repository  仓库
+     * @param packageName packageName
+     * @param version     version
+     * @param targetUrl   targetUrl
+     * @return 结果
+     */
+    PubPackageVersionMetadata inspectVersion(Repository repository, String packageName, String version, String targetUrl);
+
+    /**
+     * pub packages
+     *
+     * @param repository  仓库
+     * @param packageName packageName
+     * @param targetUrl   targetUrl
+     * @return 结果
+     */
+    JSONObject packages(Repository repository, String packageName, String targetUrl);
+
+    /**
+     * pub packages
+     *
+     * @param repository  仓库
+     * @param packageName packageName
+     * @param targetUrl   targetUrl
+     * @return 结果
+     */
+    JSONObject getLocalPackages(Repository repository, String packageName, String targetUrl);
+}

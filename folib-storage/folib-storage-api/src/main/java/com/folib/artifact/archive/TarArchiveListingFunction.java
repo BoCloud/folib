@@ -1,0 +1,68 @@
+package com.folib.artifact.archive;
+
+import com.folib.providers.io.RepositoryPath;
+import org.apache.commons.compress.archivers.ArchiveInputStream;
+import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
+
+import java.io.BufferedInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Set;
+
+/**
+ * @author veadan
+ */
+public enum TarArchiveListingFunction
+        implements ArchiveListingFunction {
+
+    /**
+     * 实例
+     */
+    INSTANCE;
+
+    @Override
+    public Set<String> listFilenames(final RepositoryPath path)
+            throws IOException {
+        try (InputStream is = Files.newInputStream(path);
+             BufferedInputStream bis = new BufferedInputStream(is);
+             ArchiveInputStream ais = new TarArchiveInputStream(bis)) {
+            return getEntryNames(ais);
+        }
+    }
+
+    @Override
+    public byte[] getContentByFileName(RepositoryPath path, String fileName) throws IOException {
+        try (InputStream is = Files.newInputStream(path);
+             BufferedInputStream bis = new BufferedInputStream(is);
+             ArchiveInputStream ais = new TarArchiveInputStream(bis)) {
+            return getContentByFileName(ais, fileName);
+        }
+    }
+
+    @Override
+    public byte[] getContentByFileName(RepositoryPath repositoryPath, Path path, String fileName) throws IOException {
+        try (InputStream is = Files.newInputStream(path);
+             BufferedInputStream bis = new BufferedInputStream(is);
+             ArchiveInputStream ais = new TarArchiveInputStream(bis)) {
+            return getContentByFileName(ais, fileName);
+        }
+    }
+
+    @Override
+    public byte[] getContentByEqualsFileName(RepositoryPath repositoryPath, Path path, String fileName) throws IOException {
+        try (InputStream is = Files.newInputStream(path);
+             BufferedInputStream bis = new BufferedInputStream(is);
+             ArchiveInputStream ais = new TarArchiveInputStream(bis)) {
+            return getContentByEqualsFileName(ais, fileName);
+        }
+    }
+
+    @Override
+    public boolean supports(final RepositoryPath path) {
+        final Path fileName = path.getFileName();
+        return fileName != null && fileName.toString().endsWith("tar");
+    }
+
+}

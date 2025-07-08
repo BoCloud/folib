@@ -13,26 +13,26 @@
     <context:annotation-config />
     <cache:annotation-driven />
 
-    <bean id="dataBaseUserDetailService" class="com.veadan.folib.users.userdetails.DataBaseUserDetailService"/>
+    <bean id="dataBaseUserDetailService" class="com.folib.users.userdetails.DataBaseUserDetailService"/>
     <!-- UserDetailsServices -->
-    <bean id="yamlUserDetailService" class="com.veadan.folib.users.userdetails.YamlUserDetailService"/>
+    <bean id="yamlUserDetailService" class="com.folib.users.userdetails.YamlUserDetailService"/>
     <import resource="classpath:/com/veadan/folib/authentication/external/ldap/folib-authentication-providers.xml" />
 
     <bean
-            class="com.veadan.folib.authentication.api.CacheManagerAuthenticationCache" />
+            class="com.folib.authentication.api.CacheManagerAuthenticationCache" />
 
     <!-- AuthenticationProviders -->
     <bean id="passwordAuthenticationProvider"
-          class="com.veadan.folib.authentication.api.password.PasswordAuthenticationProvider" />
+          class="com.folib.authentication.api.password.PasswordAuthenticationProvider" />
 
     <bean id="jwtAuthenticationProvider"
-          class="com.veadan.folib.authentication.api.jwt.JwtAuthenticationProvider">
+          class="com.folib.authentication.api.jwt.JwtAuthenticationProvider">
     </bean>
 
     <bean id="securityTokenAuthenticationProvider"
-          class="com.veadan.folib.authentication.api.nuget.SecurityTokenAuthenticationProvider">
+          class="com.folib.authentication.api.nuget.SecurityTokenAuthenticationProvider">
         <constructor-arg>
-            <bean id="securityTokenClaimsProvider" class="com.veadan.folib.authentication.api.nuget.SecurityTokenClaimsProvider"/>
+            <bean id="securityTokenClaimsProvider" class="com.folib.authentication.api.nuget.SecurityTokenClaimsProvider"/>
         </constructor-arg>
     </bean>
 

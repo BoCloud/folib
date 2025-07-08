@@ -1,0 +1,19 @@
+package com.folib.services;
+
+import com.folib.storage.repository.Repository;
+
+/**
+ * @author veadan
+ **/
+public interface PypiService {
+
+    /**
+     * pypi packages
+     *
+     * @param repository  仓库
+     * @param packageName packageName
+     * @param targetUrl   targetUrl
+     * @return 结果
+     */
+    String packages(Repository repository, String packageName, String targetUrl);
+}

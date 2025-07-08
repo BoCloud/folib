@@ -15,10 +15,10 @@
 
     <context:annotation-config />  
       
-    <bean id="ldapRolesMapping" class="com.veadan.folib.authentication.api.ldap.LdapRolesMappingFactoryBean"/>
+    <bean id="ldapRolesMapping" class="com.folib.ldap.LdapRolesMappingFactoryBean"/>
 
     <bean id="ldapAuthoritiesExternalToInternalMapper"
-        class="com.veadan.folib.authentication.support.AuthoritiesExternalToInternalMapper">
+        class="com.folib.authentication.support.AuthoritiesExternalToInternalMapper">
         <property name="rolesMapping" ref="ldapRolesMapping"/>
     </bean>
 
@@ -35,7 +35,7 @@
         <property name="contextSource" ref="contextSource" />
     </bean>
 
-    <bean id="ldapAuthoritiesPopulator" class="com.veadan.folib.authentication.api.ldap.MappedAuthoritiesPopulator">
+    <bean id="ldapAuthoritiesPopulator" class="com.folib.ldap.MappedAuthoritiesPopulator">
         <constructor-arg ref="ldapAuthoritiesExternalToInternalMapper"/>
         <property name="delegate">
             <bean class="org.springframework.security.ldap.userdetails.DefaultLdapAuthoritiesPopulator">
@@ -65,7 +65,7 @@
         <property name="userDetailsMapper" ref="customUserDetailsMapper"/>
     </bean>
     
-    <bean id="customUserDetailsMapper" class="com.veadan.folib.authentication.api.ldap.CustomLdapUserDetailsMapper">
+    <bean id="customUserDetailsMapper" class="com.folib.ldap.CustomLdapUserDetailsMapper">
         <property name="userPasswordEncoded" value="${folib.authentication.ldap.userPasswordEncoded}"/>
     </bean>
 

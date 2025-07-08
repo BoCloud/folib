@@ -5,7 +5,7 @@
 
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.veadan.folib</groupId>
+    <groupId>com.folib</groupId>
     <artifactId>folib-rest-client</artifactId>
     <version>3.0.0-RELEASE</version>
     <packaging>jar</packaging>
@@ -55,7 +55,7 @@
 
     <dependencies>
         <dependency>
-            <groupId>com.veadan.folib</groupId>
+            <groupId>com.folib</groupId>
             <artifactId>folib-client</artifactId>
             <version>3.0.0-RELEASE</version>
         </dependency>

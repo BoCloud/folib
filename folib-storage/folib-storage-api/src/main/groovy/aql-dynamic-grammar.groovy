@@ -1,4 +1,4 @@
-import com.veadan.folib.artifact.coordinates.ArtifactLayoutLocator
+import com.folib.artifact.coordinates.ArtifactLayoutLocator
 import org.jtwig.JtwigTemplate
 import org.jtwig.JtwigModel
 

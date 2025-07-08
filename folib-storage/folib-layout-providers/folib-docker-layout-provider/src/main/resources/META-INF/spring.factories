@@ -1,2 +1,2 @@
 org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
-  com.veadan.folib.config.DockerLayoutProviderConfig
+  com.folib.config.DockerLayoutProviderConfig

@@ -1,0 +1,19 @@
+package com.folib.security.exceptions;
+
+/**
+ * @author veadan
+ */
+public class ExpiredTokenException extends InvalidTokenException
+{
+
+    public ExpiredTokenException(String msg,
+                                         Throwable t)
+    {
+        super(msg, t);
+    }
+
+    public ExpiredTokenException(String msg)
+    {
+        super(msg);
+    }
+}

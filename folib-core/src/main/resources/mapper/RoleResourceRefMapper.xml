@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.veadan.folib.mapper.RoleResourceRefMapper">
-    <resultMap type="com.veadan.folib.entity.RoleResourceRef" id="RoleResourceRefMap">
+<mapper namespace="com.folib.mapper.RoleResourceRefMapper">
+    <resultMap type="com.folib.entity.RoleResourceRef" id="RoleResourceRefMap">
         <result property="id" column="id"/>
         <result property="roleId" column="role_id"/>
         <result property="entityId" column="entity_id"/>
@@ -109,7 +109,7 @@
             #{roleId}
         </foreach>
     </select>
-    <select id="getUserByRoleId" resultType="com.veadan.folib.dto.RoleDTO">
+    <select id="getUserByRoleId" resultType="com.folib.dto.RoleDTO">
         select
             fr.id as name,
             fr.description as description,
@@ -124,7 +124,7 @@
         group by
             fr.id;
     </select>
-    <select id="queryPermissions" resultType="com.veadan.folib.dto.PermissionsDTO">
+    <select id="queryPermissions" resultType="com.folib.dto.PermissionsDTO">
         select
             rrr.*,fr.id as roleId, fr.description,
             r.api_authoritie,
@@ -171,7 +171,7 @@
             or  rrr.resource_id is null and rrr.id is not null
         </if>
     </select>
-    <select id="queryRoleByUserId" resultType="com.veadan.folib.entity.RoleResourceRef">
+    <select id="queryRoleByUserId" resultType="com.folib.entity.RoleResourceRef">
         select
             *
         from
@@ -185,7 +185,7 @@
             #{roleId}
         </foreach>
     </select>
-    <select id="queryApiAuthorities" resultType="com.veadan.folib.entity.RoleResourceRef">
+    <select id="queryApiAuthorities" resultType="com.folib.entity.RoleResourceRef">
         select
             rrr.role_id,
             r.api_authoritie
@@ -199,14 +199,14 @@
                 #{roleId}
             </foreach>
     </select>
-    <select id="queryByRoleIds" resultType="com.veadan.folib.entity.RoleResourceRef">
+    <select id="queryByRoleIds" resultType="com.folib.entity.RoleResourceRef">
         select * from role_resource_ref rrr where
             rrr.role_id in
             <foreach collection="roleIds" item="roleId" open="(" separator="," close=")">
                 #{roleId}
             </foreach>
     </select>
-    <select id="queryPrivileges" resultType="com.veadan.folib.dto.UserRoleDTO">
+    <select id="queryPrivileges" resultType="com.folib.dto.UserRoleDTO">
         select
             fr.*,
             GROUP_CONCAT(distinct rrr.storage_privilege) as storagePrivilege,
@@ -225,7 +225,7 @@
         group by
             fr.id
     </select>
-    <select id="queryResourcesByRoleIds" resultType="com.veadan.folib.entity.RoleResourceRef">
+    <select id="queryResourcesByRoleIds" resultType="com.folib.entity.RoleResourceRef">
         select
         rrr.*,fr.id as roleId, fr.description,
         r.api_authoritie,

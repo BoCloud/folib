@@ -1,0 +1,11 @@
+package com.folib.storage.repository.remote.heartbeat.monitor;
+
+/**
+ * @author veadan
+ */
+@FunctionalInterface
+public interface RemoteRepositoryHeartbeatMonitorStrategy
+{
+
+    boolean isAlive(String storageId, String repositoryId, String remoteRepositoryUrl);
+}

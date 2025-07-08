@@ -1,0 +1,33 @@
+package com.folib.storage.repository;
+
+import com.folib.providers.layout.Maven2LayoutProvider;
+import com.folib.repository.MavenRepositoryFeatures;
+
+import jakarta.inject.Inject;
+import java.util.LinkedHashSet;
+
+import org.springframework.stereotype.Component;
+
+/**
+ * @author Veadan
+ */
+@Component
+public class MavenRepositoryFactory
+        implements RepositoryFactory
+{
+
+    @Inject
+    private MavenRepositoryFeatures mavenRepositoryFeatures;
+
+    @Override
+    public RepositoryDto createRepository(String repositoryId)
+    {
+        RepositoryDto repository = new RepositoryDto(repositoryId);
+        repository.setLayout(Maven2LayoutProvider.ALIAS);
+        repository.setArtifactCoordinateValidators(
+                new LinkedHashSet<>(mavenRepositoryFeatures.getDefaultArtifactCoordinateValidators()));
+
+        return repository;
+    }
+
+}

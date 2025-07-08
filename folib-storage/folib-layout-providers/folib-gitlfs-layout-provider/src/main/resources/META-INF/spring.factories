@@ -1,2 +1,2 @@
 org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
-  com.veadan.folib.config.GitLfsLayoutProviderConfig
+  com.folib.config.GitLfsLayoutProviderConfig

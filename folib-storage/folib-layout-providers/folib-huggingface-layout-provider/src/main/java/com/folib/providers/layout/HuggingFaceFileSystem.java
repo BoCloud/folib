@@ -1,0 +1,29 @@
+package com.folib.providers.layout;
+
+import com.folib.booters.PropertiesBooter;
+import com.folib.providers.io.LayoutFileSystem;
+import com.folib.providers.io.LayoutFileSystem;
+import com.folib.providers.layout.HuggingFaceLayoutProvider;
+import com.folib.providers.layout.LayoutFileSystemProvider;
+import com.folib.storage.repository.Repository;
+
+import javax.inject.Inject;
+import java.nio.file.FileSystem;
+import java.util.Set;
+
+public class HuggingFaceFileSystem extends LayoutFileSystem {
+    @Inject
+    private HuggingFaceLayoutProvider layoutProvider;
+
+    public HuggingFaceFileSystem(PropertiesBooter propertiesBooter,
+                                 Repository repository,
+                                 FileSystem storageFileSystem,
+                                 LayoutFileSystemProvider provider) {
+        super(propertiesBooter, repository, storageFileSystem, provider);
+    }
+
+    @Override
+    public Set<String> getDigestAlgorithmSet() {
+        return layoutProvider.getDigestAlgorithmSet();
+    }
+}

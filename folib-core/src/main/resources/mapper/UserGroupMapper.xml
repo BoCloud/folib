@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.veadan.folib.mapper.UserGroupMapper">
-    <resultMap type="com.veadan.folib.entity.UserGroup" id="UserGroupMap">
+<mapper namespace="com.folib.mapper.UserGroupMapper">
+    <resultMap type="com.folib.entity.UserGroup" id="UserGroupMap">
         <result property="id" column="id"/>
         <result property="groupName" column="group_name"/>
         <result property="description" column="description"/>
@@ -23,7 +23,7 @@
     </select>
 
     <!--分页查询指定行数据-->
-    <select id="queryAllByLimit" resultType="com.veadan.folib.dto.UserGroupListDTO" >
+    <select id="queryAllByLimit" resultType="com.folib.dto.UserGroupListDTO" >
         select
         ug.id,
         ug.deleted,
@@ -93,7 +93,7 @@
                 and update_time = #{updateTime}
             </if>
     </select>
-    <select id="queryGroupDetailById" resultType="com.veadan.folib.dto.UserGroupDTO">
+    <select id="queryGroupDetailById" resultType="com.folib.dto.UserGroupDTO">
         select
             ug.*,
             group_concat(distinct ugr.user_id) as users,
@@ -181,7 +181,7 @@
         delete from user_group where id = #{id}
     </delete>
 
-    <select id="queryAllByUser" resultType="com.veadan.folib.dto.UserGroupListDTO" >
+    <select id="queryAllByUser" resultType="com.folib.dto.UserGroupListDTO" >
         select
             ug.id,
             ug.deleted,

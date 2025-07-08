@@ -1,0 +1,40 @@
+package com.folib.authorization.service;
+
+import com.folib.authorization.domain.AuthorizationConfig;
+import com.folib.authorization.dto.RoleDto;
+import com.folib.users.domain.Privileges;
+import com.folib.authorization.dto.AuthorizationConfigDto;
+
+import java.io.IOException;
+import java.util.List;
+
+/**
+ * @author 
+ * @author veadan
+ */
+public interface AuthorizationConfigService
+{
+
+    void setAuthorizationConfig(AuthorizationConfigDto config) throws IOException;
+
+    AuthorizationConfigDto getDto();
+
+    AuthorizationConfig get();
+    AuthorizationConfig get(String username);
+
+    void addRole(RoleDto role) throws IOException;
+
+    boolean deleteRole(String roleName) throws IOException;
+
+    void addPrivilegesToAnonymous(List<Privileges> privilegeList) throws IOException;
+
+    /**
+     * 处理角色信息
+     *
+     * @param roleInfo 角色信息
+     */
+    void handlerRole(String roleInfo);
+
+    void clearPrivilegesAnonymous() throws IOException;
+    AuthorizationConfig getRole(String roleId);
+}

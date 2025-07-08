@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.veadan.folib.mapper.UserGroupRefMapper">
-    <resultMap type="com.veadan.folib.entity.UserGroupRef" id="UserGroupRefMap">
+<mapper namespace="com.folib.mapper.UserGroupRefMapper">
+    <resultMap type="com.folib.entity.UserGroupRef" id="UserGroupRefMap">
         <result property="id" column="id"/>
         <result property="userGroupId" column="user_group_id"/>
         <result property="userGroupName" column="user_group_name"/>
@@ -70,7 +70,7 @@
             </if>
         </where>
     </select>
-    <select id="queryPrivilegeByGroup" resultType="com.veadan.folib.dto.RoleResourceRefDTO">
+    <select id="queryPrivilegeByGroup" resultType="com.folib.dto.RoleResourceRefDTO">
         select
             rrr.role_id,
             rrr.resource_type,
@@ -88,7 +88,7 @@
               </foreach>
         group by role_id,resource_type;
     </select>
-    <select id="queryByGroupIds" resultType="com.veadan.folib.entity.UserGroupRef">
+    <select id="queryByGroupIds" resultType="com.folib.entity.UserGroupRef">
         select * from user_group_ref where
         user_group_id in
             <foreach collection="groupIds" item="groupId" open="(" separator="," close=")" >

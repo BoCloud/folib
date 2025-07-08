@@ -21,8 +21,8 @@
     <if condition="${console:-true}">
         <then>
             <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
-                <filter class="com.veadan.folib.log.CronTaskContextDeclineFilter"/>
-                <filter class="com.veadan.folib.log.JaninoClassLoaderLogDeclineFilter"/>
+                <filter class="com.folib.log.CronTaskContextDeclineFilter"/>
+                <filter class="com.folib.log.JaninoClassLoaderLogDeclineFilter"/>
 
                 <encoder>
                     <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} | %.-1level | %-20.20t{20} | %-37.37logger{37} | %-30.30M{30} | %-4.4L | %m%n</pattern>
@@ -38,8 +38,8 @@
         <then>
             <appender name="FILE"
                       class="ch.qos.logback.core.rolling.RollingFileAppender">
-                <filter class="com.veadan.folib.log.CronTaskContextDeclineFilter"/>
-                <filter class="com.veadan.folib.log.JaninoClassLoaderLogDeclineFilter"/>
+                <filter class="com.folib.log.CronTaskContextDeclineFilter"/>
+                <filter class="com.folib.log.JaninoClassLoaderLogDeclineFilter"/>
 
                 <file>${loggingFile}</file>
                 <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
@@ -66,8 +66,8 @@
                 <sift>
                     <appender name="CRON-JOB-CONTEXT-SIFT-FILE-APPENDER"
                               class="ch.qos.logback.core.rolling.RollingFileAppender">
-                        <filter class="com.veadan.folib.log.CronTaskContextAcceptFilter"/>
-                        <filter class="com.veadan.folib.log.JaninoClassLoaderLogDeclineFilter"/>
+                        <filter class="com.folib.log.CronTaskContextAcceptFilter"/>
+                        <filter class="com.folib.log.JaninoClassLoaderLogDeclineFilter"/>
 
                         <file>${loggingDir}/${folib-cron-context-name}/${folib-cron-context-name}.log</file>
                         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
@@ -99,13 +99,13 @@
             <logger name="springfox" level="INFO" />
 
             <!-- Folib packages -->
-            <logger name="com.veadan.folib" level="DEBUG"/>
-            <logger name="com.veadan.folib.security.authentication" level="DEBUG"/>
-            <logger name="com.veadan.folib.security.vote" level="DEBUG"/>
-            <logger name="com.veadan.folib.data" level="WARN"/>
-            <logger name="com.veadan.folib.data.tx" level="WARN"/>
-            <logger name="com.veadan.folib.data.criteria" level="DEBUG"/>
-            <logger name="com.veadan.folib.data.server" level="DEBUG"/>
+            <logger name="com.folib" level="DEBUG"/>
+            <logger name="com.folib.security.authentication" level="DEBUG"/>
+            <logger name="com.folib.security.vote" level="DEBUG"/>
+            <logger name="com.folib.data" level="WARN"/>
+            <logger name="com.folib.data.tx" level="WARN"/>
+            <logger name="com.folib.data.criteria" level="DEBUG"/>
+            <logger name="com.folib.data.server" level="DEBUG"/>
             <!-- Folib packages -->
 
             <!-- Third-party packages -->
@@ -139,13 +139,13 @@
         </then>
         <else>
             <!-- Folib packages -->
-            <logger name="com.veadan.folib" level="INFO"/>
-            <logger name="com.veadan.folib.security.authentication" level="INFO"/>
-            <logger name="com.veadan.folib.security.vote" level="INFO"/>
-            <logger name="com.veadan.folib.data" level="WARN"/>
-            <logger name="com.veadan.folib.data.tx" level="INFO"/>
-            <logger name="com.veadan.folib.data.criteria" level="INFO"/>
-            <logger name="com.veadan.folib.data.server" level="INFO"/>
+            <logger name="com.folib" level="INFO"/>
+            <logger name="com.folib.security.authentication" level="INFO"/>
+            <logger name="com.folib.security.vote" level="INFO"/>
+            <logger name="com.folib.data" level="WARN"/>
+            <logger name="com.folib.data.tx" level="INFO"/>
+            <logger name="com.folib.data.criteria" level="INFO"/>
+            <logger name="com.folib.data.server" level="INFO"/>
             <!-- Folib packages -->
 
             <!-- Third-party packages -->

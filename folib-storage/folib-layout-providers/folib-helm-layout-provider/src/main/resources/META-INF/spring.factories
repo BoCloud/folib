@@ -1,2 +1,2 @@
 org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
-  com.veadan.folib.config.HelmLayoutProviderConfig
+  com.folib.config.HelmLayoutProviderConfig

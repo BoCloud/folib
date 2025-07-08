@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.veadan.folib.mapper.VulnerableSoftwareMapper">
+<mapper namespace="com.folib.mapper.VulnerableSoftwareMapper">
 <!--    <resultMap type="com.veadan.folib.domain.vulnerability.model.VulnerableSoftware" id="VulnerableSoftwareMap">-->
 <!--        <result property="id" column="id" jdbcType="BIGINT"/>-->
 <!--        <result property="cpe22" column="cpe22" jdbcType="String"/>-->
@@ -38,7 +38,7 @@
         from vulnerable_software
         where id = #{id}
     </select>
-    <select id="getVulnerableSoftwareByCpe23" resultType="com.veadan.folib.entity.VulnerableSoftwareEntity">
+    <select id="getVulnerableSoftwareByCpe23" resultType="com.folib.entity.VulnerableSoftwareEntity">
         select * from vulnerable_software
         where cpe23 = #{cpe23}
         and versionendexcluding = #{versionEndExcluding}

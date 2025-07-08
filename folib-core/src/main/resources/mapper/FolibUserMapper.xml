@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.veadan.folib.mapper.FolibUserMapper">
-    <resultMap type="com.veadan.folib.entity.FolibUser" id="FolibUserMap">
+<mapper namespace="com.folib.mapper.FolibUserMapper">
+    <resultMap type="com.folib.entity.FolibUser" id="FolibUserMap">
         <result property="id" column="id"/>
         <result property="username" column="username"/>
         <result property="password" column="password"/>
@@ -238,7 +238,7 @@
         </if>
     </sql>
     <!--分页查询指定行数据-->
-    <select id="queryAllUserRoleByLimit" resultType="com.veadan.folib.dto.UserDTO">
+    <select id="queryAllUserRoleByLimit" resultType="com.folib.dto.UserDTO">
         SELECT id, username, `password`, original_password, avatar, email, user_type, enabled, source_id, deleted, create_by, create_time, update_by, update_time,nickname,
         GROUP_CONCAT(distinct NULLIF(userGroups, ''))  AS userGroups,
         GROUP_CONCAT(distinct NULLIF(userGroupIds, '')) AS userGroupIds,
@@ -370,7 +370,7 @@
             and nickname = #{nickname}
         </if>
     </select>
-    <select id="queryUserRoleByRepositoryAndPrivilege" resultType="com.veadan.folib.dto.UserDTO">
+    <select id="queryUserRoleByRepositoryAndPrivilege" resultType="com.folib.dto.UserDTO">
         select
         user.*,
         GROUP_CONCAT(distinct user.roles) as roles,
@@ -418,7 +418,7 @@
         group by
         fu.id) user group by user.id
     </select>
-    <select id="queryUsersNameResource" resultType="com.veadan.folib.dto.UserDTO">
+    <select id="queryUsersNameResource" resultType="com.folib.dto.UserDTO">
         SELECT
         fu.*,
         rrr.id ,

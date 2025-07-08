@@ -6,12 +6,11 @@
     <modelVersion>4.0.0</modelVersion>
 <!---Dfolib.db.profile=db_REMOTE-->
     <parent>
-        <groupId>com.veadan.folib</groupId>
+        <groupId>com.folib</groupId>
         <artifactId>folib-parent</artifactId>
         <version>3.0-SNAPSHOT</version>
         <relativePath/>
     </parent>
-
     <artifactId>folib-server</artifactId>
     <packaging>pom</packaging>
     <name>Folib: Server</name>
