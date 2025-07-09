@@ -1,4 +1,4 @@
-FROM  public.folib.com/folib/folib-docker/folib-base:v3.0
+FROM  public.folib.com/public-project/docker/openjdk:17-jdk-slim-buster
 MAINTAINER folib.com
 ENV TZ=Asia/Shanghai
 # 项目构建文件结构 环境变量
