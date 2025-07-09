@@ -3,7 +3,7 @@ package com.folib.util;
 import java.util.function.Function;
 
 /**
- * @author Dawid Antecki
+ * folib
  */
 @FunctionalInterface
 public interface ThrowingFunction<T, R>

@@ -63,7 +63,7 @@ mybatis:
     map-underscore-to-camelcase: true
     #log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
 mapper:
-  mappers: com.veadan.folib.common.base.CommonMapper
+  mappers: com.folib.common.base.CommonMapper
   identity: MYSQL
 
 scan:

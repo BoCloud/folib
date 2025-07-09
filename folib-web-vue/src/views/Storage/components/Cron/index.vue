@@ -204,7 +204,7 @@ export default {
 
         // Cocoapods: 本地仓库过滤掉代理仓库定时任务
         if (this.folibRepository.type === "hosted")
-        { cronCanSetList = res.filter(e => !(e.jobClass === "com.veadan.folib.cron.jobs.SyncProxyRepositoryIndexCronJob")) }
+        { cronCanSetList = res.filter(e => !(e.jobClass === "com.folib.cron.jobs.SyncProxyRepositoryIndexCronJob")) }
 
         if (this.folibRepository.type === "group")
         { cronCanSetList = res.filter(e => !e.jobClass.includes("CleanupArtifactsRepositoryCronJob") && !e.jobClass.includes("ClearRepositoryTrashCronJob"))}

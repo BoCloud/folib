@@ -3,7 +3,7 @@ package com.folib.util;
 import java.util.function.Predicate;
 
 /**
- * @author Dawid Antecki
+ * folib
  */
 @FunctionalInterface
 public interface ThrowingPredicate<T, E extends Throwable>

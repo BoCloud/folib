@@ -553,13 +553,13 @@ export default {
       })
     },
     getCrontaskByClass() {
-      getCrontaskByClass({ className: 'com.veadan.folib.cron.jobs.VulnerabilityRefreshCronJob' }).then(res => {
+      getCrontaskByClass({ className: 'com.folib.cron.jobs.VulnerabilityRefreshCronJob' }).then(res => {
         if (res && res.cronTaskConfigurations && res.cronTaskConfigurations.length > 0) {
           this.vulnerabilityCron.uuid = res.cronTaskConfigurations[0].uuid
           this.vulnerabilityCron.cronExpression = res.cronTaskConfigurations[0].cronExpression
         }
       })
-      getCrontaskByClass({ className: 'com.veadan.folib.cron.jobs.ArtifactScanCronJob' }).then(res => {
+      getCrontaskByClass({ className: 'com.folib.cron.jobs.ArtifactScanCronJob' }).then(res => {
         if (res && res.cronTaskConfigurations && res.cronTaskConfigurations.length > 0) {
           this.artifactScanCron.uuid = res.cronTaskConfigurations[0].uuid
           this.artifactScanCron.cronExpression = res.cronTaskConfigurations[0].cronExpression

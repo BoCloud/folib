@@ -10,9 +10,9 @@ layoutMap.each{ k, v -> println "${v.getArtifactCoordinates()}" }
 JtwigTemplate template = JtwigTemplate.fileTemplate("$project.basedir/src/main/twig/AQL.g4.twig")
 JtwigModel model = JtwigModel.newModel().with("layoutMap", layoutMap)
 
-new File("$project.basedir/target/antlr4/com/veadan/folib/aql/grammar").mkdirs()
+new File("$project.basedir/target/antlr4/com/folib/aql/grammar").mkdirs()
 
-def out = new File("$project.basedir/target/antlr4/com/veadan/folib/aql/grammar","AQL.g4").newOutputStream()
+def out = new File("$project.basedir/target/antlr4/com/folib/aql/grammar","AQL.g4").newOutputStream()
 try
 {
     template.render(model, out)

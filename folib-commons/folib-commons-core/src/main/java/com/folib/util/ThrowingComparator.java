@@ -3,7 +3,7 @@ package com.folib.util;
 import java.util.Comparator;
 
 /**
- * @author Dawid Antecki
+ * folib
  */
 @FunctionalInterface
 public interface ThrowingComparator<T, E extends Throwable>

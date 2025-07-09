@@ -3,7 +3,7 @@ package com.folib.util;
 import java.util.function.Supplier;
 
 /**
- * @author Dawid Antecki
+ * folib
  */
 @FunctionalInterface
 public interface ThrowingSupplier<T, E extends Throwable>

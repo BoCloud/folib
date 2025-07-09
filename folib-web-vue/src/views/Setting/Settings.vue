@@ -1970,7 +1970,7 @@ export default {
           return 0;
       },
     getCrontaskByClass() {
-          getCrontaskByClass({ className: 'com.veadan.folib.cron.jobs.AlarmNoticeCronJob' }).then(res => {
+          getCrontaskByClass({ className: 'com.folib.cron.jobs.AlarmNoticeCronJob' }).then(res => {
               if (res && res.cronTaskConfigurations && res.cronTaskConfigurations.length > 0) {
                   this.alarmConfigurationCron.uuid = res.cronTaskConfigurations[0].uuid
                   this.alarmConfigurationCron.cronExpression = res.cronTaskConfigurations[0].cronExpression
