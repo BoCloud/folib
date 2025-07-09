@@ -8,7 +8,7 @@ Wants=network-online.target
 Type=simple
 User=Folib
 Environment=FOLIB_HOME=/opt/folib
-Environment=FOLIB_VAULT=/opt/folib-data
+Environment=FOLIB_DATA=/opt/folib-data
 Environment=FOLIB_PORT=48080
 ExecStart=/opt/folib/bin/folib console
 ExecStop=/opt/folib/bin/folib stop

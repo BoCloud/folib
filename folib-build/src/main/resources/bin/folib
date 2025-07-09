@@ -4,16 +4,16 @@ SCRIPT_PATH=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd -P)
 BASE_DIR=$(realpath $SCRIPT_PATH/../)
 
 FOLIB_DEFAULT_HOME=$BASE_DIR
-FOLIB_DEFAULT_VAULT=$(realpath $FOLIB_DEFAULT_HOME/../folib-data)
+FOLIB_DEFAULT_DATA=$(realpath $FOLIB_DEFAULT_HOME/../folib-data)
 # 配置用户环境变量
 FOLIB_CLUSTER_OPENFLAG="${FOLIB_CLUSTER_OPENFLAG:-false}"
 FOLIB_DISTRIBUTED_LOCKIP="${FOLIB_DISTRIBUTED_LOCKIP:-127.0.0.1}"     #当前机器内网IP(并非VIP)用来做多实例集群标识当前机器的内网IP的
-FOLIB_STORAGE_BASE_DIR="${FOLIB_STORAGE_BASE_DIR:-$FOLIB_DEFAULT_VAULT}"   #如果NAS存储地址不在VAULT下请配置其他地址
+FOLIB_STORAGE_BASE_DIR="${FOLIB_STORAGE_BASE_DIR:-$FOLIB_DEFAULT_DATA}"   #如果NAS存储地址不在VAULT下请配置其他地址
 
 
 FOLIB_HOME="${FOLIB_HOME:-$FOLIB_DEFAULT_HOME}"
-FOLIB_VAULT="${FOLIB_VAULT:-$FOLIB_DEFAULT_VAULT}"
-FOLIB_PID_FILE="$FOLIB_VAULT/folib.pid"
+FOLIB_DATA="${FOLIB_DATA:-$FOLIB_DEFAULT_DATA}"
+FOLIB_PID_FILE="$FOLIB_DATA/folib.pid"
 FOLIB_JVM_XMX="${FOLIB_JVM_XMX:-4096m}"
 FOLIB_JVM_XMS="${FOLIB_JVM_XMS:-4096m}"
 FOLIB_JVM_XSS="${FOLIB_JVM_XSS:-256k}"
@@ -68,9 +68,9 @@ FOLIB_PROMOTION_BLOCK="${FOLIB_PROMOTION_BLOCK:-false}"
 ##scanner相关配置
 FOLIB_MYSQL_HOST="${FOLIB_MYSQL_HOST:-127.0.0.1}"
 FOLIB_MYSQL_PORT="${FOLIB_MYSQL_PORT:-3306}"
-FOLIB_MYSQL_DB="${FOLIB_MYSQL_DB:-folib_scanner}"
+FOLIB_MYSQL_DB="${FOLIB_MYSQL_DB:-folib}"
 FOLIB_MYSQL_USER="${FOLIB_MYSQL_USER:-root}"
-FOLIB_MYSQL_PASSWORD="${FOLIB_MYSQL_PASSWORD:-199088926}"
+FOLIB_MYSQL_PASSWORD="${FOLIB_MYSQL_PASSWORD:-folib@v587}"
 FOLIB_NVD="${FOLIB_NVD:-nvd.folib.com/feeds/json/cve/1.1}"
 
 
@@ -147,7 +147,7 @@ FOLIB_PROMOTION_WS_REQUEST_TIMOUT="${FOLIB_PROMOTION_WS_REQUEST_TIMOUT:-2}"
 
 FOLIB_CUSTOM_MAX_IN_MEMORY_SIZE="${FOLIB_CUSTOM_MAX_IN_MEMORY_SIZE:-10240}"
 #lucene索引存放位置
-FOLIB_SEARCH_INDEX="${FOLIB_SEARCH_INDEX:-$FOLIB_VAULT/search_index}"
+FOLIB_SEARCH_INDEX="${FOLIB_SEARCH_INDEX:-$FOLIB_DATA/search_index}"
 
 print_banner()
 {
@@ -205,19 +205,19 @@ pre_check()
         fi
     fi
 
-    if [[ ! -d $FOLIB_VAULT ]]; then
-        mkdir -p $FOLIB_VAULT
+    if [[ ! -d $FOLIB_DATA ]]; then
+        mkdir -p $FOLIB_DATA
     fi
 }
 
 run()
 {
-    JAVA_OPTS="${JAVA_OPTS} -XX:+ExitOnOutOfMemoryError -XX:+CrashOnOutOfMemoryError -XX:ParallelGCThreads=${FOLIB_JVM_PARALLEL_GC_THREADS} -XX:MaxDirectMemorySize=${FOLIB_JVM_MAX_DIRECT_MEMORY_SIZE} -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=${FOLIB_VAULT}/logs  -Xlog:gc*:file=${FOLIB_VAULT}/logs/gc-%t.log:time:filecount=0 -XX:ErrorFile=${FOLIB_VAULT}/logs/hs_err_pid%p.log"
+    JAVA_OPTS="${JAVA_OPTS} -XX:+ExitOnOutOfMemoryError -XX:+CrashOnOutOfMemoryError -XX:ParallelGCThreads=${FOLIB_JVM_PARALLEL_GC_THREADS} -XX:MaxDirectMemorySize=${FOLIB_JVM_MAX_DIRECT_MEMORY_SIZE} -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=${FOLIB_DATA}/logs  -Xlog:gc*:file=${FOLIB_DATA}/logs/gc-%t.log:time:filecount=0 -XX:ErrorFile=${FOLIB_DATA}/logs/hs_err_pid%p.log"
     JAVA_OPTS+=" -Xmx${FOLIB_JVM_XMX} -Xms${FOLIB_JVM_XMS} -Xss${FOLIB_JVM_XSS}"
     JAVA_OPTS+=" -Dappserver.home=. -Dappserver.base=${FOLIB_HOME} -Djetty.logs=${FOLIB_HOME}/logs"
     JAVA_OPTS+=" -Djava.io.tmpdir=${FOLIB_HOME}/tmp"
     JAVA_OPTS+=" -Dserver.port=${FOLIB_PORT}"
-    JAVA_OPTS+=" -Dehcache.disk.store.dir=${FOLIB_VAULT}/cache"
+    JAVA_OPTS+=" -Dehcache.disk.store.dir=${FOLIB_DATA}/cache"
     JAVA_OPTS+=" -Dlogging.config=${FOLIB_HOME}/etc/logback-spring.xml"
     JAVA_OPTS+=" -Dlogging.debug=${FOLIB_DEBUG}"
     JAVA_OPTS+=" -Dlogging.file.enabled=${FOLIB_LOG_FILE_ENABLED}"
@@ -225,11 +225,11 @@ run()
     JAVA_OPTS+=" -Dlogging.file.size.total=${FOLIB_LOG_FILE_SIZE_TOTAL}"
     JAVA_OPTS+=" -Dlogging.file.history=${FOLIB_LOG_FILE_HISTORY}"
     JAVA_OPTS+=" -Dlogging.console.enabled=${FOLIB_LOG_CONSOLE_ENABLED}"
-    JAVA_OPTS+=" -Dlogging.dir=${FOLIB_VAULT}/logs"
-    JAVA_OPTS+=" -Dlogging.file.name=${FOLIB_VAULT}/logs/folib.log"
+    JAVA_OPTS+=" -Dlogging.dir=${FOLIB_DATA}/logs"
+    JAVA_OPTS+=" -Dlogging.file.name=${FOLIB_DATA}/logs/folib.log"
     JAVA_OPTS+=" -Dlogging.level.org.eclipse.jetty=${FOLIB_JETTY_LEVEL}"
     JAVA_OPTS+=" -Dfolib.home=${FOLIB_HOME}"
-    JAVA_OPTS+=" -Dfolib.vault=${FOLIB_VAULT}"
+    JAVA_OPTS+=" -Dfolib.vault=${FOLIB_DATA}"
     JAVA_OPTS+=" -Dfolib.storage.booter.basedir=${FOLIB_STORAGE_BASE_DIR}/storages"
     JAVA_OPTS+=" -Dfolib.port=${FOLIB_PORT}"
     JAVA_OPTS+=" -Dfolib.distributed.lockip=${FOLIB_DISTRIBUTED_LOCKIP}"
@@ -422,7 +422,7 @@ run()
         sleep 1
         printf "  PID: $(get_pid) \n"
         printf "  CMD: %s\n\n" "$CMD"
-        tail -fn 1000 ${FOLIB_VAULT}/logs/folib.log
+        tail -fn 1000 ${FOLIB_DATA}/logs/folib.log
     else
         trap "kill -SIGTERM $(get_pid) && sleep 3" SIGTERM
         trap "echo 'Exiting!'; (set -ex; rm -rf $FOLIB_PID_FILE)" EXIT
@@ -445,10 +445,10 @@ start()
 
 repair_start()
 {
-    if [[ ${FOLIB_VAULT}/db ]];then
-    echo "ready to delete ${FOLIB_VAULT}/db"
-    rm -rf ${FOLIB_VAULT}/db
-    echo "${FOLIB_VAULT}/db delete complete"
+    if [[ ${FOLIB_DATA}/db ]];then
+    echo "ready to delete ${FOLIB_DATA}/db"
+    rm -rf ${FOLIB_DATA}/db
+    echo "${FOLIB_DATA}/db delete complete"
     fi;
     start
 }
