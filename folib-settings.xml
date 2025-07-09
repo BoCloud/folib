@@ -3,55 +3,36 @@
           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
           xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0 http://maven.apache.org/xsd/settings-1.0.0.xsd">
     <!--本地依赖位置按照实际情况进行修改-->
-
+<!--    <localRepository></localRepository>-->
     <mirrors>
         <mirror>
-            <id>maven</id>
+            <id>folib-oss-maven</id>
             <name>maven</name>
-            <url>https://public.folib.com/storages/oss/maven</url>
+            <url>http://public.folib.com/storages/oss/maven</url>
             <mirrorOf>central</mirrorOf>
         </mirror>
-
-        <mirror>
-            <id>folib-oss-local</id>
-            <name>folib-oss-local</name>
-            <url>https://public.folib.com/storages/oss/folib-oss-local</url>
-            <mirrorOf>folib-oss-local</mirrorOf>
-        </mirror>
-
     </mirrors>
-    <servers>
 
-
-        <server>
-            <id>folib-oss-local</id>
-            <username>folib</username>
-            <password>folib@v587</password>
-        </server>
-
-    </servers>
     <profiles>
-
-
         <profile>
-            <id>jdk-11</id>
+            <id>jdk-17</id>
             <activation>
                 <activeByDefault>true</activeByDefault>
-                <jdk>11</jdk>
+                <jdk>17</jdk>
             </activation>
             <properties>
-                <maven.compiler.source>11</maven.compiler.source>
-                <maven.compiler.target>11</maven.compiler.target>
-                <maven.compiler.compilerVersion>11</maven.compiler.compilerVersion>
+                <maven.compiler.source>17</maven.compiler.source>
+                <maven.compiler.target>17</maven.compiler.target>
+                <maven.compiler.compilerVersion>17</maven.compiler.compilerVersion>
             </properties>
         </profile>
 
         <profile>
-            <id>folib-oss-local</id>
+            <id>folib-oss-maven</id>
             <repositories>
                 <repository>
                     <id>central</id>
-                    <url>https://public.folib.com/storages/oss/folib-oss-local</url>
+                    <url>https://public.folib.com/storages/oss/maven</url>
                     <snapshots>
                         <enabled>true</enabled>
                     </snapshots>
@@ -62,9 +43,8 @@
     </profiles>
 
     <activeProfiles>
-        <activeProfile>folib-oss-local</activeProfile>
-        <activeProfile>jdk-11</activeProfile>
-
+        <activeProfile>folib-oss-maven</activeProfile>
+        <activeProfile>jdk-17</activeProfile>
     </activeProfiles>
 
 
