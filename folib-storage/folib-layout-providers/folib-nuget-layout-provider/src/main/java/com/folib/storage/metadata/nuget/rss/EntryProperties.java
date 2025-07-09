@@ -19,7 +19,6 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
 import com.folib.artifact.coordinates.versioning.SemanticVersion;
-import com.folib.storage.metadata.nuget.Dependency;
 import com.folib.storage.metadata.nuget.NugetFormatException;
 import com.folib.storage.metadata.nuget.Nuspec;
 import com.folib.storage.metadata.nuget.StringListTypeAdapter;
