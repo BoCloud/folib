@@ -9,11 +9,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.cyclonedx.model.Bom;
 import org.cyclonedx.parsers.JsonParser;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.inject.Inject;
+import java.util.HashMap;
+import java.util.Map;
 
 
 @Slf4j
@@ -26,7 +29,8 @@ public class SbomController {
     private SbomAnalyzeServer sbomAnalsisServer;
     @Inject
     private AnalyzeService analyzeService;
-
+    @Value("${folib.enableAnalysis}")
+    private boolean enable;
 
     @ApiOperation(value = " sbom cyclonedx json 分析", notes = "")
     @PostMapping(value = "/sbom/cyclonedx", consumes = "multipart/form-data", produces = "application/json")
@@ -58,6 +62,12 @@ public class SbomController {
         analyzeService.addTask(task);
         return ResponseEntity.ok("susses");
     }
-
+    @ApiOperation(value = "获取制品分析配置", notes = "")
+    @GetMapping(value = "/getAnalyzeConfig", produces = "application/json")
+    public ResponseEntity<?> getAnalyzeConfig(){
+        Map<String, Object> config = new HashMap<>();
+        config.put("enable",enable);
+        return ResponseEntity.ok(config);
+    }
 
 }

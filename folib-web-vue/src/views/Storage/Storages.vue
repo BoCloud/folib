@@ -874,9 +874,6 @@ import {
     aliveRepository, repositoryEnableUsers,
     queryRepositoriesByStorage
 } from "@/api/folib"
-import {
-  queryCustomLayoutList,
-} from "@/api/customLayout"
 import { getUsers, queryUser } from "@/api/users"
 import CardProjectFolib from "@/components/Cards/CardProjectFolib"
 import { getLayoutType, genLayoutType, groupRepositoriesBuild, objectToGroupRepositories } from "@/utils/layoutUtil"
@@ -1182,7 +1179,6 @@ export default {
       this.queryParams.limit = 10
     }
     this.getStorage(this.currentStorage.id)
-    this.queryCustomLayoutList()
   },
   computed: {
     // isChecked(){
@@ -2463,15 +2459,6 @@ export default {
       if (this.customLayoutList && val && !this.folibRepository.customLayout) {
         // this.folibRepository.customLayout = this.customLayoutList[0].artifactPathPattern
       }
-    },
-    queryCustomLayoutList() {
-      queryCustomLayoutList().then(res => {
-        this.customLayoutList = []
-        if (res) {
-          this.customLayoutList = res
-        }
-      }).finally(() => {
-      })
     },
     //根据仓库布局类型判断是否有组合仓库功能
     filterGroupStrategyLayout(){

@@ -37,7 +37,7 @@
              <span class="label">{{ $t('Sidebars.SecurityScanning') }}</span>
            </router-link>
          </a-menu-item>
-         <a-menu-item v-if="this.userInfo.roles.indexOf('ADMIN') > -1 || this.userInfo.roles.indexOf('OPEN_SOURCE_MANAGE') > -1" class="menu-item-header">
+         <a-menu-item v-if="(this.userInfo.roles.indexOf('ADMIN') > -1 || this.userInfo.roles.indexOf('OPEN_SOURCE_MANAGE') > -1 ) && analyzeEnable" class="menu-item-header">
            <hr class="mt-5" />
            {{ $t('Sidebars.OpenSourceGovernance') }}
          </a-menu-item>
@@ -165,6 +165,7 @@ import { hasRole, isAdmin, isAnonymous, isLogin } from "@/utils/permission";
 import {
   getCacheConfig
 } from "@/api/foEyes";
+import {getCacheAnalyzeConfig} from "@/api/abstractAnalyze";
 export default {
   props: {
     // Sidebar collapsed status.
@@ -191,7 +192,8 @@ export default {
       openKeys: this.$route.meta.sidebarMap,
       userInfo: {},
       instanceName:sessionStorage.getItem("instanceName")||"",
-      foeyesEnable: false
+      foeyesEnable: false,
+      analyzeEnable: false,
     };
   },
   created() {
@@ -208,6 +210,7 @@ export default {
         this.openKeys = latestOpenKey ? [latestOpenKey] : [];
       }
       this.getFoEyesEnable()
+      this.getAnalyzeEnable()
     },
     getFoEyesEnable() {
       const cacheConfig = getCacheConfig()
@@ -215,6 +218,12 @@ export default {
         this.foeyesEnable = cacheConfig.enable
       }
     },
+    getAnalyzeEnable  (){
+        const cacheConfig = getCacheAnalyzeConfig()
+        if (cacheConfig) {
+            this.analyzeEnable = cacheConfig.enable
+        }
+    }
   },
 };
 </script>

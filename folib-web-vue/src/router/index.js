@@ -336,24 +336,4 @@ const router = new VueRouter({
 	}
 })
 
-// 校验登录信息
-router.beforeEach((to,from,next)=>{
-	getServerName().then(res=>{
-    sessionStorage.setItem("instanceName",res)
-  })
-	let identityLevel = sessionStorage.getItem("identityLevel")
-	if (proLevel.includes(to.path) && identityLevel !== 'pro') {
-		const lang = store.state.language.lang
-		Swal.fire({
-			title: lang === 'zh' ? '提示信息' : 'Prompt information',
-			text: lang === 'zh' ? '此功能为高级版尊享，如需体验，请升级为高级版' : 'This feature is for the premium version, if you need to experience, please upgrade to the premium version.',
-			confirmButtonColor: '#1890ff',
-			confirmButtonText: lang === 'zh' ? '好的' : 'Well',
-		})
-		next(false)
-		return
-	}
-  next(true)
-})
-
 export default router
