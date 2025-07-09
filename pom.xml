@@ -73,7 +73,7 @@
                 <artifactId>license-maven-plugin</artifactId>
                 <version>5.0.0</version>
                 <configuration>
-                    <header>file://${project.parent.basedir}/license-header.txt</header>
+                    <header>file://${project.basedir}/license-header.txt</header>
                     <includes>
                         <include>**/*.java</include>
                     </includes>
