@@ -23,6 +23,14 @@ export function getServerName () {
   })
 }
 
+export function getServerVersion () {
+  return axios({
+    url: '/api/configuration/folib/getVersion',
+    method: 'get',
+  })
+}
+
+
 
 export function getLdap () {
   return axios({

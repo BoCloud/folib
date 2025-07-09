@@ -98,7 +98,7 @@
 </template>
 
 <script>
-import {checkMachineCode,getServerName} from "@/api/settings";
+import {checkMachineCode, getServerName, getServerVersion} from "@/api/settings";
 import {setLanguage} from "@/locale";
 
 	export default ({
@@ -137,6 +137,9 @@ import {setLanguage} from "@/locale";
       }
     },
     created() {
+      getServerVersion().then(res=>{
+        sessionStorage.setItem("instanceVersion",res)
+      })
 // TODO 这处代码要考虑在session过期之后不要在充分调用
       getServerName().then(res=>{
         this.instanceName=res
