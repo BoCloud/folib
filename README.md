@@ -2,13 +2,11 @@
 <h3 align="center">一个为Ai研发而生的、全语言软件供应链服务平台</h3>
 <p align="center">
 
-<img src="https://img.shields.io/github/stars/vuejs/vue" alt="GitCode Stars">
-<img src="https://img.shields.io/badge/dynamic/json?url=https://web-api.gitcode.com/api/v2/projects/Cangjie/Cangjie-Examples/simple&label=Stars&query=$.star_count&logo=gitpod&logoColor=red" alt="GitCode Stars">
-<img src="https://img.shields.io/badge/Stars-1.2k-white?logo=gitpod&logoColor=red" alt="GitCode Stars">
-<img src="https://img.shields.io/badge/Atomgit_Stars-6k-white" alt="Atomgit Stars">
+<img src="https://img.shields.io/github/stars/BoCloud/folib" alt="Github Stars">
+<img src="https://img.shields.io/badge/dynamic/json?url=https://atomgit.com/api/v3/projects/37131596?_input_charset=utf-8&label=Stars&color=white&query=$.star_count&logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiBmaWxsPSJub25lIiB2ZXJzaW9uPSIxLjEiIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0Ij48ZGVmcz48bGluZWFyR3JhZGllbnQgeDE9IjAuMTUxOTg3NzE2NTU1NTk1NCIgeTE9IjAuMTYxMTc2MDEwOTY2MzAwOTYiIHgyPSIwLjczNzU4OTUzODA5NzM4MTYiIHkyPSIwLjk1MDU4NDY1MDAzOTY3MjkiIGlkPSJtYXN0ZXJfc3ZnMF8xMjVfMDY0MTUiPjxzdG9wIG9mZnNldD0iMC4wMDAwMDEwNzMyMjUyNDIwMDk4MTIlIiBzdG9wLWNvbG9yPSIjNjVFOEZDIiBzdG9wLW9wYWNpdHk9IjEiLz48c3RvcCBvZmZzZXQ9IjEwMCUiIHN0b3AtY29sb3I9IiMxMjgxRkYiIHN0b3Atb3BhY2l0eT0iMSIvPjwvbGluZWFyR3JhZGllbnQ+PC9kZWZzPjxnPjxwYXRoIGQ9Ik0yLjUyMDc1LDQuNTg0OTRDOC44OTAyNSw2LjAxMjA1LDE1LjA5NTYsNi4wNDQwNiwyMS40NTE3LDQuNTkxNjhDMTguNjU3MywxLjMyOTczLDE1LjIzNDYsLTAuMjQzOTY2LDExLjExMzQsMC4wMzA2NzE3QzcuNjg0MDMsMC4yNTk4MTgsNC43OTkxNiwxLjc0MDg0LDIuNTIwNzUsNC41ODQ5NFpNMCwxMS45MDMxTDAsMTEuOTAyNkMwLjAwMDA0NjkwNiwxMC43NzY1LDAuMTYyMjI0LDkuMTQ2NTcsMC40OTcyMzYsOC4yMTY2NEMwLjcwOTk5OSw3LjYyODYxLDAuOTA0MzM0LDcuMDM1NTMsMS4yNzI5LDYuNDc5NTFMMTAuMDYxNSw2LjQ3OTUxQzkuNDcxODMsNy45MDgzLDguOTE4OTgsOS4yNDQ0Myw4LjMzNzY1LDEwLjY1MTNDNS40NTk0OCwxMS4xODU0LDIuNjkwMjEsMTIuMDU5OSwwLjEyMDI5MywxMy42MTE3QzAuMDE0ODAzNywxMy4yMzExLDAuMDAwMDE1MzcsMTIuMjE2NCwwLDExLjkwMzFaTTI0LDExLjkwMzFMMjQsMTEuOTAyNkMyNCwxMC43NzY1LDIzLjgzNzcsOS4xNDY1MSwyMy41MDI3LDguMjE2NThDMjMuMjg5OSw3LjYyODU2LDIzLjA5NTYsNy4wMzU1MywyMi43MjcxLDYuNDc5NTFMMTMuOTM4NSw2LjQ3OTUxQzE0LjUyODIsNy45MDgzLDE1LjA4MSw5LjI0NDQzLDE1LjY2MjQsMTAuNjUxM0MxOC41NDA1LDExLjE4NTQsMjEuMzA5NywxMi4wNTk4LDIzLjg3OTYsMTMuNjExNkMyMy45ODUxLDEzLjIzMSwyNCwxMi4yMTY0LDI0LDExLjkwMzFaTTEwLjAxMTIsMTAuNDkzOEMxMS4zMTQsMTAuMjgyOSwxMi42MTY5LDEwLjI3MTQsMTMuOTE5NywxMC40OTM4TDEzLjkxOTcsMTAuNDkyMUMxMy41NTQ1LDkuMjQwMjQsMTMuMjI3OCw4LjA5Nzg4LDEyLjc0Miw3LjAxNjE3QzEyLjQ1MjEsNi4zNzI1NCwxMS41MjU3LDYuMjk4NDEsMTEuMjA5MSw2LjkwMzI5QzEwLjYyOTQsOC4wMTAyNiwxMC4zNDI5LDkuMjI4NDQsMTAuMDExMiwxMC40OTM4Wk02LjE4NzUsMjIuMzYzNUM3LjEyNSwyMi45ODg5LDcuNjg3NSwyMy40MjY2LDEwLjQzNzUsMjMuOTI2OUMxMS40NTgzLDI0LjAyNSwxMi40NzkyLDI0LjAyMzcsMTMuNSwyMy45MjY5QzE2LDIzLjQyNjYsMTYuODc1LDIzLjA1MTQsMTcuODc1LDIyLjM2MzVDMTYuNjkwNiwxOC42NjUyLDE1LjQ0NDEsMTUuMTgxMSwxNC4yNzQ3LDExLjUyNjVDMTIuNjYzMSwxMS4yMjY2LDExLjE3ODcsMTEuMjMxNyw5LjU5ODk0LDExLjU0ODRDOC40MjQ1NSwxNS4yMTQ4LDcuMzQxNzgsMTguNzU3OSw2LjE4NzUsMjIuMzYzNVpNNy44MTI1LDExLjkyMDFDNS4xMDY4OSwxMi43NTI0LDIuNjg4NDEsMTQuMzcwNywwLjczMTY1NiwxNi40Mjk2TDAuNzI5OTgsMTYuNDMxM0MxLjI5NjIzLDE4LjA0MDQsMi4xODkxNywxOS4zODE1LDMuMzg1MzMsMjAuNTIzOUMzLjcwNjk5LDIwLjgzMjIsNC4wMzcwMywyMC43NjgyLDQuMjg0OTcsMjAuNDAwOUM0LjQwMjI0LDIwLjIyNzQsNC40OTQzOCwyMC4wMzcsNC41NzQ4LDE5Ljg0NDlDNS41Njk5MywxNy40NDczLDYuNTYxNzEsMTUuMDQ5Nyw3LjU0ODQ2LDEyLjY1MDRDNy42MjIxNywxMi40NzAxLDcuODEyNSwxMi4wNDUyLDcuODEyNSwxMS45MjAxWk0xNi4xMjUsMTEuOTIwMUMxOC44MzA2LDEyLjc1MjQsMjEuMjQ5MSwxNC4zNzA3LDIzLjIwNTgsMTYuNDI5NkwyMy4yMDU4LDE2LjQyOTZDMjMuMjA2OSwxNi40MzA3LDIzLjIwNzIsMTYuNDMyMSwyMy4yMDY4LDE2LjQzMzVDMjIuNjQwNSwxOC4wNDE2LDIxLjc0NzgsMTkuMzgyMSwyMC41NTIyLDIwLjUyMzlDMjAuMjMwNSwyMC44MzIyLDE5LjkwMDUsMjAuNzY4MiwxOS42NTI1LDIwLjQwMDlDMTkuNTM1MywyMC4yMjc0LDE5LjQ0MzEsMjAuMDM3LDE5LjM2MjcsMTkuODQ0OUMxOC4zNjc2LDE3LjQ0NzMsMTcuMzc1OCwxNS4wNDk3LDE2LjM4OSwxMi42NTA0QzE2LjMxNTMsMTIuNDcwMSwxNi4xMjUsMTIuMDQ1MiwxNi4xMjUsMTEuOTIwMVoiIGZpbGwtcnVsZT0iZXZlbm9kZCIgZmlsbD0idXJsKCNtYXN0ZXJfc3ZnMF8xMjVfMDY0MTUpIiBmaWxsLW9wYWNpdHk9IjEiIHN0eWxlPSJtaXgtYmxlbmQtbW9kZTpwYXNzdGhyb3VnaCIvPjwvZz48L3N2Zz4=" alt="Atomgit Stars">
 <img src="https://img.shields.io/badge/release-v1.2.0-rgb(13,126,191)" alt="release">
-<img src="https://img.shields.io/badge/springboot-v3.2.12-rgb(13,126,191)?logo=springboot" alt="springboot">
-<img src="https://img.shields.io/badge/jdk-17-rgb(13,126,191)?logo=openjdk" alt="jdk">
+<img src="https://img.shields.io/badge/springboot-v3.2.12-rgb(13,126,19)?logo=springboot" alt="springboot">
+<img src="https://img.shields.io/badge/jdk-17-rgb(178,34,34)?logo=openjdk" alt="jdk">
 <img src="https://img.shields.io/badge/license-GPL3.0-white">
 <br>
 </p>
@@ -54,6 +52,7 @@ docker.folib.com/folib-common/folib-docker/folib-server:1.0
 -   [演示环境](https://demo.folib.com)
 
 ### 技术交流群
+欢迎加入我们的技术交流群，还有不定期的各种活动。
 <p align="left"><a href="https://folib.com"><img src="build/wecom.jpg" alt="Folib for AI" width="300" /></a></p>
 
 
@@ -61,19 +60,25 @@ docker.folib.com/folib-common/folib-docker/folib-server:1.0
 
 ## 版本说明
 
-FOLib 按年发布 LTS（Long Term Support）版本。
-
-- v3.00-lts：发布时间为 2025 年 8 月 1 日，持续更新中；
+FOLib 会平均每个季度一个版本。
+- v3.00：发布时间为 2025 年 8 月 1 日，持续更新中；
+- v3.1：接下来会发布一些AI mcp相关的功能；
 
 
 FOLib 产品版本分为社区版和企业版，详情请参见：[FOLib产品版本对比](https://folib.com/pricing)
 
-## 技术栈
+## 技术栈与架构
 
 -   后端: [Spring Boot3.x](https://spring.io/projects/spring-boot)
 -   前端: [Vue.js](https://vuejs.org/)
--   数据库: [MySQL](https://www.mysql.com/)
+-   关系型数据库: 大部分数据库都支持
 -   基础设施: [Docker](https://www.docker.com/)
+-   文件存储: NFS/S3协议均支持
+>前端打包成静态资源文件后与后端放在一起进行打包。
+<p align=""><a href="https://folib.com"><img src="build/folib-arch.png" alt="Folib for AI" width="800" /></a></p>
+
+
+
 
 ## 开发编译说明
 ### 环境准备
@@ -85,6 +90,7 @@ FOLib 产品版本分为社区版和企业版，详情请参见：[FOLib产品�
 ```shell
   sh folib-package.sh
 ```
+
 
 
 ## License & Copyright
