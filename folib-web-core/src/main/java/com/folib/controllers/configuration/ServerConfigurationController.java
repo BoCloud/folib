@@ -315,6 +315,15 @@ public class ServerConfigurationController
         return ResponseEntity.ok(configuration.getInstanceName());
     }
 
+    @ApiOperation(value = "get version.")
+    @ApiResponses(value = {@ApiResponse(code = 200, message = SUCCESSFUL_SAVE_SERVER_SETTINGS),
+            @ApiResponse(code = 400, message = FAILED_SAVE_SERVER_SETTINGS)})
+    @GetMapping(value = "/getVersion",
+            produces = {MediaType.APPLICATION_JSON_VALUE})
+    public ResponseEntity getVersion() {
+        Configuration configuration = configurationManagementService.getConfiguration();
+        return ResponseEntity.ok(configuration.getVersion());
+    }
 
     @ApiOperation(value = "Get global server settings.")
     @ApiResponses(value = {@ApiResponse(code = 200, message = SUCCESSFUL_SAVE_SERVER_SETTINGS),
