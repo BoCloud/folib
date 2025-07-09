@@ -1,6 +1,6 @@
 [Unit]
 Description=Folib Repository Manager
-Documentation=https://folib.github.io/
+Documentation=https://folib.com/
 After=network-online.target firewalld.service
 Wants=network-online.target
 
@@ -9,22 +9,14 @@ Type=simple
 User=Folib
 Environment=FOLIB_HOME=/opt/folib
 Environment=FOLIB_DATA=/opt/folib-data
-Environment=FOLIB_PORT=48080
+Environment=FOLIB_PORT=38080
 ExecStart=/opt/folib/bin/folib console
 ExecStop=/opt/folib/bin/folib stop
 ExecReload=/bin/kill -s HUP $MAINPID
 TimeoutSec=0
 RestartSec=2
 Restart=always
-
-# Note that StartLimit* options were moved from "Service" to "Unit" in systemd 229.
-# Both the old, and new location are accepted by systemd 229 and up, so using the old location
-# to make them work for either version of systemd.
 StartLimitBurst=3
-
-# Note that StartLimitInterval was renamed to StartLimitIntervalSec in systemd 230.
-# Both the old, and new name are accepted by systemd 230 and up, so using the old name to make
-# this option work for either version of systemd.
 StartLimitInterval=60s
 
 [Install]
