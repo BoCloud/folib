@@ -91,8 +91,8 @@
 					<div class="img">
 						<img src="images/login-bk.svg" alt="rocket">
 					</div>
-					<h5 class="text-white">{{ instanceName }} 携手国产化，引领信创未来，我们为你的软件制品保驾护航！</h5>
-					<p class="text-white">{{ instanceName }} Joining Hands in National Innovation, Pioneering the Future of Technology, We Safeguard Your Software Solutions!</p>
+					<h5 class="text-white">{{ instanceName }} FOLib for AI 一个为Ai研发而生的全语言供应链服务平台！</h5>
+					<p class="text-white">{{ instanceName }} A Full-Language Software Supply Chain Service Platform Built for AI R&D!</p>
 				</div>
 			</a-col>
 			<!-- / Sign Up Image Column -->

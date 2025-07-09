@@ -1,0 +1,11 @@
+oooooooooooo   .oooooo.   ooooo        ooooo oooooooooo.        .o88o.                               .o.       ooooo
+`888'     `8  d8P'  `Y8b  `888'        `888' `888'   `Y8b       888 `"                              .888.      `888'
+ 888         888      888  888          888   888     888      o888oo   .ooooo.  oooo d8b          .8"888.      888
+ 888oooo8    888      888  888          888   888oooo888'       888    d88' `88b `888""8P         .8' `888.     888
+ 888    "    888      888  888          888   888    `88b       888    888   888  888            .88ooo8888.    888
+ 888         `88b    d88'  888       o  888   888    .88P       888    888   888  888           .8'     `888.   888
+o888o         `Y8bood8P'  o888ooooood8 o888o o888bood8P'       o888o   `Y8bod8P' d888b         o88o     o8888o o888o
+
+
+Folib - [新一代AI制品仓库]  Version: 3.0.0
+Copyright (C) 2025 bocloud.com.cn <folib@beyondcent.com>

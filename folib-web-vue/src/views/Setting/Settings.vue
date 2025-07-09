@@ -64,7 +64,7 @@
                 <a-row :gutter="[24]">
                   <a-col :span="24" :lg="8">
                     <a-form-item class="mb-10" :label="$t('Setting.ApplicationName')" :colon="false">
-                      <a-input placeholder="folib" v-model="serverSettings.instanceName" />
+                      <a-input disabled placeholder="folib" v-model="serverSettings.instanceName" />
                     </a-form-item>
                   </a-col>
                   <a-col :span="24" :lg="8">
@@ -316,109 +316,71 @@
         <a-row type="flex" :gutter="24">
 
           <!-- 许可信息-->
-          <a-col :span="24" :md="12" class="mb-24">
+          <a-col :span="24" :md="24" class="mb-24">
 
             <a-card :bordered="false" class="header-solid h-full card-profile-information"
               :bodyStyle="{ paddingTop: 0, paddingBottom: '16px' }" :headStyle="{ paddingRight: 0, }">
               <template #title>
                 <h6 class="font-semibold m-0">FOLIB {{ $t('Setting.LicenseInfo') }}</h6>
               </template>
-              <a-button v-if="machineInfo.haveError || machineInfo.dalyOut" type="link" slot="extra"
-                @click="copy(machineInfo.mac)">
-                <a-icon type="copy" theme="twoTone" />
-              </a-button>
-              <p class="text-dark" v-if="!machineInfo.haveError && !machineInfo.dalyOut">
-                {{ $t('Setting.userChoose') }}{{ instanceName }}!
-                {{ $t('Setting.InWhatFollows') }}{{ instanceName }} {{ $t('Setting.provideYou') }}
-                {{ $t('Setting.ITDigital') }}{{ instanceName }} {{ $t('Setting.IsWithYou') }}
+              <p class="text-dark">
+                {{ $t('Setting.userChoose') }}
               </p>
-              <p class="text-dark" v-if="machineInfo.haveError && machineInfo.dalyOut">
-                {{ $t('Setting.userChoose') }}{{ instanceName }} ! {{ $t('Setting.serviceHotline') }}
-              </p>
-              <p class="text-dark" v-if="(!machineInfo.haveError) && machineInfo.dalyOut">
-                {{ $t('Setting.userChoose') }}{{ instanceName }}! {{ $t('Setting.serialNumberExpired') }}
-              </p>
+
               <hr class="my-25">
-              <a-descriptions
-                :title="machineInfo.haveError ? $t('Setting.NotActivated') : (!machineInfo.haveError) && machineInfo.dalyOut ? $t('Setting.HasExpired') : $t('Setting.Activated')"
-                :column="1">
-                <a-descriptions-item :label="$t('Setting.MachineCode')">
-                  {{ machineInfo.mac }}
-                </a-descriptions-item>
-                <a-descriptions-item :label="$t('Setting.VersionType')">
-                  {{ machineInfo.haveError || !machineInfo.object ? $t('Setting.None') : machineInfo.object.type }}
-                </a-descriptions-item>
-                <a-descriptions-item :label="$t('Setting.ExpirationDate')">
-                  {{ machineInfo.haveError || !machineInfo.object ? $t('Setting.None') : machineInfo.object.endDate }}
-                </a-descriptions-item>
-                <a-descriptions-item :label="$t('Setting.SerialNumber')">
-                  {{ machineInfo.haveError || !machineInfo.object ? $t('Setting.None') : machineInfo.object.codes }}
-                </a-descriptions-item>
-                <a-descriptions-item :label="$t('Setting.FunctionalLevel')">
-                  <a-tag> {{ machineInfo.haveError || !machineInfo.object ? $t('Setting.None') :
-                    upperCase(machineInfo.object.level) }}</a-tag>
-                </a-descriptions-item>
-                <a-descriptions-item :label="$t('Setting.WhetherItIsActiveOrNot')">
-                  <a href="http://folib.com" class="mx-5 px-5" v-if="!machineInfo.haveError">
-                    <a-avatar :size="24" shape="square" src="images/folib/isactivate.svg" />
-                  </a>
-                  <a href="http://folib.com" class="mx-5 px-5" v-if="machineInfo.haveError">
-                    <a-avatar :size="24" shape="square" src="images/folib/notactivate.svg" />
-                  </a>
-                </a-descriptions-item>
-              </a-descriptions>
+
             </a-card>
 
           </a-col>
-          <a-col :span="24" :md="12" class="mb-24">
-            <a-card :bordered="false" class="header-solid h-full card-profile-information"
-              :bodyStyle="{ paddingTop: 0, paddingBottom: '16px' }" :headStyle="{ paddingRight: 0, }">
-              <template #title>
-                <h6 class="font-semibold m-0">{{ $t('Setting.ActivateSequenceNum') }}</h6>
-              </template>
-              <a-upload :fileList="fileList" :multiple="false" :customRequest="uploadLicense" slot="extra">
-                <a-button type="link" class="by-p-r-0">
-                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path class="fill-muted"
-                      d="M13.5858 3.58579C14.3668 2.80474 15.6332 2.80474 16.4142 3.58579C17.1953 4.36683 17.1953 5.63316 16.4142 6.41421L15.6213 7.20711L12.7929 4.37868L13.5858 3.58579Z"
-                      fill="#111827" />
-                    <path class="fill-muted" d="M11.3787 5.79289L3 14.1716V17H5.82842L14.2071 8.62132L11.3787 5.79289Z"
-                      fill="#111827" />
-                  </svg>
-                  {{ $t('Setting.OfflineActivated') }}
-                </a-button>
-              </a-upload>
-              <a-button type="link" slot="extra" @click="postActivate(false)" class="by-p-r-0">
-                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path class="fill-muted"
-                    d="M13.5858 3.58579C14.3668 2.80474 15.6332 2.80474 16.4142 3.58579C17.1953 4.36683 17.1953 5.63316 16.4142 6.41421L15.6213 7.20711L12.7929 4.37868L13.5858 3.58579Z"
-                    fill="#111827" />
-                  <path class="fill-muted" d="M11.3787 5.79289L3 14.1716V17H5.82842L14.2071 8.62132L11.3787 5.79289Z"
-                    fill="#111827" />
-                </svg>
-                {{ $t('Setting.OfficiallyActivated') }}
-              </a-button>
-              <a-button type="link" slot="extra" @click="postActivate(true)">
-                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path class="fill-muted"
-                    d="M13.5858 3.58579C14.3668 2.80474 15.6332 2.80474 16.4142 3.58579C17.1953 4.36683 17.1953 5.63316 16.4142 6.41421L15.6213 7.20711L12.7929 4.37868L13.5858 3.58579Z"
-                    fill="#111827" />
-                  <path class="fill-muted" d="M11.3787 5.79289L3 14.1716V17H5.82842L14.2071 8.62132L11.3787 5.79289Z"
-                    fill="#111827" />
-                </svg>
-                {{ $t('Setting.TryItOut') }}
-              </a-button>
-              <p class="$color-muted">
-                {{ $t('Setting.FOLIBSerialNumber') }}
-              </p>
-              <hr class="my-25">
-              <a-form-item class="mb-10" :label="$t('Setting.SerialNumber')" :colon="false">
-                <a-textarea :rows="8" :placeholder="$t('Setting.machineCode')" v-model="activateCode" />
-              </a-form-item>
-            </a-card>
-            <!-- / Conversations Card -->
+<!--          <a-col :span="24" :md="12" class="mb-24">-->
+<!--            <a-card :bordered="false" class="header-solid h-full card-profile-information"-->
+<!--              :bodyStyle="{ paddingTop: 0, paddingBottom: '16px' }" :headStyle="{ paddingRight: 0, }">-->
+<!--              <template #title>-->
+<!--                <h6 class="font-semibold m-0">{{ $t('Setting.ActivateSequenceNum') }}</h6>-->
+<!--              </template>-->
+<!--              <a-upload :fileList="fileList" :multiple="false" :customRequest="uploadLicense" slot="extra">-->
+<!--                <a-button type="link" class="by-p-r-0">-->
+<!--                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">-->
+<!--                    <path class="fill-muted"-->
+<!--                      d="M13.5858 3.58579C14.3668 2.80474 15.6332 2.80474 16.4142 3.58579C17.1953 4.36683 17.1953 5.63316 16.4142 6.41421L15.6213 7.20711L12.7929 4.37868L13.5858 3.58579Z"-->
+<!--                      fill="#111827" />-->
+<!--                    <path class="fill-muted" d="M11.3787 5.79289L3 14.1716V17H5.82842L14.2071 8.62132L11.3787 5.79289Z"-->
+<!--                      fill="#111827" />-->
+<!--                  </svg>-->
+<!--                  {{ $t('Setting.OfflineActivated') }}-->
+<!--                </a-button>-->
+<!--              </a-upload>-->
+<!--              <a-button type="link" slot="extra" @click="postActivate(false)" class="by-p-r-0">-->
+<!--                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">-->
+<!--                  <path class="fill-muted"-->
+<!--                    d="M13.5858 3.58579C14.3668 2.80474 15.6332 2.80474 16.4142 3.58579C17.1953 4.36683 17.1953 5.63316 16.4142 6.41421L15.6213 7.20711L12.7929 4.37868L13.5858 3.58579Z"-->
+<!--                    fill="#111827" />-->
+<!--                  <path class="fill-muted" d="M11.3787 5.79289L3 14.1716V17H5.82842L14.2071 8.62132L11.3787 5.79289Z"-->
+<!--                    fill="#111827" />-->
+<!--                </svg>-->
+<!--                {{ $t('Setting.OfficiallyActivated') }}-->
+<!--              </a-button>-->
+<!--              <a-button type="link" slot="extra" @click="postActivate(true)">-->
+<!--                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">-->
+<!--                  <path class="fill-muted"-->
+<!--                    d="M13.5858 3.58579C14.3668 2.80474 15.6332 2.80474 16.4142 3.58579C17.1953 4.36683 17.1953 5.63316 16.4142 6.41421L15.6213 7.20711L12.7929 4.37868L13.5858 3.58579Z"-->
+<!--                    fill="#111827" />-->
+<!--                  <path class="fill-muted" d="M11.3787 5.79289L3 14.1716V17H5.82842L14.2071 8.62132L11.3787 5.79289Z"-->
+<!--                    fill="#111827" />-->
+<!--                </svg>-->
+<!--                {{ $t('Setting.TryItOut') }}-->
+<!--              </a-button>-->
+<!--              <p class="$color-muted">-->
+<!--                {{ $t('Setting.FOLIBSerialNumber') }}-->
+<!--              </p>-->
+<!--              <hr class="my-25">-->
+<!--              <a-form-item class="mb-10" :label="$t('Setting.SerialNumber')" :colon="false">-->
+<!--                <a-textarea :rows="8" :placeholder="$t('Setting.machineCode')" v-model="activateCode" />-->
+<!--              </a-form-item>-->
+<!--            </a-card>-->
+<!--            &lt;!&ndash; / Conversations Card &ndash;&gt;-->
 
-          </a-col>
+<!--          </a-col>-->
 
         </a-row>
       </a-tab-pane>
