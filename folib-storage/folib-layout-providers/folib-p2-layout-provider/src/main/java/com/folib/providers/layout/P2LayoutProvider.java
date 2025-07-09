@@ -4,8 +4,8 @@ package com.folib.providers.layout;
 import com.folib.providers.io.RepositoryFiles;
 import com.folib.providers.io.RepositoryPath;
 import com.folib.repository.P2RepositoryFeatures;
-import com.folib.repository.P2RepositoryManagementStrategy;
-import com.folib.artifact.coordinates.P2ArtifactCoordinates;
+import com.folib.repository.P2RepositoryStrategy;
+import com.folib.artifact.coordinates.P2Coordinates;
 
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
@@ -16,7 +16,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class P2LayoutProvider
-        extends AbstractLayoutProvider<P2ArtifactCoordinates>
+        extends AbstractLayoutProvider<P2Coordinates>
 {
 
     private static final Logger logger = LoggerFactory.getLogger(P2LayoutProvider.class);
@@ -24,7 +24,7 @@ public class P2LayoutProvider
     public static final String ALIAS = "P2 Repository";
 
     @Inject
-    private P2RepositoryManagementStrategy p2RepositoryManagementStrategy;
+    private P2RepositoryStrategy p2RepositoryManagementStrategy;
 
     @Inject
     private P2RepositoryFeatures p2RepositoryFeatures;
@@ -37,9 +37,9 @@ public class P2LayoutProvider
     }
 
     @Override
-    public P2ArtifactCoordinates getArtifactCoordinates(RepositoryPath path) throws IOException
+    public P2Coordinates getArtifactCoordinates(RepositoryPath path) throws IOException
     {
-        return P2ArtifactCoordinates.create(RepositoryFiles.relativizePath(path));
+        return P2Coordinates.create(RepositoryFiles.relativizePath(path));
     }
 
     @Override
@@ -64,7 +64,7 @@ public class P2LayoutProvider
     }
 
     @Override
-    public P2RepositoryManagementStrategy getRepositoryManagementStrategy()
+    public P2RepositoryStrategy getRepositoryManagementStrategy()
     {
         return p2RepositoryManagementStrategy;
     }

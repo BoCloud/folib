@@ -64,9 +64,9 @@ public class ArtifactLayoutDescription
     {
         ArtifactLayoutDescription result = ReflectionUtils.getAllAnnotations(artifactCoordinatesClass)
                                                           .stream()
-                                                          .filter(a -> a instanceof ArtifactCoordinatesLayout)
+                                                          .filter(a -> a instanceof CoordinatesLayout)
                                                           .findFirst()
-                                                          .map(a -> (ArtifactCoordinatesLayout) a)
+                                                          .map(a -> (CoordinatesLayout) a)
                                                           .map(a -> parseClass(artifactCoordinatesClass, a))
                                                           .get();
 
@@ -84,7 +84,7 @@ public class ArtifactLayoutDescription
     }
 
     private static ArtifactLayoutDescription parseClass(Class<? extends ArtifactCoordinates> c,
-                                                        ArtifactCoordinatesLayout a)
+                                                        CoordinatesLayout a)
     {
         ArtifactLayoutDescription result = new ArtifactLayoutDescription();
 

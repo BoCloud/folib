@@ -2,10 +2,10 @@ package com.folib.domain;
 
 import com.folib.artifact.ArtifactTag;
 import com.folib.artifact.coordinates.ArtifactCoordinates;
-import com.folib.artifact.coordinates.GenericArtifactCoordinates;
+import com.folib.artifact.coordinates.GenericCoordinates;
 import com.folib.data.domain.DomainEntity;
-import com.veadan.folib.db.schema.Edges;
-import com.veadan.folib.db.schema.Vertices;
+import com.folib.db.schema.Edges;
+import com.folib.db.schema.Vertices;
 import com.folib.enums.SafeLevelEnum;
 import com.folib.gremlin.adapters.DateConverter;
 import lombok.extern.slf4j.Slf4j;
@@ -38,7 +38,7 @@ public class ArtifactEntity
     private String storageIdAndRepositoryId;
 
     @Relationship(type = Edges.ARTIFACT_HAS_ARTIFACT_COORDINATES, direction = Relationship.OUTGOING)
-    private GenericArtifactCoordinates artifactCoordinates;
+    private GenericCoordinates artifactCoordinates;
 
     @Relationship(type = Edges.ARTIFACT_HAS_TAGS, direction = Relationship.OUTGOING)
     private Set<ArtifactTag> tagSet;

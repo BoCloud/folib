@@ -1,6 +1,6 @@
 package com.folib.indexer;
 
-import com.folib.artifact.coordinates.PypiArtifactCoordinates;
+import com.folib.artifact.coordinates.PypiCoordinates;
 import com.folib.components.DistributedLockComponent;
 import com.folib.components.PypiBrowsePackageHtmlResponseBuilder;
 import com.folib.configuration.ConfigurationManager;
@@ -72,15 +72,15 @@ public class PypiPackageMetadataIndexer {
             return;
         }
         String storageId = repositoryPath.getStorageId(), repositoryId = repositoryPath.getRepositoryId();
-        PypiArtifactCoordinates pypiArtifactCoordinates = null;
+        PypiCoordinates pypiArtifactCoordinates = null;
         String artifactPath = RepositoryFiles.relativizePath(repositoryPath);
         if (artifactPath.startsWith(PypiConstants.PACKAGE_HTML_EXTENSION)) {
             return;
         }
-        if (PypiArtifactCoordinates.EXTENSION_LIST.stream().noneMatch(artifactPath::endsWith)) {
-            pypiArtifactCoordinates = PypiArtifactCoordinates.resolveName(artifactPath);
+        if (PypiCoordinates.EXTENSION_LIST.stream().noneMatch(artifactPath::endsWith)) {
+            pypiArtifactCoordinates = PypiCoordinates.resolveName(artifactPath);
         } else {
-            pypiArtifactCoordinates = PypiArtifactCoordinates.parse(artifactPath);
+            pypiArtifactCoordinates = PypiCoordinates.parse(artifactPath);
         }
         final String packageName = PypiUtils.escapeSpecialCharacters(pypiArtifactCoordinates.getId());
         String key = String.format("PypiIndex_%s_%s_%s", storageId, repositoryId, packageName), htmlData = "";
@@ -108,7 +108,7 @@ public class PypiPackageMetadataIndexer {
         log.info("Started reindexing for package '{}' in storage '{}' repository '{}'", packageName, storageId, repositoryId);
         String htmlData = null, searchPackageName = packageName + "-";
         RepositoryProvider repositoryProvider = repositoryProviderRegistry.getProvider(repositoryPath.getRepository().getType());
-        RepositorySearchRequest predicate = new RepositorySearchRequest(searchPackageName, true, PypiArtifactCoordinates.EXTENSION_LIST);
+        RepositorySearchRequest predicate = new RepositorySearchRequest(searchPackageName, true, PypiCoordinates.EXTENSION_LIST);
         Paginator paginator = new Paginator();
         List<Path> searchResult = repositoryProvider.search(storageId, repositoryId,
                 predicate, paginator);
@@ -130,11 +130,11 @@ public class PypiPackageMetadataIndexer {
         return PypiIndexTypeEnum.REINDEX.getType().equals(pypiIndexTypeEnum.getType());
     }
 
-    private void finalizePackageIndexing(RepositoryPath repositoryPath, PypiArtifactCoordinates pypiArtifactCoordinates, String storageId, String repositoryId, String packageName, PypiIndexTypeEnum pypiIndexTypeEnum, String htmlData) throws Exception {
+    private void finalizePackageIndexing(RepositoryPath repositoryPath, PypiCoordinates pypiArtifactCoordinates, String storageId, String repositoryId, String packageName, PypiIndexTypeEnum pypiIndexTypeEnum, String htmlData) throws Exception {
         writeOrDeletePackageMetadataFile(repositoryPath, pypiArtifactCoordinates, storageId, repositoryId, packageName, pypiIndexTypeEnum, htmlData);
     }
 
-    private void indexType(RepositoryPath repositoryPath, PypiArtifactCoordinates pypiArtifactCoordinates, String storageId, String repositoryId, String packageName, PypiIndexTypeEnum pypiIndexTypeEnum, PypiSimpleIndex pypiSimpleIndex) {
+    private void indexType(RepositoryPath repositoryPath, PypiCoordinates pypiArtifactCoordinates, String storageId, String repositoryId, String packageName, PypiIndexTypeEnum pypiIndexTypeEnum, PypiSimpleIndex pypiSimpleIndex) {
         try {
             switch (pypiIndexTypeEnum.getType()) {
                 case "add":
@@ -151,7 +151,7 @@ public class PypiPackageMetadataIndexer {
         }
     }
 
-    private void writeOrDeletePackageMetadataFile(RepositoryPath repositoryPath, PypiArtifactCoordinates pypiArtifactCoordinates, String storageId, String repositoryId, String packageName, PypiIndexTypeEnum pypiIndexTypeEnum, String htmlData) throws Exception {
+    private void writeOrDeletePackageMetadataFile(RepositoryPath repositoryPath, PypiCoordinates pypiArtifactCoordinates, String storageId, String repositoryId, String packageName, PypiIndexTypeEnum pypiIndexTypeEnum, String htmlData) throws Exception {
         String packageMetadataFilePath = PypiUtils.getPackageIndexPathLocalRepo(packageName);
         RepositoryPath packageHtmlRepositoryPath = repositoryPathResolver.resolve(repositoryPath.getRepository(), packageMetadataFilePath);
         if (StringUtils.isNotBlank(htmlData)) {
@@ -167,24 +167,24 @@ public class PypiPackageMetadataIndexer {
         }
     }
 
-    private void handleDeletePypiPackage(PypiSimpleIndex pypiSimpleIndex, RepositoryPath repositoryPath, PypiArtifactCoordinates pypiArtifactCoordinates, String packageName) throws Exception {
+    private void handleDeletePypiPackage(PypiSimpleIndex pypiSimpleIndex, RepositoryPath repositoryPath, PypiCoordinates pypiArtifactCoordinates, String packageName) throws Exception {
         log.debug("Handling Delete for package: '{}', version: '{}'", packageName, pypiArtifactCoordinates.getVersion());
         removeVersionFromPackageMetadata(repositoryPath, pypiArtifactCoordinates, pypiSimpleIndex);
     }
 
-    private void handleAddPypiPackage(PypiSimpleIndex pypiSimpleIndex, RepositoryPath repositoryPath, PypiArtifactCoordinates pypiArtifactCoordinates, String packageName) throws Exception {
+    private void handleAddPypiPackage(PypiSimpleIndex pypiSimpleIndex, RepositoryPath repositoryPath, PypiCoordinates pypiArtifactCoordinates, String packageName) throws Exception {
         log.debug("Handling Add for package: '{}', version: '{}'", packageName, pypiArtifactCoordinates.getVersion());
         addPypiPackage(repositoryPath, pypiArtifactCoordinates, pypiSimpleIndex);
     }
 
-    private void addPypiPackage(RepositoryPath repositoryPath, PypiArtifactCoordinates pypiArtifactCoordinates, PypiSimpleIndex pypiSimpleIndex) throws Exception {
+    private void addPypiPackage(RepositoryPath repositoryPath, PypiCoordinates pypiArtifactCoordinates, PypiSimpleIndex pypiSimpleIndex) throws Exception {
         String repositoryBaseUrl = getRepositoryBaseUrl(repositoryPath.getRepository());
         String link = repositoryBaseUrl + PypiConstants.PYPI_PACKAGES + GlobalConstants.SEPARATOR + pypiArtifactCoordinates.getFileName();
         PypiIndexEntry pypiIndexEntry = PypiIndexEntry.builder().link(link).name(pypiArtifactCoordinates.getFileName()).build();
         pypiSimpleIndex.getEntries().add(pypiIndexEntry);
     }
 
-    private void removeVersionFromPackageMetadata(RepositoryPath repositoryPath, PypiArtifactCoordinates pypiArtifactCoordinates, PypiSimpleIndex pypiSimpleIndex) {
+    private void removeVersionFromPackageMetadata(RepositoryPath repositoryPath, PypiCoordinates pypiArtifactCoordinates, PypiSimpleIndex pypiSimpleIndex) {
         log.debug("Remove version {} from package {}", pypiArtifactCoordinates.getVersion(), pypiArtifactCoordinates.getFileName());
         SortedSet<PypiIndexEntry> pypiIndexEntries = pypiSimpleIndex.getEntries();
         String repositoryBaseUrl = getRepositoryBaseUrl(repositoryPath.getRepository());

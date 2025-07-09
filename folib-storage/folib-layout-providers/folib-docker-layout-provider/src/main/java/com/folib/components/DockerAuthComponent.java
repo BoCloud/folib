@@ -2,7 +2,7 @@ package com.folib.components;
 
 import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Maps;
-import com.folib.artifact.coordinates.DockerArtifactCoordinates;
+import com.folib.artifact.coordinates.DockerCoordinates;
 import com.folib.constant.GlobalConstants;
 import com.folib.domain.AuthInfo;
 import com.folib.domain.client.ResponseResult;
@@ -100,7 +100,7 @@ public class DockerAuthComponent {
         if (Objects.nonNull(authInfo.getExpiresIn()) && authInfo.getExpiresIn() < ttl) {
             ttl = authInfo.getExpiresIn() - 30;
         }
-        if (ttl > 0 && DockerArtifactCoordinates.DOCKER_LAYER_DIR_NAME_LIST.stream().noneMatch(item -> item.equals(imagePath))) {
+        if (ttl > 0 && DockerCoordinates.DOCKER_LAYER_DIR_NAME_LIST.stream().noneMatch(item -> item.equals(imagePath))) {
             distributedCacheComponent.put(key, String.format("%s %s", "Bearer", authInfo.getToken()), ttl, TimeUnit.SECONDS);
         }
     }

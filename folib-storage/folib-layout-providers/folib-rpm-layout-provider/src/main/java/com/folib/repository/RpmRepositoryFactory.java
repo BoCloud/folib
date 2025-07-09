@@ -1,6 +1,6 @@
 package com.folib.repository;
 
-import com.folib.providers.layout.RpmLayoutProvider;
+import com.folib.providers.RpmLayoutProvider;
 import com.folib.storage.repository.RepositoryDto;
 import com.folib.storage.repository.RepositoryFactory;
 import org.springframework.stereotype.Component;

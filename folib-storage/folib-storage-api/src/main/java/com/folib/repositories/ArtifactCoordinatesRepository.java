@@ -3,7 +3,7 @@ package com.folib.repositories;
 import jakarta.inject.Inject;
 
 import com.folib.artifact.coordinates.ArtifactCoordinates;
-import com.folib.artifact.coordinates.GenericArtifactCoordinates;
+import com.folib.artifact.coordinates.GenericCoordinates;
 import com.folib.gremlin.adapters.ArtifactCoordinatesHierarchyAdapter;
 import com.folib.gremlin.repositories.GremlinVertexRepository;
 import jakarta.transaction.Transactional;
@@ -11,7 +11,7 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 @Transactional
-public class ArtifactCoordinatesRepository extends GremlinVertexRepository<GenericArtifactCoordinates>
+public class ArtifactCoordinatesRepository extends GremlinVertexRepository<GenericCoordinates>
         //implements ArtifactCoordinatesQueries
 {
 
@@ -28,7 +28,7 @@ public class ArtifactCoordinatesRepository extends GremlinVertexRepository<Gener
     }
 
     @Override
-    public <R extends GenericArtifactCoordinates> R save(R entity)
+    public <R extends GenericCoordinates> R save(R entity)
     {
         if (entity.getUuid() == null)
         {

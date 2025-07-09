@@ -2,7 +2,7 @@ package com.folib.job.tasks;
 
 import cn.hutool.core.date.DatePattern;
 import cn.hutool.core.date.DateUtil;
-import com.folib.artifact.coordinates.RawArtifactCoordinates;
+import com.folib.artifact.coordinates.RawCoordinates;
 
 import com.folib.providers.io.RepositoryPath;
 import com.folib.providers.io.RepositoryPathResolver;
@@ -130,7 +130,7 @@ public class ReplicationBackup {
                 RepositoryDto newRepo = configurationManagementService.getMutableConfigurationClone().getStorage(repository.getStorage().getId())
                         .getRepository(repository.getId());
                 newRepo.setId(backupName);
-                newRepo.setLayout(RawArtifactCoordinates.LAYOUT_NAME);
+                newRepo.setLayout(RawCoordinates.LAYOUT_NAME);
                 newRepo.setType(RepositoryTypeEnum.HOSTED.getType());
                 newRepo.setRemoteRepository(null);
                 newRepo.setSubLayout("raw");

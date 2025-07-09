@@ -1,16 +1,16 @@
 package com.folib.strategy;
 
 import com.folib.artifact.coordinates.ArtifactCoordinates;
-import com.folib.artifact.coordinates.MavenArtifactCoordinates;
-import com.folib.domain.GenericArtifactCoordinatesEntity;
+import com.folib.artifact.coordinates.MavenCoordinates;
+import com.folib.domain.GenericCoordinatesEntity;
 import org.springframework.stereotype.Service;
 
-@Service("mavenArtifactCoordinatesStrategy")
-public class MavenArtifactCoordinatesStrategyImpl implements ArtifactCoordinatesStrategy{
+@Service("mavenCoordinatesStrategy")
+public class MavenArtifactCoordinatesStrategyImpl implements ArtifactStrategy {
 
     @Override
-    public ArtifactCoordinates getArtifactCoordinates(GenericArtifactCoordinatesEntity entity) {
-        MavenArtifactCoordinates mavenArtifactCoordinates = new MavenArtifactCoordinates();
+    public ArtifactCoordinates getArtifactCoordinates(GenericCoordinatesEntity entity) {
+        MavenCoordinates mavenArtifactCoordinates = new MavenCoordinates();
         mavenArtifactCoordinates.setNativeId(entity.getNativeId());
         mavenArtifactCoordinates.setVersion(entity.getVersion());
         mavenArtifactCoordinates.setGroupId(entity.getCoordinates().get("groupId"));

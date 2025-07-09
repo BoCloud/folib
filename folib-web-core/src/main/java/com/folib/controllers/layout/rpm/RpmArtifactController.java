@@ -6,12 +6,12 @@ import com.folib.controllers.BaseArtifactController;
 import com.folib.entity.Dict;
 import com.folib.metadata.indexer.RpmRepoIndexer;
 import com.folib.providers.io.RepositoryPath;
-import com.folib.providers.layout.RpmLayoutProvider;
+import com.folib.providers.RpmLayoutProvider;
 import com.folib.services.DictService;
 import com.folib.services.RepositoryManagementService;
 import com.folib.storage.repository.Repository;
-import com.folib.web.LayoutRequestMapping;
-import com.folib.web.RepositoryMapping;
+import com.folib.web.LayoutReqMapping;
+import com.folib.web.RepoMapping;
 import io.swagger.annotations.*;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -33,7 +33,7 @@ import java.nio.file.Files;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 
 @RestController
-@LayoutRequestMapping(RpmLayoutProvider.ALIAS)
+@LayoutReqMapping(RpmLayoutProvider.ALIAS)
 @Slf4j
 @Api(description = "rpm坐标控制器",tags = "rpm坐标控制器")
 public class RpmArtifactController extends BaseArtifactController {
@@ -65,7 +65,7 @@ public class RpmArtifactController extends BaseArtifactController {
             @ApiResponse(code = 404, message = "The specified storageId/repositoryId/path does not exist!")})
     @PreAuthorize("hasAuthority('ARTIFACTS_DELETE')")
     @DeleteMapping(value = "/{storageId}/{repositoryId}/{artifactPath:.+}")
-    public ResponseEntity delete(@RepositoryMapping Repository repository,
+    public ResponseEntity delete(@RepoMapping Repository repository,
                                  @ApiParam(value = "Whether to use force delete")
                                  @RequestParam(defaultValue = "false",
                                          name = "force",
@@ -100,7 +100,7 @@ public class RpmArtifactController extends BaseArtifactController {
             @ApiResponse(code = 400, message = "An error occurred.")})
     @PreAuthorize("hasAuthority('ARTIFACTS_DEPLOY')")
     @RequestMapping(value = "{storageId}/{repositoryId}/{path:.+}", method = {RequestMethod.PUT, RequestMethod.POST})
-    public ResponseEntity upload(@RepositoryMapping Repository repository,
+    public ResponseEntity upload(@RepoMapping Repository repository,
                                  @PathVariable String path,
                                  HttpServletRequest request,
                                  @RequestParam("files") MultipartFile[] files,
@@ -156,7 +156,7 @@ public class RpmArtifactController extends BaseArtifactController {
             @ApiResponse(code = 400, message = "An error occurred.")})
     @PreAuthorize("hasAuthority('ARTIFACTS_DEPLOY')")
     @GetMapping(value = {"{storageId}/{repositoryId}/buildIndex"})
-    public ResponseEntity buildIndex(@RepositoryMapping Repository repository) {
+    public ResponseEntity buildIndex(@RepoMapping Repository repository) {
         try {
             RpmRepoIndexer rpmRepoIndexer = new RpmRepoIndexer(repositoryPathResolver,artifactManagementService,tempPath);
             RepositoryPath repositoryPath = repositoryPathResolver.resolve(repository, "");
@@ -176,7 +176,7 @@ public class RpmArtifactController extends BaseArtifactController {
             @ApiResponse(code = 400, message = "An error occurred.")})
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     @GetMapping(value = {"{storageId}/{repositoryId}/{path:.+}"})
-    public void download(@RepositoryMapping Repository repository,
+    public void download(@RepoMapping Repository repository,
                          @RequestHeader HttpHeaders httpHeaders,
                          @PathVariable String path,
                          @PathVariable String storageId,

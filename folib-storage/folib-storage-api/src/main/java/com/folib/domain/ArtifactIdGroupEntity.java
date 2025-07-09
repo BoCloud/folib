@@ -5,8 +5,8 @@ import java.util.HashSet;
 import java.util.Set;
 
 import com.folib.data.domain.DomainEntity;
-import com.veadan.folib.db.schema.Edges;
-import com.veadan.folib.db.schema.Vertices;
+import com.folib.db.schema.Edges;
+import com.folib.db.schema.Vertices;
 import org.neo4j.ogm.annotation.NodeEntity;
 import org.neo4j.ogm.annotation.Relationship;
 

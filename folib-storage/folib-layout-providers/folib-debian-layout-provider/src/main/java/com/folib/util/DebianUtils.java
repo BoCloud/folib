@@ -3,7 +3,7 @@ package com.folib.util;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.io.ByteStreams;
-import com.folib.artifact.coordinates.DebianArtifactCoordinates;
+import com.folib.artifact.coordinates.DebianCoordinates;
 import com.folib.constant.DebianConstant;
 import com.folib.domain.Artifact;
 import com.folib.domain.ArtifactEntity;
@@ -352,7 +352,7 @@ public class DebianUtils {
     }
 
 
-    public static void setCoordinates(RepositoryPath repositoryPath, DebianArtifactCoordinates coordinates) {
+    public static void setCoordinates(RepositoryPath repositoryPath, DebianCoordinates coordinates) {
         if (Objects.nonNull(repositoryPath) && Objects.nonNull(coordinates)) {
             try {
                 if (!RepositoryFiles.isArtifact(repositoryPath)) {
@@ -368,7 +368,7 @@ public class DebianUtils {
         }
     }
 
-    public static DebianIndexEvent generateEvent(DebianArtifactCoordinates coordinates, Artifact artifact, DeltaIndexEventType type) {
+    public static DebianIndexEvent generateEvent(DebianCoordinates coordinates, Artifact artifact, DeltaIndexEventType type) {
         DebianIndexEvent event = new DebianIndexEvent();
         event.setEventType(type);
         event.setArtifact(artifact);

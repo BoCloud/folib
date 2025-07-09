@@ -1,6 +1,6 @@
 package com.folib.components.syncartifact;
 
-import com.folib.artifact.coordinates.GoArtifactCoordinates;
+import com.folib.artifact.coordinates.GoCoordinates;
 import com.folib.constant.GlobalConstants;
 import com.folib.enums.ArtifactSyncTypeEnum;
 import com.folib.services.MigrateInfoService;
@@ -39,7 +39,7 @@ public class GoSyncArtifactProvider extends BaseArtifactProvider {
 
     @Override
     public String getLayout() {
-        return GoArtifactCoordinates.LAYOUT_NAME;
+        return GoCoordinates.LAYOUT_NAME;
     }
 
 

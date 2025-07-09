@@ -5,7 +5,7 @@ import com.folib.controllers.BaseController;
 import com.folib.services.ArtifactMetadataService;
 import com.folib.storage.metadata.MetadataType;
 import com.folib.storage.repository.Repository;
-import com.folib.web.RepositoryMapping;
+import com.folib.web.RepoMapping;
 
 import javax.inject.Inject;
 import java.io.IOException;
@@ -79,7 +79,7 @@ public class MavenMetadataManagementController
     @PreAuthorize("hasAuthority('MANAGEMENT_DELETE_METADATA')")
     @DeleteMapping(value = "{storageId}/{repositoryId}/{path:.+}",
                    produces = MediaType.TEXT_PLAIN_VALUE)
-    public ResponseEntity delete(@RepositoryMapping Repository repository,
+    public ResponseEntity delete(@RepoMapping Repository repository,
                                  @ApiParam(value = "The version of the artifact.", required = true)
                                  @RequestParam(name = "version") String version,
                                  @ApiParam(value = "The classifier of the artifact.")

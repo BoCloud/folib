@@ -1,14 +1,14 @@
 package com.folib.providers.layout;
 
 import cn.hutool.crypto.digest.SM3;
-import com.folib.artifact.coordinates.DebianArtifactCoordinates;
+import com.folib.artifact.coordinates.DebianCoordinates;
 import com.folib.constant.DebianConstant;
 import com.folib.providers.io.RepositoryFileAttributeType;
 import com.folib.providers.io.RepositoryFiles;
 import com.folib.providers.io.RepositoryPath;
 import com.folib.repository.DebianRepositoryFeatures;
-import com.folib.repository.DebianRepositoryManagementStrategy;
-import com.folib.repository.RepositoryManagementStrategy;
+import com.folib.repository.DebianRepositoryStrategy;
+import com.folib.repository.RepositoryStrategy;
 import com.folib.storage.repository.RepositoryTypeEnum;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.digest.MessageDigestAlgorithms;
@@ -32,13 +32,13 @@ import java.util.stream.Stream;
  */
 @Slf4j
 @Component
-public class DebianLayoutProvider extends AbstractLayoutProvider<DebianArtifactCoordinates> {
+public class DebianLayoutProvider extends AbstractLayoutProvider<DebianCoordinates> {
 
 
     public static final String ALIAS = DebianConstant.LAYOUT_NAME;
 
     @Inject
-    private DebianRepositoryManagementStrategy debianRepositoryManagementStrategy;
+    private DebianRepositoryStrategy debianRepositoryManagementStrategy;
 
     @Inject
     private DebianRepositoryFeatures debianRepositoryFeatures;
@@ -52,9 +52,9 @@ public class DebianLayoutProvider extends AbstractLayoutProvider<DebianArtifactC
 
     // 解析路径 增加自定义解析路径 与jfrog 一致deb.distribution=123;deb.component=123;deb.architecture=123
     @Override
-    public DebianArtifactCoordinates getArtifactCoordinates(RepositoryPath path)
+    public DebianCoordinates getArtifactCoordinates(RepositoryPath path)
             throws IOException {
-        DebianArtifactCoordinates coordinates = DebianArtifactCoordinates.parse(RepositoryFiles.relativizePath(path));
+        DebianCoordinates coordinates = DebianCoordinates.parse(RepositoryFiles.relativizePath(path));
         Map<String, String> extAttribute = path.getExtAttribute();
         if(extAttribute!=null){
             String distribution=extAttribute.get(DebianConstant.ATTR_DISTRIBUTION);
@@ -130,7 +130,7 @@ public class DebianLayoutProvider extends AbstractLayoutProvider<DebianArtifactC
 
 
     @Override
-    public RepositoryManagementStrategy getRepositoryManagementStrategy() {
+    public RepositoryStrategy getRepositoryManagementStrategy() {
         return debianRepositoryManagementStrategy;
     }
 

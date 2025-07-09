@@ -1,6 +1,6 @@
 package com.folib.services.impl;
 
-import com.folib.artifact.coordinates.NpmArtifactCoordinates;
+import com.folib.artifact.coordinates.NpmCoordinates;
 import com.folib.components.StorageClientComponent;
 import com.folib.components.NpmComponent;
 import com.folib.configuration.ConfigurationManager;
@@ -213,11 +213,11 @@ public class NpmProxyProvider implements NpmProvider {
     }
 
     private void handleVersion(String storageId, String repositoryId, String repositoryBaseUrl, Map.Entry<String, PackageVersion> versionEntry, String packageSuffix) {
-        NpmArtifactCoordinates npmArtifactCoordinates = null;
+        NpmCoordinates npmArtifactCoordinates = null;
         try {
             Dist dist = versionEntry.getValue().getDist();
             if (Objects.nonNull(dist) && StringUtils.isNotBlank(dist.getTarball())) {
-                npmArtifactCoordinates = NpmArtifactCoordinates.of(versionEntry.getValue().getName(), versionEntry.getValue().getVersion(), packageSuffix);
+                npmArtifactCoordinates = NpmCoordinates.of(versionEntry.getValue().getName(), versionEntry.getValue().getVersion(), packageSuffix);
                 URI uri = npmArtifactCoordinates.convertToResource(npmArtifactCoordinates);
                 dist.setTarball(repositoryBaseUrl + uri.toString());
             }

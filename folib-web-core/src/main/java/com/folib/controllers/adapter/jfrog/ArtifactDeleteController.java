@@ -3,7 +3,7 @@ package com.folib.controllers.adapter.jfrog;
 import com.folib.providers.io.RepositoryPath;
 import com.folib.storage.ArtifactStorageException;
 import com.folib.storage.repository.Repository;
-import com.folib.web.RepositoryMapping;
+import com.folib.web.RepoMapping;
 import io.swagger.annotations.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -31,7 +31,7 @@ public class ArtifactDeleteController extends JFrogBaseController {
             @ApiResponse(code = 404, message = "The specified repositoryId/path does not exist!")})
     @PreAuthorize("hasAuthority('ARTIFACTS_DELETE')")
     @DeleteMapping(value = "/{repositoryId:^(?!api$).+}/{artifactPath:.+}")
-    public ResponseEntity delete(@RepositoryMapping Repository repository,
+    public ResponseEntity delete(@RepoMapping Repository repository,
                                  @ApiParam(value = "Whether to use force delete")
                                  @RequestParam(defaultValue = "false",
                                          name = "force",

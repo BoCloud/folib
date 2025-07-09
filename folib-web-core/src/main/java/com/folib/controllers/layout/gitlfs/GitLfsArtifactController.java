@@ -9,11 +9,11 @@ import com.folib.model.request.GitLfsBatchReq;
 import com.folib.model.response.GitLfsBatchRes;
 
 import com.folib.providers.io.RepositoryPath;
-import com.folib.providers.layout.GitLfsLayoutProvider;
+import com.folib.providers.GitLfsLayoutProvider;
 import com.folib.storage.repository.Repository;
 import com.folib.users.userdetails.SpringSecurityUser;
-import com.folib.web.LayoutRequestMapping;
-import com.folib.web.RepositoryMapping;
+import com.folib.web.LayoutReqMapping;
+import com.folib.web.RepoMapping;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
@@ -40,7 +40,7 @@ import java.util.stream.Collectors;
 
 
 @RestController
-@LayoutRequestMapping(GitLfsLayoutProvider.ALIAS)
+@LayoutReqMapping(GitLfsLayoutProvider.ALIAS)
 @Api(value = "gitlfs坐标控制器", tags = "gitlfs坐标控制器")
 public class GitLfsArtifactController extends BaseArtifactController {
 
@@ -64,7 +64,7 @@ public class GitLfsArtifactController extends BaseArtifactController {
             @ApiResponse(code = 400, message = "An error occurred.")})
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     @GetMapping(value = "{storageId}/{repositoryId}/objects/{OID}", produces = {"application/vnd.git-lfs+json"})
-    public ResponseEntity<?> download(@RepositoryMapping Repository repository,
+    public ResponseEntity<?> download(@RepoMapping Repository repository,
                                       HttpServletRequest request,
                                       @PathVariable("OID") String oid) throws IOException {
         return gitLfsLocalService.lfsDownloadResponse(repository.getStorage().getId(),repository.getId(), oid, request.getHeader("Authorization"));
@@ -74,7 +74,7 @@ public class GitLfsArtifactController extends BaseArtifactController {
             @ApiResponse(code = 400, message = "An error occurred.")})
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     @PostMapping(value = "{storageId}/{repositoryId}/objects/{OID}", produces = {"application/vnd.git-lfs+json"})
-    public ResponseEntity<?> verify(@RepositoryMapping Repository repository,@PathVariable("OID") String oid) {
+    public ResponseEntity<?> verify(@RepoMapping Repository repository, @PathVariable("OID") String oid) {
         return gitLfsLocalService.lfsVerifyObject(repository.getStorage().getId(),repository.getId(), oid);
     }
 
@@ -82,7 +82,7 @@ public class GitLfsArtifactController extends BaseArtifactController {
             @ApiResponse(code = 400, message = "An error occurred.")})
     @PreAuthorize("hasAuthority('ARTIFACTS_DEPLOY')")
     @PostMapping(value = "{storageId}/{repositoryId}/objects", produces = {"application/vnd.git-lfs+json"},consumes = {"application/vnd.git-lfs+json", "application/json"})
-    public ResponseEntity<?> upload(@RepositoryMapping Repository repository,
+    public ResponseEntity<?> upload(@RepoMapping Repository repository,
                            HttpServletRequest request) {
         try {
             GitLfsJson gitLfsJson =gitLfsObjectMapper.readValue(request.getInputStream(), GitLfsJson.class);
@@ -99,7 +99,7 @@ public class GitLfsArtifactController extends BaseArtifactController {
             @ApiResponse(code = 400, message = "An error occurred.")})
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     @PostMapping(value = "{storageId}/{repositoryId}/objects/batch", consumes = "application/vnd.git-lfs+json; charset=utf-8")
-    public ResponseEntity<?> batch(@RepositoryMapping Repository repository,
+    public ResponseEntity<?> batch(@RepoMapping Repository repository,
                                    @RequestBody GitLfsBatchReq req,
                                    HttpServletRequest request) {
 
@@ -116,7 +116,7 @@ public class GitLfsArtifactController extends BaseArtifactController {
             @ApiResponse(code = 400, message = "An error occurred.")})
     @PreAuthorize("hasAuthority('ARTIFACTS_DEPLOY')")
     @PutMapping(value = "{storageId}/{repositoryId}/{path:.+}", consumes = "application/*")
-    public ResponseEntity<?> upload(@RepositoryMapping Repository repository,
+    public ResponseEntity<?> upload(@RepoMapping Repository repository,
                                     @PathVariable String path,
                                     HttpServletRequest request) {
         final String storageId = repository.getStorage().getId();
@@ -139,7 +139,7 @@ public class GitLfsArtifactController extends BaseArtifactController {
             @ApiResponse(code = 400, message = "An error occurred.")})
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     @GetMapping(value = {"{storageId}/{repositoryId}/{path:.+}"}, produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
-    public void download(@RepositoryMapping Repository repository,
+    public void download(@RepoMapping Repository repository,
                          @RequestHeader HttpHeaders httpHeaders,
                          @PathVariable String path,
                          HttpServletRequest request,
@@ -159,7 +159,7 @@ public class GitLfsArtifactController extends BaseArtifactController {
             @ApiResponse(code = 400, message = "An error occurred.")})
     @PreAuthorize("hasAuthority('ARTIFACTS_DEPLOY')")
     @PostMapping(value = {"{storageId}/{repositoryId}/locks/verify"}, produces = "application/vnd.git-lfs+json", consumes = {"application/vnd.git-lfs+json", "application/json"})
-    public ResponseEntity<?> verify(@RepositoryMapping Repository repository,
+    public ResponseEntity<?> verify(@RepoMapping Repository repository,
                                     @RequestHeader HttpHeaders httpHeaders,
                                     HttpServletRequest request,
                                     HttpServletResponse response) {
@@ -182,7 +182,7 @@ public class GitLfsArtifactController extends BaseArtifactController {
             @ApiResponse(code = 400, message = "An error occurred.")})
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     @PostMapping(value = "{storageId}/{repositoryId}/locks", produces = "application/vnd.git-lfs+json", consumes = {"application/vnd.git-lfs+json", "application/json"})
-    public ResponseEntity<?> createLock(@RepositoryMapping Repository repository,
+    public ResponseEntity<?> createLock(@RepoMapping Repository repository,
                                         @RequestHeader HttpHeaders httpHeaders,
                                         HttpServletRequest request,
                                         HttpServletResponse response) {
@@ -207,7 +207,7 @@ public class GitLfsArtifactController extends BaseArtifactController {
             @ApiResponse(code = 400, message = "An error occurred.")})
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     @GetMapping(value = "{storageId}/{repositoryId}/locks", produces = "application/vnd.git-lfs+json")
-    public ResponseEntity<?> getLocks(@RepositoryMapping Repository repository,
+    public ResponseEntity<?> getLocks(@RepoMapping Repository repository,
                                       HttpServletRequest request,
                                       @RequestParam(name = "path", required = false) String path,
                                       @RequestParam(name = "id", required = false) String id,
@@ -225,7 +225,7 @@ public class GitLfsArtifactController extends BaseArtifactController {
             @ApiResponse(code = 400, message = "An error occurred.")})
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     @PostMapping(value = "{storageId}/{repositoryId}/locks/{lockId}/unlock", produces = "application/vnd.git-lfs+json", consumes = {"application/vnd.git-lfs+json", "application/json"})
-    public ResponseEntity<?> deleteLock(@RepositoryMapping Repository repository,
+    public ResponseEntity<?> deleteLock(@RepoMapping Repository repository,
                                         @RequestHeader HttpHeaders httpHeaders,
                                         HttpServletRequest request,
                                         @PathParam("lockId") String lockId) {

@@ -4,7 +4,7 @@ package com.folib.controllers.layout.debian;
 import com.folib.constant.DebianConstant;
 import com.folib.controllers.BaseArtifactController;
 import com.folib.providers.io.RepositoryPath;
-import com.folib.web.LayoutRequestMapping;
+import com.folib.web.LayoutReqMapping;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
@@ -27,7 +27,7 @@ import jakarta.servlet.http.HttpServletResponse;
  * @since 2024-09-06 10:36
  */
 @RestController
-@LayoutRequestMapping(DebianConstant.LAYOUT_NAME)
+@LayoutReqMapping(DebianConstant.LAYOUT_NAME)
 @Api(tags = "debian 坐标控制器")
 public class DebianArtifactController extends BaseArtifactController {
 

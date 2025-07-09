@@ -3,7 +3,7 @@ package com.folib.components;
 import com.alibaba.fastjson.JSON;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
-import com.folib.artifact.coordinates.DockerArtifactCoordinates;
+import com.folib.artifact.coordinates.DockerCoordinates;
 import com.folib.constant.GlobalConstants;
 import com.folib.enums.ProductTypeEnum;
 import com.folib.providers.io.RepositoryFiles;
@@ -79,7 +79,7 @@ public class DockerLayoutComponent {
     }
 
     public String readManifest(RepositoryPath manifestPath) {
-        if (!DockerArtifactCoordinates.isManifestPath(manifestPath)) {
+        if (!DockerCoordinates.isManifestPath(manifestPath)) {
             log.warn(String.format("RepositoryPath [%s] not is a manifest path or not exists", manifestPath));
             return "";
         }
@@ -108,7 +108,7 @@ public class DockerLayoutComponent {
         if (!Files.exists(repositoryPath)) {
             return null;
         }
-        DockerArtifactCoordinates dockerArtifactCoordinates = DockerArtifactCoordinates.parse(RepositoryFiles.relativizePath(repositoryPath));
+        DockerCoordinates dockerArtifactCoordinates = DockerCoordinates.parse(RepositoryFiles.relativizePath(repositoryPath));
         List<ImageManifest> imageManifestList = Lists.newArrayList();
         String manifestString = readManifest(repositoryPath);
         if (StringUtils.isBlank(manifestString)) {
@@ -138,7 +138,7 @@ public class DockerLayoutComponent {
         AtomicBoolean atomicBoolean = new AtomicBoolean(true);
         final Set<Boolean> flagSet = Sets.newConcurrentHashSet();
         try {
-            if (RepositoryFiles.isChecksum(manifestRepositoryPath) || RepositoryFiles.isArtifactMetadata(manifestRepositoryPath) || !DockerArtifactCoordinates.isManifestPath(manifestRepositoryPath)) {
+            if (RepositoryFiles.isChecksum(manifestRepositoryPath) || RepositoryFiles.isArtifactMetadata(manifestRepositoryPath) || !DockerCoordinates.isManifestPath(manifestRepositoryPath)) {
                 return atomicBoolean.get();
             }
             log.debug("Manifest repositoryPath [{}] [{}] [{}]", manifestRepositoryPath.getStorageId(), manifestRepositoryPath.getRepositoryId(), RepositoryFiles.relativizePath(manifestRepositoryPath));
@@ -150,7 +150,7 @@ public class DockerLayoutComponent {
                                                  BasicFileAttributes attrs)
                         throws IOException {
                     RepositoryPath itemPath = (RepositoryPath) file;
-                    if (DockerArtifactCoordinates.isTagPath(itemPath) && !Files.isSameFile(tagPath, itemPath)) {
+                    if (DockerCoordinates.isTagPath(itemPath) && !Files.isSameFile(tagPath, itemPath)) {
                         log.debug("Tag repositoryPath [{}] [{}] [{}]", itemPath.getStorageId(), itemPath.getRepositoryId(), RepositoryFiles.relativizePath(itemPath));
                         List<ImageManifest> imageManifestList = getImageManifests(itemPath);
                         if (CollectionUtils.isNotEmpty(imageManifestList)) {
@@ -168,7 +168,7 @@ public class DockerLayoutComponent {
                 @Override
                 public FileVisitResult preVisitDirectory(final Path dir, final BasicFileAttributes attrs) throws IOException {
                     RepositoryPath itemPath = (RepositoryPath) dir;
-                    if (!Files.isSameFile(itemPath, itemPath.getRoot()) && !RepositoryPathUtil.include(2, itemPath, true, ProductTypeEnum.Docker.getFoLibraryName()) || (DockerArtifactCoordinates.DOCKER_LAYER_DIR_NAME_LIST.stream().anyMatch(item -> itemPath.getFileName().toString().equalsIgnoreCase(item)))) {
+                    if (!Files.isSameFile(itemPath, itemPath.getRoot()) && !RepositoryPathUtil.include(2, itemPath, true, ProductTypeEnum.Docker.getFoLibraryName()) || (DockerCoordinates.DOCKER_LAYER_DIR_NAME_LIST.stream().anyMatch(item -> itemPath.getFileName().toString().equalsIgnoreCase(item)))) {
                         log.debug("RepositoryPath [{}] skip...", itemPath.toString());
                         return FileVisitResult.SKIP_SUBTREE;
                     }
@@ -202,7 +202,7 @@ public class DockerLayoutComponent {
     public void handleBlob(RepositoryPath blobsRepositoryPath, boolean force) {
         try {
             String blobName = blobsRepositoryPath.getFileName().toString();
-            if (RepositoryFiles.isChecksum(blobsRepositoryPath) || RepositoryFiles.isArtifactMetadata(blobsRepositoryPath) || !DockerArtifactCoordinates.include(blobName)) {
+            if (RepositoryFiles.isChecksum(blobsRepositoryPath) || RepositoryFiles.isArtifactMetadata(blobsRepositoryPath) || !DockerCoordinates.include(blobName)) {
                 return;
             }
             log.debug("Blob repositoryPath [{}] [{}] [{}]", blobsRepositoryPath.getStorageId(), blobsRepositoryPath.getRepositoryId(), RepositoryFiles.relativizePath(blobsRepositoryPath));
@@ -215,7 +215,7 @@ public class DockerLayoutComponent {
                                                  BasicFileAttributes attrs)
                         throws IOException {
                     RepositoryPath itemPath = (RepositoryPath) file;
-                    if (DockerArtifactCoordinates.isRealManifestPath(itemPath)) {
+                    if (DockerCoordinates.isRealManifestPath(itemPath)) {
                         log.debug("Manifest repositoryPath [{}] [{}] [{}]", itemPath.getStorageId(), itemPath.getRepositoryId(), RepositoryFiles.relativizePath(itemPath));
                         List<ImageManifest> imageManifestList = getImageManifests(itemPath);
                         if (CollectionUtils.isNotEmpty(imageManifestList)) {

@@ -1,7 +1,7 @@
 package com.folib.storage.validation.groupid;
 
 import com.folib.artifact.coordinates.ArtifactCoordinates;
-import com.folib.artifact.coordinates.MavenArtifactCoordinates;
+import com.folib.artifact.coordinates.MavenCoordinates;
 import com.folib.providers.io.RepositoryFileAttributes;
 import com.folib.providers.io.RepositoryPath;
 import com.folib.storage.validation.artifact.ArtifactCoordinatesValidationException;
@@ -64,7 +64,7 @@ public class MavenGroupIdLowercaseValidator
                          ArtifactCoordinates coordinates)
             throws ArtifactCoordinatesValidationException
     {
-        MavenArtifactCoordinates mac = (MavenArtifactCoordinates) coordinates;
+        MavenCoordinates mac = (MavenCoordinates) coordinates;
         if (!mac.getGroupId().toLowerCase().equals(mac.getGroupId()))
         {
             throw new LowercaseValidationException("The groupId should be defined in lowercase.");

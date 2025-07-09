@@ -9,7 +9,7 @@ import com.folib.indexer.NpmPackageMetadataIndexer;
 import com.folib.providers.io.RepositoryFiles;
 import com.folib.providers.io.RepositoryPath;
 import com.folib.providers.io.RepositoryPathResolver;
-import com.folib.providers.layout.NpmLayoutProvider;
+import com.folib.providers.NpmLayoutProvider;
 import com.folib.services.NpmArtifactIndexService;
 import com.folib.storage.Storage;
 import com.folib.storage.repository.Repository;

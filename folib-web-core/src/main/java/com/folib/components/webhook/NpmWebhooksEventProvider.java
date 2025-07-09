@@ -1,6 +1,6 @@
 package com.folib.components.webhook;
 
-import com.folib.artifact.coordinates.NpmArtifactCoordinates;
+import com.folib.artifact.coordinates.NpmCoordinates;
 import com.folib.controllers.adapter.jfrog.dto.WebhookDto;
 import com.folib.entity.Dict;
 import com.folib.enums.WebhookEventsTypeEnum;
@@ -49,7 +49,7 @@ public class NpmWebhooksEventProvider extends BaseWebhookEventsProvider {
 
     @Override
     public String resolvePath(WebhookDto webhook) {
-        NpmArtifactCoordinates npmArtifactCoordinates = NpmArtifactCoordinates.parseByResolvePath(webhook.getData().getPath());
+        NpmCoordinates npmArtifactCoordinates = NpmCoordinates.parseByResolvePath(webhook.getData().getPath());
         return npmArtifactCoordinates.buildPath();
     }
 }

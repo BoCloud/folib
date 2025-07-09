@@ -4,7 +4,7 @@ import com.folib.storage.validation.ArtifactCoordinatesValidator;
 import com.folib.storage.validation.artifact.ArtifactCoordinatesValidatorRegistry;
 import com.folib.controllers.BaseController;
 import com.folib.storage.repository.Repository;
-import com.folib.web.RepositoryMapping;
+import com.folib.web.RepoMapping;
 
 import javax.inject.Inject;
 
@@ -59,7 +59,7 @@ public class ArtifactCoordinateValidatorsManagementController
                             @ApiResponse(code = 404, message = NOT_FOUND_REPOSITORY_MESSAGE) })
     @GetMapping(value = "/{storageId}/{repositoryId}",
                 produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity listArtifactCoordinatesForRepository(@RepositoryMapping Repository repository)
+    public ResponseEntity listArtifactCoordinatesForRepository(@RepoMapping Repository repository)
     {
         Set<String> versionValidators = repository.getArtifactCoordinateValidators()
                                                   .stream()
@@ -75,7 +75,7 @@ public class ArtifactCoordinateValidatorsManagementController
     @PutMapping(value = "/{storageId}/{repositoryId}/{alias}",
                 produces = { MediaType.TEXT_PLAIN_VALUE,
                              MediaType.APPLICATION_JSON_VALUE })
-    public ResponseEntity add(@RepositoryMapping Repository repository,
+    public ResponseEntity add(@RepoMapping Repository repository,
                               @PathVariable String alias,
                               @RequestHeader(HttpHeaders.ACCEPT) String acceptHeader) throws IOException
     {
@@ -92,7 +92,7 @@ public class ArtifactCoordinateValidatorsManagementController
     @DeleteMapping(value = "/{storageId}/{repositoryId}/{alias}",
                    produces = { MediaType.TEXT_PLAIN_VALUE,
                                 MediaType.APPLICATION_JSON_VALUE })
-    public ResponseEntity delete(@RepositoryMapping Repository repository,
+    public ResponseEntity delete(@RepoMapping Repository repository,
                                  @PathVariable String alias,
                                  @RequestHeader(HttpHeaders.ACCEPT) String acceptHeader) throws IOException
     {

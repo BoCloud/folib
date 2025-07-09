@@ -1,7 +1,7 @@
 package com.folib.repository;
 
 import com.folib.artifact.ArtifactTag;
-import com.folib.artifact.coordinates.RpmArtifactCoordinates;
+import com.folib.artifact.coordinates.RpmCoordinates;
 import com.folib.domain.Artifact;
 import com.folib.domain.ArtifactEntity;
 import com.folib.domain.ArtifactTagEntity;
@@ -111,7 +111,7 @@ public class RpmPackageFeedParser {
                                         String repositoryId,
                                         PackageVersion packageVersion)
     {
-        RpmArtifactCoordinates c = RpmArtifactCoordinates.of(packageVersion.getName());
+        RpmCoordinates c = RpmCoordinates.of(packageVersion.getName());
 
         LocalDateTime now = LocalDateTimeInstance.now();
 
@@ -139,10 +139,10 @@ public class RpmPackageFeedParser {
                                         PackageEntry packageEntry)
     {
         String scope = packageEntry.getScope();
-        String packageId = RpmArtifactCoordinates.calculatePackageId("unscoped".equals(scope) ? null : scope,
+        String packageId = RpmCoordinates.calculatePackageId("unscoped".equals(scope) ? null : scope,
                 packageEntry.getName());
 
-        RpmArtifactCoordinates c = RpmArtifactCoordinates.of(packageId);
+        RpmCoordinates c = RpmCoordinates.of(packageId);
 
         Artifact artifact = artifactRepository.findOneArtifact(storageId, repositoryId, c.buildPath());
         ArtifactEntity remoteArtifactEntry = null;

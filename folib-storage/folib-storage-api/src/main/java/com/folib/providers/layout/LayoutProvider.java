@@ -4,7 +4,7 @@ import com.folib.artifact.coordinates.ArtifactCoordinates;
 import com.folib.constant.GlobalConstants;
 import com.folib.domain.ArtifactGroup;
 import com.folib.providers.io.RepositoryPath;
-import com.folib.repository.RepositoryManagementStrategy;
+import com.folib.repository.RepositoryStrategy;
 import com.folib.storage.repository.Repository;
 import com.folib.storage.repository.RepositoryTypeEnum;
 import org.apache.commons.lang3.StringUtils;
@@ -19,7 +19,7 @@ import java.util.Set;
  * @author Veadan
  */
 public interface LayoutProvider<T extends ArtifactCoordinates> {
-    RepositoryManagementStrategy getRepositoryManagementStrategy();
+    RepositoryStrategy getRepositoryManagementStrategy();
 
     @Nonnull
     Set<String> listArchiveFilenames(RepositoryPath repositoryPath);

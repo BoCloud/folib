@@ -1,7 +1,7 @@
 package com.folib.configuration.repository.remote;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
-import com.folib.providers.layout.PhpLayoutProvider;
+import com.folib.providers.PhpLayoutProvider;
 import com.folib.yaml.repository.remote.CustomRemoteRepositoryConfigurationData;
 import com.folib.yaml.repository.remote.RemoteRepositoryConfigurationDto;
 

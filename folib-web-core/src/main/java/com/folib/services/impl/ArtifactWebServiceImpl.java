@@ -29,8 +29,8 @@ import com.folib.util.*;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.sun.management.HotSpotDiagnosticMXBean;
-import com.folib.artifact.coordinates.DockerArtifactCoordinates;
-import com.folib.artifact.coordinates.MavenArtifactCoordinates;
+import com.folib.artifact.coordinates.DockerCoordinates;
+import com.folib.artifact.coordinates.MavenCoordinates;
 import com.folib.authorization.dto.Role;
 import com.folib.components.DistributedLockComponent;
 import com.folib.components.artifact.ArtifactComponent;
@@ -307,7 +307,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                             artifact.getArtifactPath());
                     Repository repository = repositoryPath.getRepository();
                     if (DockerLayoutProvider.ALIAS.equalsIgnoreCase(repository.getLayout())) {
-                        DockerArtifactCoordinates dockerArtifactCoordinates = (DockerArtifactCoordinates) artifact.getArtifactCoordinates();
+                        DockerCoordinates dockerArtifactCoordinates = (DockerCoordinates) artifact.getArtifactCoordinates();
                         artifactInfo.setArtifactPath(dockerArtifactCoordinates.getIMAGE_NAME().replace(":", "/"));
                     }
                 } catch (Exception ex) {
@@ -444,7 +444,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                 }
                 validateAuth(repositoryPath);
                 boolean isDocker = DockerLayoutProvider.ALIAS.equalsIgnoreCase(repositoryPath.getRepository().getLayout());
-                boolean isDockerTag = isDocker && DockerArtifactCoordinates.isDockerTag(repositoryPath);
+                boolean isDockerTag = isDocker && DockerCoordinates.isDockerTag(repositoryPath);
                 if (!isDockerTag && Files.isDirectory(repositoryPath)) {
                     recursiveMetadata(repositoryPath, artifactMetadataForm);
                     return ResponseMessage.ok().getMessage();
@@ -483,7 +483,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                 }
                 validateAuth(repositoryPath);
                 boolean isDocker = DockerLayoutProvider.ALIAS.equalsIgnoreCase(repositoryPath.getRepository().getLayout());
-                boolean isDockerTag = isDocker && DockerArtifactCoordinates.isDockerTag(repositoryPath);
+                boolean isDockerTag = isDocker && DockerCoordinates.isDockerTag(repositoryPath);
                 if (!isDockerTag && Files.isDirectory(repositoryPath)) {
                     recursiveDeleteMetadata(repositoryPath, artifactMetadataForm);
                     return;
@@ -653,7 +653,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
             repositoryForm.setFilePaths(Optional.ofNullable(artifact.getFilePaths()).orElse(Collections.emptySet()).stream().map(item -> JSONObject.parseObject(item, ScannerReportForm.class)).collect(Collectors.toList()));
             if (DockerLayoutProvider.ALIAS.equals(repository.getLayout())) {
                 //docker
-                DockerArtifactCoordinates dockerArtifactCoordinates = (DockerArtifactCoordinates) artifact.getArtifactCoordinates();
+                DockerCoordinates dockerArtifactCoordinates = (DockerCoordinates) artifact.getArtifactCoordinates();
                 repositoryForm.setImageName(dockerArtifactCoordinates.getName());
                 repositoryForm.setVersion(dockerArtifactCoordinates.getTAG());
             } else {
@@ -681,7 +681,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                     }
                     validateAuth(repositoryPath);
                     boolean isDocker = DockerLayoutProvider.ALIAS.equalsIgnoreCase(repositoryPath.getRepository().getLayout());
-                    boolean isDockerTag = isDocker && DockerArtifactCoordinates.isDockerTag(repositoryPath);
+                    boolean isDockerTag = isDocker && DockerCoordinates.isDockerTag(repositoryPath);
                     if (!isDockerTag && Files.isDirectory(repositoryPath)) {
                         recursiveBatchMetadata(repositoryPath, artifactMetaData, artifactMetadataFormList);
                         return;
@@ -742,7 +742,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
             return null;
         }
         DirectoryListing directoryListing = directoryListingService.fromRepositoryPath(repositoryPath);
-        List<FileContent> fileContents = directoryListing.getFiles().stream().filter(file -> DockerArtifactCoordinates.include(file.getName())).collect(Collectors.toList());
+        List<FileContent> fileContents = directoryListing.getFiles().stream().filter(file -> DockerCoordinates.include(file.getName())).collect(Collectors.toList());
         if (CollectionUtils.isEmpty(fileContents)) {
             return null;
         }
@@ -992,13 +992,13 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                 artifactInfo.setName(artifact.getArtifactName());
                 repository = getRepository(artifact.getStorageId(), artifact.getRepositoryId());
                 if (Objects.nonNull(repository) && Maven2LayoutProvider.ALIAS.equals(repository.getLayout())) {
-                    if (artifact.getArtifactCoordinates() instanceof MavenArtifactCoordinates) {
-                        MavenArtifactCoordinates mavenArtifactCoordinates = (MavenArtifactCoordinates) artifact.getArtifactCoordinates();
+                    if (artifact.getArtifactCoordinates() instanceof MavenCoordinates) {
+                        MavenCoordinates mavenArtifactCoordinates = (MavenCoordinates) artifact.getArtifactCoordinates();
                         artifactInfo.setName(String.format("%s:%s", mavenArtifactCoordinates.getGroupId(), mavenArtifactCoordinates.getArtifactId()));
                     }
                 } else if (Objects.nonNull(repository) && DockerLayoutProvider.ALIAS.equals(repository.getLayout())) {
-                    if (artifact.getArtifactCoordinates() instanceof DockerArtifactCoordinates) {
-                        DockerArtifactCoordinates dockerArtifactCoordinates = (DockerArtifactCoordinates) artifact.getArtifactCoordinates();
+                    if (artifact.getArtifactCoordinates() instanceof DockerCoordinates) {
+                        DockerCoordinates dockerArtifactCoordinates = (DockerCoordinates) artifact.getArtifactCoordinates();
                         artifactInfo.setPath(dockerArtifactCoordinates.getIMAGE_NAME());
                         artifactInfo.setName(dockerArtifactCoordinates.getName());
                     }
@@ -1473,7 +1473,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                                     RepositoryPath blobRepositoryPath = (RepositoryPath) blobsPath;
                                     try {
                                         String blobName = blobRepositoryPath.getFileName().toString();
-                                        if (DockerArtifactCoordinates.include(blobName) && RepositoryFiles.isArtifact(blobRepositoryPath) && !RepositoryFiles.isArtifactChecksum(blobName) && !RepositoryFiles.isArtifactMetadata(blobRepositoryPath)) {
+                                        if (DockerCoordinates.include(blobName) && RepositoryFiles.isArtifact(blobRepositoryPath) && !RepositoryFiles.isArtifactChecksum(blobName) && !RepositoryFiles.isArtifactMetadata(blobRepositoryPath)) {
                                             RepositoryPath targetBlobRepositoryPath = blobsRootRepositoryPath.resolve(blobName);
                                             boolean exist = Files.exists(targetBlobRepositoryPath);
                                             log.info("Find image [{}] [{}] [{}] source blob [{}] target [{}] exists [{}]", imageRepositoryPath.getStorageId(), imageRepositoryPath.getRepositoryId(), RepositoryFiles.relativizePath(imageRepositoryPath), RepositoryFiles.relativizePath(blobRepositoryPath), RepositoryFiles.relativizePath(targetBlobRepositoryPath), exist);
@@ -1521,7 +1521,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                                     RepositoryPath manifestRepositoryPath = (RepositoryPath) manifestPath;
                                     try {
                                         String manifestName = manifestRepositoryPath.getFileName().toString();
-                                        if (DockerArtifactCoordinates.isRealManifestPath(manifestRepositoryPath)) {
+                                        if (DockerCoordinates.isRealManifestPath(manifestRepositoryPath)) {
                                             RepositoryPath targetManifestRepositoryPath = manifestRootRepositoryPath.resolve(manifestName);
                                             boolean exist = Files.exists(targetManifestRepositoryPath);
                                             log.info("Find image [{}] [{}] [{}] source blob [{}] target [{}] exists [{}]", imageRepositoryPath.getStorageId(), imageRepositoryPath.getRepositoryId(), RepositoryFiles.relativizePath(imageRepositoryPath), RepositoryFiles.relativizePath(manifestRepositoryPath), RepositoryFiles.relativizePath(targetManifestRepositoryPath), exist);
@@ -1709,7 +1709,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
             //删除仓库根目录下blobs目录
             try (Stream<Path> blobStream = Files.list(blobsRootRepositoryPath)) {
                 blobStream.forEach(blobPath -> {
-                    if (DockerArtifactCoordinates.include(blobPath.getFileName().toString())) {
+                    if (DockerCoordinates.include(blobPath.getFileName().toString())) {
                         rootBlobAl.getAndIncrement();
                         try {
                             RepositoryFiles.delete((RepositoryPath) blobPath, true);
@@ -1726,7 +1726,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
             //删除仓库根目录下manifest目录
             try (Stream<Path> manifestStream = Files.list(manifestRootRepositoryPath)) {
                 manifestStream.forEach(manifestPath -> {
-                    if (DockerArtifactCoordinates.include(manifestPath.getFileName().toString())) {
+                    if (DockerCoordinates.include(manifestPath.getFileName().toString())) {
                         rootManifestAl.getAndIncrement();
                         try {
                             RepositoryFiles.delete((RepositoryPath) manifestPath, true);
@@ -1813,8 +1813,8 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
         try {
             String storage = "storages";
             if (DockerLayoutProvider.ALIAS.equals(layout)) {
-                if (artifact.getArtifactCoordinates() instanceof DockerArtifactCoordinates) {
-                    DockerArtifactCoordinates dockerArtifactCoordinates = (DockerArtifactCoordinates) artifact.getArtifactCoordinates();
+                if (artifact.getArtifactCoordinates() instanceof DockerCoordinates) {
+                    DockerCoordinates dockerArtifactCoordinates = (DockerCoordinates) artifact.getArtifactCoordinates();
                     baseUrl = StringUtils.removeEnd(baseUrl, "/");
                     return String.format("%s/%s/%s/%s/%s/%s/%s", baseUrl, "v2", storageId, repositoryId, dockerArtifactCoordinates.getName(), "manifests", dockerArtifactCoordinates.getTAG());
                 }
@@ -2624,7 +2624,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
 
         RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, path);
         DirectoryListing directoryListing = directoryListingService.fromRepositoryPath(repositoryPath);
-        List<FileContent> fileContents = directoryListing.getFiles().stream().filter(file -> DockerArtifactCoordinates.include(file.getName())).collect(Collectors.toList());
+        List<FileContent> fileContents = directoryListing.getFiles().stream().filter(file -> DockerCoordinates.include(file.getName())).collect(Collectors.toList());
         FileContent fileContent = fileContents.get(0);
         RepositoryPath versionPath = repositoryPathResolver.resolve(storageId, repositoryId, path + File.separator + fileContent.getName());
 

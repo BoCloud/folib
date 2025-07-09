@@ -4,7 +4,7 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.serializer.SerializerFeature;
 import com.google.common.collect.Maps;
-import com.folib.artifact.coordinates.PubArtifactCoordinates;
+import com.folib.artifact.coordinates.PubCoordinates;
 import com.folib.constant.GlobalConstants;
 import com.folib.constants.PubConstants;
 import com.folib.controllers.BaseArtifactController;
@@ -22,8 +22,8 @@ import com.folib.services.PubService;
 import com.folib.storage.repository.Repository;
 import com.folib.users.service.UserService;
 import com.folib.users.service.impl.RelationalDatabaseUserService;
-import com.folib.web.LayoutRequestMapping;
-import com.folib.web.RepositoryMapping;
+import com.folib.web.LayoutReqMapping;
+import com.folib.web.RepoMapping;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
@@ -55,7 +55,7 @@ import java.util.Objects;
  * @author veadan
  */
 @RestController
-@LayoutRequestMapping(PubArtifactCoordinates.LAYOUT_NAME)
+@LayoutReqMapping(PubCoordinates.LAYOUT_NAME)
 @Api(description = "pub仓库控制器", tags = "pub仓库控制器")
 public class PubArtifactController
         extends BaseArtifactController {
@@ -87,7 +87,7 @@ public class PubArtifactController
     @ApiOperation(value = "Inspect the version of a PUB package.", nickname = "inspectSpecificVersion", notes = "Deprecated as of Dart 2.8, use \"listAllVersions\" instead.")
     @ApiResponses({@ApiResponse(code = 200, message = "OK", response = PubPackageVersionMetadata.class), @ApiResponse(code = 403, message = "Forbidden. User has no read permission"), @ApiResponse(code = 404, message = "Package Not Found")})
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
-    public ResponseEntity inspectVersion(@RepositoryMapping Repository repository, @PathVariable(name = "storageId") String storageId, @PathVariable(name = "repositoryId") String repositoryId,
+    public ResponseEntity inspectVersion(@RepoMapping Repository repository, @PathVariable(name = "storageId") String storageId, @PathVariable(name = "repositoryId") String repositoryId,
                                          @PathVariable("packageName") String packageName, @PathVariable("version") String version, HttpServletRequest request, HttpServletResponse response) {
         PubPackageVersionMetadata inspectedVersionMetadata = pubService.inspectVersion(repository, packageName, version, PACKAGES_ENDPOINT + packageName);
         if (Objects.isNull(inspectedVersionMetadata)) {
@@ -102,7 +102,7 @@ public class PubArtifactController
     @ApiOperation(value = "List all the versions of a PUB package.", nickname = "listAllVersions")
     @ApiResponses({@ApiResponse(code = 200, message = "OK", response = PubPackageMetadata.class), @ApiResponse(code = 403, message = "Forbidden. User has no read permission"), @ApiResponse(code = 404, message = "Package Not Found")})
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
-    public ResponseEntity packages(@RepositoryMapping Repository repository,
+    public ResponseEntity packages(@RepoMapping Repository repository,
                                    @PathVariable(name = "storageId") String storageId,
                                    @PathVariable(name = "repositoryId") String repositoryId,
                                    @PathVariable(name = "packageName") String packageName,
@@ -121,7 +121,7 @@ public class PubArtifactController
     @RequestMapping(path = "{storageId}/{repositoryId}/packages/{packageName}/versions/{artifactName}",
             method = {RequestMethod.GET,
                     RequestMethod.HEAD})
-    public void download(@RepositoryMapping Repository repository,
+    public void download(@RepoMapping Repository repository,
                          @PathVariable(name = "storageId") String storageId,
                          @PathVariable(name = "repositoryId") String repositoryId,
                          @PathVariable(name = "packageName") String packageName,
@@ -141,7 +141,7 @@ public class PubArtifactController
     @GetMapping(path = "{storageId}/{repositoryId}/api/packages/versions/new")
     @ApiOperation(value = "Start deploy process by retrieving the url for deployment.", nickname = "getUrlDeployment", response = PubUpload.class)
     @PreAuthorize("hasAuthority('ARTIFACTS_DEPLOY')")
-    public ResponseEntity getUrlDeployment(@RepositoryMapping Repository repository,
+    public ResponseEntity getUrlDeployment(@RepoMapping Repository repository,
                                            @PathVariable(name = "storageId") String storageId,
                                            @PathVariable(name = "repositoryId") String repositoryId,
                                            HttpServletResponse response) {
@@ -157,7 +157,7 @@ public class PubArtifactController
     @ApiOperation(value = "Performs deploy process by uploading the package.", nickname = "deploy")
     @ApiResponses({@ApiResponse(code = 204, message = "No Content"), @ApiResponse(code = 400, message = "Bad Request"), @ApiResponse(code = 500, message = "Internal server error")})
     @PreAuthorize("hasAuthority('ARTIFACTS_DEPLOY')")
-    public ResponseEntity deploy(@RepositoryMapping Repository repository,
+    public ResponseEntity deploy(@RepoMapping Repository repository,
                                  @PathVariable(name = "storageId") String storageId,
                                  @PathVariable(name = "repositoryId") String repositoryId,
                                  HttpServletRequest request,
@@ -168,7 +168,7 @@ public class PubArtifactController
             Pair<Pubspec, Path> pubspecPathPair = extractor.extractPubSpec(fileInputStream);
             try (InputStream bufferedInputStream = new BufferedInputStream(Files.newInputStream(extractor.extractPubSpec(file.getInputStream()).getValue1()))) {
                 Pubspec pubspec = pubspecPathPair.getValue0();
-                PubArtifactCoordinates pubArtifactCoordinates = PubArtifactCoordinates.of(pubspec.getName(), pubspec.getVersion(), PubArtifactCoordinates.PUB_EXTENSION);
+                PubCoordinates pubArtifactCoordinates = PubCoordinates.of(pubspec.getName(), pubspec.getVersion(), PubCoordinates.PUB_EXTENSION);
                 String artifactPath = pubArtifactCoordinates.convertToPath(pubArtifactCoordinates);
                 logger.info("Pub upload storageId [{}] repositoryId [{}] artifactPath [{}]", storageId, repositoryId, artifactPath);
                 RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
@@ -202,7 +202,7 @@ public class PubArtifactController
             @ApiResponse(code = 400, message = "An error occurred.")})
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     @GetMapping(path = "{storageId}/{repositoryId}/{packageName}/{artifactName}")
-    public void download(@RepositoryMapping Repository repository,
+    public void download(@RepoMapping Repository repository,
                          @RequestHeader HttpHeaders httpHeaders,
                          @PathVariable String packageName,
                          @PathVariable String artifactName,

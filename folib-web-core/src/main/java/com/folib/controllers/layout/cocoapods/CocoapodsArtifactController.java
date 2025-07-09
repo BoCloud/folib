@@ -1,7 +1,7 @@
 package com.folib.controllers.layout.cocoapods;
 
 import cn.hutool.core.io.FileUtil;
-import com.folib.artifact.coordinates.CocoapodsArtifactCoordinates;
+import com.folib.artifact.coordinates.CocoapodsCoordinates;
 import com.folib.controllers.BaseArtifactController;
 import com.folib.domain.ArtifactEntity;
 import com.folib.providers.io.RepositoryFiles;
@@ -11,8 +11,8 @@ import com.folib.storage.repository.Repository;
 import com.folib.storage.repository.RepositoryTypeEnum;
 import com.folib.util.CocoapodsArtifactUtil;
 import com.folib.util.CompressUtil;
-import com.folib.web.LayoutRequestMapping;
-import com.folib.web.RepositoryMapping;
+import com.folib.web.LayoutReqMapping;
+import com.folib.web.RepoMapping;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
@@ -45,7 +45,7 @@ import java.util.regex.Pattern;
  * @date 2023/8/3 15:29
  */
 @RestController
-@LayoutRequestMapping(CocoapodsArtifactCoordinates.LAYOUT_NAME)
+@LayoutReqMapping(CocoapodsCoordinates.LAYOUT_NAME)
 public class CocoapodsArtifactController extends BaseArtifactController
 {
     @Value("${folib.temp}")
@@ -66,7 +66,7 @@ public class CocoapodsArtifactController extends BaseArtifactController
             @ApiResponse(code = 400, message = "An error occurred.")})
     @PreAuthorize("hasAuthority('ARTIFACTS_DEPLOY')")
     @PutMapping(value = "{storageId}/{repositoryId}/{artifactPath:.+}")
-    public ResponseEntity uploadPod(@RepositoryMapping Repository repository,
+    public ResponseEntity uploadPod(@RepoMapping Repository repository,
                                  @PathVariable String artifactPath,
                                  HttpServletRequest request) {
         final String storageId = repository.getStorage().getId();
@@ -85,7 +85,7 @@ public class CocoapodsArtifactController extends BaseArtifactController
                 final CocoapodsArtifactUtil.PodSpec podSpec = CocoapodsArtifactUtil.resolvePodSpec(podspecSourceContent);
                 // 存储制品文件
                 final ArtifactEntity podArtifactEntity = new ArtifactEntity(storageId, repositoryId, RepositoryFiles.readCoordinates(podRepositoryPath));
-                final CocoapodsArtifactCoordinates podArtifactCoordinates = (CocoapodsArtifactCoordinates) podArtifactEntity.getArtifactCoordinates();
+                final CocoapodsCoordinates podArtifactCoordinates = (CocoapodsCoordinates) podArtifactEntity.getArtifactCoordinates();
                 podArtifactCoordinates.setBaseName(podSpec.getName());
                 podArtifactCoordinates.setVersion(podSpec.getVersion());
                 podRepositoryPath.setArtifact(podArtifactEntity);
@@ -97,7 +97,7 @@ public class CocoapodsArtifactController extends BaseArtifactController
                     final String uri = podRepositoryPath.toUri().getPath();
                     final RepositoryPath podSpecRepositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, String.format(".specs/%s/%s/%s.podspec", podSpec.getName(), podSpec.getVersion(), podSpec.getName()));
                     final ArtifactEntity podSpecArtifactEntity = new ArtifactEntity(storageId, repositoryId, RepositoryFiles.readCoordinates(podSpecRepositoryPath));
-                    final CocoapodsArtifactCoordinates artifactCoordinates = (CocoapodsArtifactCoordinates) podSpecArtifactEntity.getArtifactCoordinates();
+                    final CocoapodsCoordinates artifactCoordinates = (CocoapodsCoordinates) podSpecArtifactEntity.getArtifactCoordinates();
                     artifactCoordinates.setPath(uri);
                     artifactCoordinates.setBaseName(podSpec.getName());
                     artifactCoordinates.setVersion(podSpec.getVersion());
@@ -126,7 +126,7 @@ public class CocoapodsArtifactController extends BaseArtifactController
             @ApiResponse(code = 400, message = "An error occurred.") })
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     @GetMapping(value = { "{storageId}/{repositoryId}/{path:.+}" })
-    public void download(@RepositoryMapping Repository repository,
+    public void download(@RepoMapping Repository repository,
                          @RequestHeader HttpHeaders httpHeaders,
                          @PathVariable String path,
                          HttpServletRequest request,
@@ -145,7 +145,7 @@ public class CocoapodsArtifactController extends BaseArtifactController
             @ApiResponse(code = 400, message = "An error occurred.") })
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     @GetMapping(value = { "{storageId}/{repositoryId}/archive/refs/heads/{path:.+}" })
-    public void downloadBranchZip(@RepositoryMapping Repository repository,
+    public void downloadBranchZip(@RepoMapping Repository repository,
                                @RequestHeader HttpHeaders httpHeaders,
                                @PathVariable String path,
                                HttpServletRequest request,
@@ -230,7 +230,7 @@ public class CocoapodsArtifactController extends BaseArtifactController
 
             // 装在附加信息
             final ArtifactEntity artifactEntity = new ArtifactEntity(storageId, repositoryId, RepositoryFiles.readCoordinates(repositoryTarGzPath));
-            final CocoapodsArtifactCoordinates artifactCoordinates = (CocoapodsArtifactCoordinates) artifactEntity.getArtifactCoordinates();
+            final CocoapodsCoordinates artifactCoordinates = (CocoapodsCoordinates) artifactEntity.getArtifactCoordinates();
             artifactCoordinates.setVersion(version);
             artifactCoordinates.setBaseName(podName);
             repositoryTarGzPath.setArtifact(artifactEntity);

@@ -1,6 +1,6 @@
 package com.folib.util;
 
-import com.folib.artifact.coordinates.RpmArtifactCoordinates;
+import com.folib.artifact.coordinates.RpmCoordinates;
 import org.apache.commons.io.FilenameUtils;
 import com.folib.domain.RpmPackageArch;
 import com.folib.domain.RpmPackageType;
@@ -35,7 +35,7 @@ public class RpmArtifactCoordinatesUtils
      * @param path to RPM package on the filesystem;
      * @return compiled RpmArtifactCoordinates;
      */
-    public static RpmArtifactCoordinates parse(@NotEmpty String path)
+    public static RpmCoordinates parse(@NotEmpty String path)
     {
         String rpmFileName = FilenameUtils.getName(path);
         if (!rpmFileName.endsWith(".rpm"))
@@ -54,10 +54,10 @@ public class RpmArtifactCoordinatesUtils
             String version = matcher.group(2);
             String release = matcher.group(3);
             String type = matcher.group(4);
-            RpmArtifactCoordinates artifactCoordinates;
+            RpmCoordinates artifactCoordinates;
             if (RpmPackageType.SOURCE.getPostfix().equals(type))
             {
-                artifactCoordinates = new RpmArtifactCoordinates(baseName, version, release,path,RpmPackageType.SOURCE);
+                artifactCoordinates = new RpmCoordinates(baseName, version, release,path,RpmPackageType.SOURCE);
             }
             else
             {
@@ -69,7 +69,7 @@ public class RpmArtifactCoordinatesUtils
                     rpmPackageType = RpmPackageType.UNKNOWN;
                 }
                 ;
-                artifactCoordinates = new RpmArtifactCoordinates(baseName, version, release,rpmPackageType, arch, path);
+                artifactCoordinates = new RpmCoordinates(baseName, version, release,rpmPackageType, arch, path);
             }
 
             return artifactCoordinates;

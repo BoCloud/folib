@@ -1,6 +1,6 @@
 package com.folib.providers.layout.p2;
 
-import com.folib.artifact.coordinates.P2ArtifactCoordinates;
+import com.folib.artifact.coordinates.P2Coordinates;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -10,7 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Finds a {@link P2ArtifactCoordinates} from the provided repository base directory and artifact path.
+ * Finds a {@link P2Coordinates} from the provided repository base directory and artifact path.
  * The artifact path consists of {id}/{version}/{classifier}. E.g. bundle-name/1.0.0/osgi.bundle
  */
 public class P2ArtifactReader
@@ -19,23 +19,23 @@ public class P2ArtifactReader
     private static final Logger logger = LoggerFactory.getLogger(P2ArtifactReader.class);
 
     /**
-     * Finds a {@link P2ArtifactCoordinates} from the provided repository base directory and artifact path.
+     * Finds a {@link P2Coordinates} from the provided repository base directory and artifact path.
      *
      * @param repositoryBaseDir The folder containing the repository
      * @param bundle            The artifact path in the format of {id}/{version}/{classifier}. E.g. bundle-name/1.0.0/osgi.bundle
      * @return P2ArtifactCoordinates if found otherwise null
      */
-    public static P2ArtifactCoordinates getArtifact(String repositoryBaseDir,
-                                                    String bundle)
+    public static P2Coordinates getArtifact(String repositoryBaseDir,
+                                            String bundle)
             throws IOException
     {
         // TODO we are dropping GenericParser and one day we will need to support P2
         //GenericParser<P2Repository> repositoryParser = new GenericParser<>(P2Repository.class);
         P2Repository p2Repository = null;//repositoryParser.parse(createPath(repositoryBaseDir).toUri().toURL());
-        final P2ArtifactCoordinates artifactToFind = P2ArtifactCoordinates.create(bundle);
+        final P2Coordinates artifactToFind = P2Coordinates.create(bundle);
         for (P2Artifact p2Artifact : p2Repository.getArtifacts().getArtifacts())
         {
-            P2ArtifactCoordinates foundArtifact = new P2ArtifactCoordinates(p2Artifact.getId(),
+            P2Coordinates foundArtifact = new P2Coordinates(p2Artifact.getId(),
                                                                             p2Artifact.getVersion(),
                                                                             p2Artifact.getClassifier());
             if (foundArtifact.equals(artifactToFind))
@@ -51,7 +51,7 @@ public class P2ArtifactReader
         return null;
     }
 
-    private static void addProperties(P2ArtifactCoordinates foundArtifact,
+    private static void addProperties(P2Coordinates foundArtifact,
                                       P2Artifact p2Artifact,
                                       String baseDir)
     {

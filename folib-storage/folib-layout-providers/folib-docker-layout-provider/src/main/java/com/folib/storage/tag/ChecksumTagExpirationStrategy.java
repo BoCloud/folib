@@ -1,6 +1,6 @@
 package com.folib.storage.tag;
 
-import com.folib.artifact.coordinates.DockerArtifactCoordinates;
+import com.folib.artifact.coordinates.DockerCoordinates;
 import com.folib.components.DistributedCacheComponent;
 import com.folib.components.DockerAuthComponent;
 import com.folib.config.CustomAuthenticationFeature;
@@ -101,7 +101,7 @@ public class ChecksumTagExpirationStrategy
 
     @Override
     public String fetchDigest(RepositoryPath repositoryPath) throws IOException {
-        DockerArtifactCoordinates dockerArtifactCoordinates = (DockerArtifactCoordinates) RepositoryFiles.readCoordinates(repositoryPath);
+        DockerCoordinates dockerArtifactCoordinates = (DockerCoordinates) RepositoryFiles.readCoordinates(repositoryPath);
         if (Objects.isNull(dockerArtifactCoordinates)) {
             log.warn("RepositoryPath [{}] resolve dockerArtifactCoordinates is null", repositoryPath);
             return "";

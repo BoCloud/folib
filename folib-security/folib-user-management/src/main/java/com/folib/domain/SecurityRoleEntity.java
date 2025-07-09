@@ -7,7 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.neo4j.ogm.annotation.NodeEntity;
 
-import static com.veadan.folib.db.schema.Vertices.SECURITY_ROLE;
+import static com.folib.db.schema.Vertices.SECURITY_ROLE;
 
 /**
  * @author veadan

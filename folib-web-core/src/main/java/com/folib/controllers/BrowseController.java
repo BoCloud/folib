@@ -7,7 +7,7 @@ import com.alibaba.fastjson.JSONObject;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.folib.services.*;
 import com.google.common.collect.Lists;
-import com.folib.artifact.coordinates.DockerArtifactCoordinates;
+import com.folib.artifact.coordinates.DockerCoordinates;
 import com.folib.booters.PropertiesBooter;
 import com.folib.components.artifact.ArtifactComponent;
 import com.folib.components.scan.ScanComponent;
@@ -32,7 +32,7 @@ import com.folib.storage.repository.RepositoryTypeEnum;
 import com.folib.users.domain.Privileges;
 import com.folib.utils.DockerUtils;
 import com.folib.aql.utils.TreeUtil;
-import com.folib.web.RepositoryMapping;
+import com.folib.web.RepoMapping;
 import io.swagger.annotations.*;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
@@ -143,7 +143,7 @@ public class BrowseController
                                       @PathVariable String repositoryId,
                                       @RequestParam(value = "type", required = false) String type,
                                       @RequestParam(value = "digest", required = false) String digest,
-                                      @RequestParam(value = "report", required = false) Boolean report, @RepositoryMapping Repository repositoryParam) throws JsonProcessingException {
+                                      @RequestParam(value = "report", required = false) Boolean report, @RepoMapping Repository repositoryParam) throws JsonProcessingException {
         Map<String, Object> jsonObject = new HashMap<>();
         if (StringUtils.isBlank(type)) {
             type = repositoryParam.getLayout();
@@ -197,11 +197,11 @@ public class BrowseController
             RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
             try {
                 DirectoryListing directoryListing = directoryListingService.fromRepositoryPath(repositoryPath);
-                List<FileContent> fileContents = directoryListing.getFiles().stream().filter(file -> DockerArtifactCoordinates.include(file.getName())).collect(Collectors.toList());
+                List<FileContent> fileContents = directoryListing.getFiles().stream().filter(file -> DockerCoordinates.include(file.getName())).collect(Collectors.toList());
                 FileContent fileContent = fileContents.get(0);
                 RepositoryPath versionPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath + File.separator + fileContent.getName());
                 Artifact artifact = getArtifact(repositoryPathResolver.resolve(storageId, repositoryId, fileContent.getArtifactPath()), report);
-                DockerArtifactCoordinates dockerArtifactCoordinates = (DockerArtifactCoordinates) artifact.getArtifactCoordinates();
+                DockerCoordinates dockerArtifactCoordinates = (DockerCoordinates) artifact.getArtifactCoordinates();
                 jsonObject.put("artifact", artifact);
                 String manifestString = Files.readString(versionPath);
 
@@ -329,7 +329,7 @@ public class BrowseController
                 } else {
                     directoryListing.getDirectories().forEach(f -> {
                         try (Stream<Path> pathStream = Files.list(repositoryPathResolver.resolve(f.getStorageId(), f.getRepositoryId(), f.getArtifactPath()))) {
-                            if (pathStream.anyMatch(DockerArtifactCoordinates::isManifestPath)) {
+                            if (pathStream.anyMatch(DockerCoordinates::isManifestPath)) {
                                 imageDirList.add(f);
                             } else if (!DockerLayoutProvider.BLOBS.equalsIgnoreCase(f.getName()) && !DockerLayoutProvider.MANIFEST.equalsIgnoreCase(f.getName())) {
                                 directories.add(f);
@@ -426,7 +426,7 @@ public class BrowseController
             @ApiResponse(code = 404, message = "The specified storageId/repositoryId/path does not exist!")})
     @PreAuthorize("hasAuthority('ARTIFACTS_DELETE')")
     @DeleteMapping(value = "/{storageId}/{repositoryId}/{artifactPath:.+}")
-    public ResponseEntity delete(@RepositoryMapping Repository repository,
+    public ResponseEntity delete(@RepoMapping Repository repository,
                                  @ApiParam(value = "Whether to use force delete")
                                  @RequestParam(defaultValue = "false",
                                          name = "force",
@@ -465,7 +465,7 @@ public class BrowseController
             produces = {MediaType.TEXT_PLAIN_VALUE,
                     MediaType.TEXT_HTML_VALUE,
                     MediaType.APPLICATION_JSON_VALUE})
-    public Object repositoryContent(@RepositoryMapping Repository repository,
+    public Object repositoryContent(@RepoMapping Repository repository,
                                     @PathVariable("path") String rawPath,
                                     HttpServletRequest request,
                                     HttpServletResponse response,

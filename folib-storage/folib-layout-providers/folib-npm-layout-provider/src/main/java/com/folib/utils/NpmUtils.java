@@ -8,7 +8,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.github.zafarkhaja.semver.Version;
-import com.folib.artifact.coordinates.NpmArtifactCoordinates;
+import com.folib.artifact.coordinates.NpmCoordinates;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
@@ -78,7 +78,7 @@ public class NpmUtils {
     }
 
     public static boolean isNameMatchConvention(String text) {
-        return NpmArtifactCoordinates.NPM_NAME_PATTERN.matcher(text).matches();
+        return NpmCoordinates.NPM_NAME_PATTERN.matcher(text).matches();
     }
 
     public static boolean isPackageMetadataValidForIndexing(String packageName, String packageVersion) {

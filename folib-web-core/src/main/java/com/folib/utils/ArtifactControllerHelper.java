@@ -1,7 +1,7 @@
 package com.folib.utils;
 
 import com.alibaba.fastjson.JSON;
-import com.folib.artifact.coordinates.DockerArtifactCoordinates;
+import com.folib.artifact.coordinates.DockerCoordinates;
 import com.folib.controllers.BaseController;
 import com.folib.enums.ProductTypeEnum;
 import com.folib.exception.ExceptionHandlingOutputStream;
@@ -223,7 +223,7 @@ public class ArtifactControllerHelper
         else if (path.getFileName().toString().endsWith(".gz"))
         {
             return com.google.common.net.MediaType.GZIP.toString();
-        } else if (ProductTypeEnum.Docker.getFoLibraryName().equalsIgnoreCase(repository.getLayout()) && DockerArtifactCoordinates.isManifestPath(path)) {
+        } else if (ProductTypeEnum.Docker.getFoLibraryName().equalsIgnoreCase(repository.getLayout()) && DockerCoordinates.isManifestPath(path)) {
             //docker repository v2
             ImageManifest imageManifest = JSON.parseObject(Files.readString(path), ImageManifest.class);
             return imageManifest.getMediaType();

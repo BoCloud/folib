@@ -1,6 +1,6 @@
 package com.folib.storage.repository;
 
-import com.folib.providers.layout.PypiLayoutProvider;
+import com.folib.providers.PypiLayoutProvider;
 import com.folib.repository.PypiRepositoryFeatures;
 
 import javax.inject.Inject;

@@ -10,7 +10,7 @@ import java.util.Objects;
 
 import jakarta.inject.Inject;
 
-import com.folib.artifact.coordinates.MavenArtifactCoordinates;
+import com.folib.artifact.coordinates.MavenCoordinates;
 import com.folib.domain.Artifact;
 import com.folib.domain.ArtifactIdGroup;
 import com.folib.providers.io.RepositoryPath;
@@ -140,7 +140,7 @@ public class RepositoryHostedIndexCreator
         final Map<String, List<Artifact>> groupedByVersion = new LinkedHashMap<>();
         for (final Artifact artifactEntry : groupEntry.getArtifacts())
         {
-            final MavenArtifactCoordinates coordinates = (MavenArtifactCoordinates) artifactEntry.getArtifactCoordinates();
+            final MavenCoordinates coordinates = (MavenCoordinates) artifactEntry.getArtifactCoordinates();
             final String version = coordinates.getVersion();
             List<Artifact> artifactEntries = groupedByVersion.get(version);
             if (artifactEntries == null)
@@ -163,7 +163,7 @@ public class RepositoryHostedIndexCreator
         {
             return new ArtifactEntryArtifactContextHelper(pomExists, sourcesExists, javadocExists);
         }
-        final MavenArtifactCoordinates coordinates = (MavenArtifactCoordinates) artifactEntry.getArtifactCoordinates();
+        final MavenCoordinates coordinates = (MavenCoordinates) artifactEntry.getArtifactCoordinates();
         if ("javadoc".equals(coordinates.getClassifier()) || "sources".equals(coordinates.getClassifier()))
         {
             return new ArtifactEntryArtifactContextHelper(pomExists, sourcesExists, javadocExists);
@@ -175,7 +175,7 @@ public class RepositoryHostedIndexCreator
 
         for (final Artifact neighbour : group)
         {
-            final MavenArtifactCoordinates neighbourCoordinates = (MavenArtifactCoordinates) neighbour.getArtifactCoordinates();
+            final MavenCoordinates neighbourCoordinates = (MavenCoordinates) neighbour.getArtifactCoordinates();
             pomExists |= ("pom".equals(neighbourCoordinates.getExtension()) && neighbourCoordinates.getClassifier() == null);
             if (Objects.equals(coordinates.getExtension(), neighbourCoordinates.getExtension()))
             {

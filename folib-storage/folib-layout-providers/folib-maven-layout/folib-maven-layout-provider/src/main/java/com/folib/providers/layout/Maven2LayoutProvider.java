@@ -6,11 +6,11 @@ import com.folib.providers.io.RepositoryFileAttributeType;
 import com.folib.providers.io.RepositoryFiles;
 import com.folib.providers.io.RepositoryPath;
 import com.folib.repository.MavenRepositoryFeatures;
-import com.folib.repository.MavenRepositoryManagementStrategy;
+import com.folib.repository.MavenRepositoryStrategy;
 import com.folib.artifact.MavenArtifact;
 import com.folib.artifact.MavenArtifactUtils;
 import com.folib.artifact.archive.JarArchiveListingFunction;
-import com.folib.artifact.coordinates.MavenArtifactCoordinates;
+import com.folib.artifact.coordinates.MavenCoordinates;
 import com.folib.storage.metadata.MetadataHelper;
 
 import javax.annotation.PostConstruct;
@@ -38,16 +38,16 @@ import org.springframework.stereotype.Component;
  */
 @Component("maven2LayoutProvider")
 public class Maven2LayoutProvider
-        extends AbstractLayoutProvider<MavenArtifactCoordinates>
+        extends AbstractLayoutProvider<MavenCoordinates>
 {
 
-    public static final String ALIAS = MavenArtifactCoordinates.LAYOUT_NAME;
+    public static final String ALIAS = MavenCoordinates.LAYOUT_NAME;
 
     private static final Logger logger = LoggerFactory.getLogger(Maven2LayoutProvider.class);
 
     @Lazy
     @Inject
-    private MavenRepositoryManagementStrategy mavenRepositoryManagementStrategy;
+    private MavenRepositoryStrategy mavenRepositoryManagementStrategy;
     @Lazy
     @Inject
     private MavenRepositoryFeatures mavenRepositoryFeatures;
@@ -61,12 +61,12 @@ public class Maven2LayoutProvider
     }
 
     @Override
-    public MavenArtifactCoordinates getArtifactCoordinates(RepositoryPath repositoryPath)
+    public MavenCoordinates getArtifactCoordinates(RepositoryPath repositoryPath)
             throws IOException
     {
         MavenArtifact artifact = MavenArtifactUtils.convertPathToArtifact(repositoryPath);
 
-        return new MavenArtifactCoordinates(artifact);
+        return new MavenCoordinates(artifact);
     }
 
     @Override
@@ -158,7 +158,7 @@ public class Maven2LayoutProvider
     }
 
     @Override
-    public MavenRepositoryManagementStrategy getRepositoryManagementStrategy()
+    public MavenRepositoryStrategy getRepositoryManagementStrategy()
     {
         return mavenRepositoryManagementStrategy;
     }

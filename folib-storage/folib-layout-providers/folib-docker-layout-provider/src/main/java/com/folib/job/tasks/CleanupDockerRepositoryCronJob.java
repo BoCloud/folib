@@ -6,7 +6,7 @@ import com.folib.job.cron.jobs.fields.*;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
-import com.folib.artifact.coordinates.DockerArtifactCoordinates;
+import com.folib.artifact.coordinates.DockerCoordinates;
 import com.folib.job.cron.domain.CronTaskConfigurationDto;
 import com.folib.domain.Artifact;
 import com.folib.enums.ProductTypeEnum;
@@ -207,7 +207,7 @@ public class CleanupDockerRepositoryCronJob extends JavaCronJob {
             return null;
         }
         String storageId = repositoryPath.getStorageId(), repositoryId = repositoryPath.getRepositoryId(), artifactPath = RepositoryFiles.relativizePath(repositoryPath);
-        DockerArtifactCoordinates dockerArtifactCoordinates = DockerArtifactCoordinates.parse(RepositoryFiles.relativizePath(repositoryPath));
+        DockerCoordinates dockerArtifactCoordinates = DockerCoordinates.parse(RepositoryFiles.relativizePath(repositoryPath));
         String imageName = dockerArtifactCoordinates.getName();
         List<ImageManifest> imageManifestList = Lists.newArrayList();
         String manifestString = Files.readString(repositoryPath);
@@ -258,7 +258,7 @@ public class CleanupDockerRepositoryCronJob extends JavaCronJob {
             manifestPathStream.forEach(manifestPath -> {
                 RepositoryPath manifestRepositoryPath = (RepositoryPath) manifestPath;
                 try {
-                    if (RepositoryFiles.isChecksum(manifestRepositoryPath) || RepositoryFiles.isArtifactMetadata(manifestRepositoryPath) || !DockerArtifactCoordinates.isRealManifestPath(manifestPath)) {
+                    if (RepositoryFiles.isChecksum(manifestRepositoryPath) || RepositoryFiles.isArtifactMetadata(manifestRepositoryPath) || !DockerCoordinates.isRealManifestPath(manifestPath)) {
                         return;
                     }
                     log.info("Manifest repositoryPath [{}] [{}] [{}]", manifestRepositoryPath.getStorageId(), manifestRepositoryPath.getRepositoryId(), RepositoryFiles.relativizePath(manifestRepositoryPath));
@@ -272,7 +272,7 @@ public class CleanupDockerRepositoryCronJob extends JavaCronJob {
                                                          BasicFileAttributes attrs)
                                 throws IOException {
                             RepositoryPath itemPath = (RepositoryPath) file;
-                            if (DockerArtifactCoordinates.isTagPath(itemPath)) {
+                            if (DockerCoordinates.isTagPath(itemPath)) {
                                 log.info("Tag repositoryPath [{}] [{}] [{}]", itemPath.getStorageId(), itemPath.getRepositoryId(), RepositoryFiles.relativizePath(itemPath));
                                 List<ImageManifest> imageManifestList = getImageManifests(itemPath);
                                 if (CollectionUtils.isNotEmpty(imageManifestList)) {
@@ -290,7 +290,7 @@ public class CleanupDockerRepositoryCronJob extends JavaCronJob {
                         @Override
                         public FileVisitResult preVisitDirectory(final Path dir, final BasicFileAttributes attrs) throws IOException {
                             RepositoryPath itemPath = (RepositoryPath) dir;
-                            if (!Files.isSameFile(itemPath, itemPath.getRoot()) && !RepositoryPathUtil.include(2, itemPath, true, ProductTypeEnum.Docker.getFoLibraryName()) || (DockerArtifactCoordinates.DOCKER_LAYER_DIR_NAME_LIST.stream().anyMatch(item -> itemPath.getFileName().toString().equalsIgnoreCase(item)))) {
+                            if (!Files.isSameFile(itemPath, itemPath.getRoot()) && !RepositoryPathUtil.include(2, itemPath, true, ProductTypeEnum.Docker.getFoLibraryName()) || (DockerCoordinates.DOCKER_LAYER_DIR_NAME_LIST.stream().anyMatch(item -> itemPath.getFileName().toString().equalsIgnoreCase(item)))) {
                                 log.info("RepositoryPath [{}] skip...", itemPath.toString());
                                 return FileVisitResult.SKIP_SUBTREE;
                             }
@@ -346,7 +346,7 @@ public class CleanupDockerRepositoryCronJob extends JavaCronJob {
                 RepositoryPath blobsRepositoryPath = (RepositoryPath) blobPath;
                 try {
                     String blobName = blobPath.getFileName().toString();
-                    if (RepositoryFiles.isChecksum(blobsRepositoryPath) || RepositoryFiles.isArtifactMetadata(blobsRepositoryPath) || !DockerArtifactCoordinates.include(blobName)) {
+                    if (RepositoryFiles.isChecksum(blobsRepositoryPath) || RepositoryFiles.isArtifactMetadata(blobsRepositoryPath) || !DockerCoordinates.include(blobName)) {
                         return;
                     }
                     log.info("Blob repositoryPath [{}] [{}] [{}]", blobsRepositoryPath.getStorageId(), blobsRepositoryPath.getRepositoryId(), RepositoryFiles.relativizePath(blobsRepositoryPath));
@@ -359,7 +359,7 @@ public class CleanupDockerRepositoryCronJob extends JavaCronJob {
                                                          BasicFileAttributes attrs)
                                 throws IOException {
                             RepositoryPath itemPath = (RepositoryPath) file;
-                            if (DockerArtifactCoordinates.isRealManifestPath(itemPath)) {
+                            if (DockerCoordinates.isRealManifestPath(itemPath)) {
                                 log.info("Manifest repositoryPath [{}] [{}] [{}]", itemPath.getStorageId(), itemPath.getRepositoryId(), RepositoryFiles.relativizePath(itemPath));
                                 List<ImageManifest> imageManifestList = getImageManifests(itemPath);
                                 if (CollectionUtils.isNotEmpty(imageManifestList)) {

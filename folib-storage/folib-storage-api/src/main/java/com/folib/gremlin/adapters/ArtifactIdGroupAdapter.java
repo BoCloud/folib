@@ -14,10 +14,10 @@ import org.apache.tinkerpop.gremlin.process.traversal.Traverser;
 import org.apache.tinkerpop.gremlin.structure.Element;
 import org.apache.tinkerpop.gremlin.structure.Vertex;
 import com.folib.artifact.ArtifactTag;
-import com.folib.artifact.coordinates.GenericArtifactCoordinates;
-import com.veadan.folib.db.schema.Edges;
-import com.veadan.folib.db.schema.Properties;
-import com.veadan.folib.db.schema.Vertices;
+import com.folib.artifact.coordinates.GenericCoordinates;
+import com.folib.db.schema.Edges;
+import com.folib.db.schema.Properties;
+import com.folib.db.schema.Vertices;
 import com.folib.domain.Artifact;
 import com.folib.domain.ArtifactIdGroup;
 import com.folib.domain.ArtifactIdGroupEntity;
@@ -40,7 +40,7 @@ public class ArtifactIdGroupAdapter implements VertexEntityTraversalAdapter<Arti
         return Vertices.ARTIFACT_ID_GROUP;
     }
 
-    public EntityTraversal<Vertex, ArtifactIdGroup> fold(Optional<Class<? extends GenericArtifactCoordinates>> layoutArtifactCoordinatesClass,
+    public EntityTraversal<Vertex, ArtifactIdGroup> fold(Optional<Class<? extends GenericCoordinates>> layoutArtifactCoordinatesClass,
                                                          Optional<ArtifactTag> optionalTag)
     {
         EntityTraversal<Vertex, Vertex> artifactsTraversal = optionalTag.map(ArtifactTag::getName)
@@ -78,7 +78,7 @@ public class ArtifactIdGroupAdapter implements VertexEntityTraversalAdapter<Arti
     @Override
     public EntityTraversal<Vertex, ArtifactIdGroup> fold()
     {
-        return fold(Optional.of(GenericArtifactCoordinates.class), Optional.empty());
+        return fold(Optional.of(GenericCoordinates.class), Optional.empty());
     }
 
     private ArtifactIdGroup map(Traverser<Map<String, Object>> t)

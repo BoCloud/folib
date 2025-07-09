@@ -1,7 +1,7 @@
 package com.folib.components.webhook;
 
 import com.alibaba.fastjson.JSON;
-import com.folib.artifact.coordinates.DockerArtifactCoordinates;
+import com.folib.artifact.coordinates.DockerCoordinates;
 import com.folib.components.layout.DockerComponent;
 import com.folib.constant.GlobalConstants;
 import com.folib.controllers.adapter.jfrog.dto.ArtifactData;
@@ -283,7 +283,7 @@ public class DockerWebhooksEventProvider extends BaseWebhookEventsProvider {
             if (Files.isDirectory(repositoryPath)) {
                 securityUtils.setAdminAuthentication();
                 DirectoryListing directoryListing = directoryListingService.fromRepositoryPath(repositoryPath);
-                List<FileContent> fileContents = directoryListing.getFiles().stream().filter(file -> DockerArtifactCoordinates.isManifestPath(file.getName())).collect(Collectors.toList());
+                List<FileContent> fileContents = directoryListing.getFiles().stream().filter(file -> DockerCoordinates.isManifestPath(file.getName())).collect(Collectors.toList());
                 if (CollectionUtils.isEmpty(fileContents)) {
                     return true;
                 }
@@ -348,7 +348,7 @@ public class DockerWebhooksEventProvider extends BaseWebhookEventsProvider {
             RepositoryPath targetRepositoryPath = repositoryPathResolver.resolve(storageId, targetRepositoryId, targetImagePath).resolve(targetTag);
             if (Files.isDirectory(repositoryPath)) {
                 DirectoryListing directoryListing = directoryListingService.fromRepositoryPath(repositoryPath);
-                List<FileContent> fileContents = directoryListing.getFiles().stream().filter(file -> DockerArtifactCoordinates.isManifestPath(file.getName())).collect(Collectors.toList());
+                List<FileContent> fileContents = directoryListing.getFiles().stream().filter(file -> DockerCoordinates.isManifestPath(file.getName())).collect(Collectors.toList());
                 if (CollectionUtils.isEmpty(fileContents)) {
                     return true;
                 }
@@ -407,7 +407,7 @@ public class DockerWebhooksEventProvider extends BaseWebhookEventsProvider {
             RepositoryPath targetRepositoryPath = repositoryPathResolver.resolve(storageId, targetRepositoryId, targetImagePath).resolve(targetTag);
             if (Files.isDirectory(repositoryPath)) {
                 DirectoryListing directoryListing = directoryListingService.fromRepositoryPath(repositoryPath);
-                List<FileContent> fileContents = directoryListing.getFiles().stream().filter(file -> DockerArtifactCoordinates.isManifestPath(file.getName())).collect(Collectors.toList());
+                List<FileContent> fileContents = directoryListing.getFiles().stream().filter(file -> DockerCoordinates.isManifestPath(file.getName())).collect(Collectors.toList());
                 if (CollectionUtils.isEmpty(fileContents)) {
                     return true;
                 }

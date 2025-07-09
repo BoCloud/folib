@@ -8,7 +8,7 @@ import com.folib.storage.metadata.maven.MetadataExpirationStrategyType;
 import com.folib.storage.metadata.maven.RefreshMetadataExpirationStrategy;
 import com.folib.storage.repository.Repository;
 import com.folib.storage.repository.RepositoryData;
-import com.folib.yaml.configuration.repository.MavenRepositoryConfiguration;
+import com.folib.configuration.MavenRepositoryConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;

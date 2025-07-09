@@ -2,7 +2,7 @@ package com.folib.services.impl;
 
 import com.alibaba.fastjson.JSON;
 import com.google.common.collect.Lists;
-import com.folib.artifact.coordinates.DockerArtifactCoordinates;
+import com.folib.artifact.coordinates.DockerCoordinates;
 import com.folib.components.common.CommonComponent;
 import com.folib.components.repository.RepositoryComponent;
 import com.folib.data.criteria.Selector;
@@ -179,13 +179,13 @@ public class FqlSearchService extends GremlinVertexRepository<Artifact> implemen
             String path = artifact.getArtifactCoordinates().buildPath();
             if (DockerLayoutProvider.ALIAS.equalsIgnoreCase(r.getLayout())) {
                 //docker
-                DockerArtifactCoordinates dockerArtifactCoordinates = (DockerArtifactCoordinates) artifact.getArtifactCoordinates();
+                DockerCoordinates dockerArtifactCoordinates = (DockerCoordinates) artifact.getArtifactCoordinates();
                 r.setArtifactName(dockerArtifactCoordinates.getTAG());
                 r.setArtifactPath(dockerArtifactCoordinates.getIMAGE_NAME().replace(":", "/"));
                 String blobs = "blobs";
                 String manifest = "manifest";
                 String artifactPath = repositoryPath.toAbsolutePath().toString();
-                if (artifactPath.contains("sha256") && !artifactPath.contains(blobs) && !artifactPath.contains(manifest) && DockerArtifactCoordinates.include(artifactPath)) {
+                if (artifactPath.contains("sha256") && !artifactPath.contains(blobs) && !artifactPath.contains(manifest) && DockerCoordinates.include(artifactPath)) {
                     r.setSizeInBytes(getSearchDockerSize(repositoryPath, r.getArtifactPath().replace("/" + r.getArtifactName(), "")));
                 }
             } else {

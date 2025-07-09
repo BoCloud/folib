@@ -21,7 +21,7 @@ import com.folib.storage.validation.artifact.version.VersionValidationException;
 import com.folib.storage.validation.deployment.RedeploymentValidator;
 import com.folib.storage.validation.version.MavenReleaseVersionValidator;
 import com.folib.storage.validation.version.MavenSnapshotVersionValidator;
-import com.folib.yaml.configuration.repository.MavenRepositoryConfiguration;
+import com.folib.configuration.MavenRepositoryConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Lazy;

@@ -1,6 +1,6 @@
 package com.folib.providers.io;
 
-import com.folib.artifact.coordinates.DockerArtifactCoordinates;
+import com.folib.artifact.coordinates.DockerCoordinates;
 import com.folib.configuration.ConfigurationManager;
 import com.folib.enums.DockerHeaderEnum;
 import com.folib.providers.layout.DockerLayoutProvider;
@@ -56,7 +56,7 @@ public class DockerTagExpiredRepositoryPathHandler
             return false;
         }
 
-        if (!DockerLayoutProvider.ALIAS.equals(repositoryPath.getRepository().getLayout()) || RepositoryTypeEnum.HOSTED.getType().equals(repositoryPath.getRepository().getType()) || !DockerArtifactCoordinates.isDockerTag(repositoryPath)) {
+        if (!DockerLayoutProvider.ALIAS.equals(repositoryPath.getRepository().getLayout()) || RepositoryTypeEnum.HOSTED.getType().equals(repositoryPath.getRepository().getType()) || !DockerCoordinates.isDockerTag(repositoryPath)) {
             return false;
         }
 
@@ -80,7 +80,7 @@ public class DockerTagExpiredRepositoryPathHandler
         if (fetchTag == USABLE) {
             return;
         }
-        DockerArtifactCoordinates dockerArtifactCoordinates = (DockerArtifactCoordinates) RepositoryFiles.readCoordinates(repositoryPath);
+        DockerCoordinates dockerArtifactCoordinates = (DockerCoordinates) RepositoryFiles.readCoordinates(repositoryPath);
         String digest = dockerExpirationStrategy.fetchDigest(repositoryPath);
         if (StringUtils.isBlank(digest)) {
             return;

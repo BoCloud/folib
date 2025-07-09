@@ -1,10 +1,10 @@
 package com.folib.converters.configuration;
 
 import com.folib.forms.configuration.*;
-import com.folib.yaml.configuration.repository.GoRepositoryConfigurationDto;
-import com.folib.yaml.configuration.repository.MavenRepositoryConfigurationDto;
+import com.folib.configuration.GoRepositoryConfigurationDto;
+import com.folib.configuration.MavenRepositoryConfigurationDto;
 import com.folib.yaml.configuration.repository.NugetRepositoryConfigurationDto;
-import com.folib.yaml.configuration.repository.RawRepositoryConfigurationDto;
+import com.folib.configuration.RawRepositoryConfigurationDto;
 import com.folib.yaml.repository.CustomRepositoryConfigurationDto;
 
 /**

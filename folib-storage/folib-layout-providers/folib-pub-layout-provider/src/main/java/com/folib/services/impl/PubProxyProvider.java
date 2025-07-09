@@ -3,7 +3,7 @@ package com.folib.services.impl;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.serializer.SerializerFeature;
-import com.folib.artifact.coordinates.PubArtifactCoordinates;
+import com.folib.artifact.coordinates.PubCoordinates;
 import com.folib.components.StorageClientComponent;
 import com.folib.configuration.ConfigurationManager;
 import com.folib.constant.GlobalConstants;
@@ -105,11 +105,11 @@ public class PubProxyProvider implements PubProvider {
                     String repositoryBaseUrl = baseUrl + String.format("/storages/%s/%s/", storageId, repositoryId);
                     pubPackageMetadata = JSONObject.parseObject(packageData.toJSONString(), PubPackageMetadata.class);
                     for (PubPackageVersionMetadata pubPackageVersionMetadata : pubPackageMetadata.getVersions()) {
-                        handleVersion(storageId, repositoryId, repositoryBaseUrl, pubPackageMetadata, PubArtifactCoordinates.of(pubPackageMetadata.getName(), pubPackageVersionMetadata.getVersion(), PubArtifactCoordinates.PUB_EXTENSION), pubPackageVersionMetadata);
+                        handleVersion(storageId, repositoryId, repositoryBaseUrl, pubPackageMetadata, PubCoordinates.of(pubPackageMetadata.getName(), pubPackageVersionMetadata.getVersion(), PubCoordinates.PUB_EXTENSION), pubPackageVersionMetadata);
                     }
                     PubPackageVersionMetadata pubPackageVersionMetadata = pubPackageMetadata.getLatest();
                     if (Objects.nonNull(pubPackageVersionMetadata)) {
-                        handleVersion(storageId, repositoryId, repositoryBaseUrl, pubPackageMetadata, PubArtifactCoordinates.of(pubPackageMetadata.getName(), pubPackageVersionMetadata.getVersion(), PubArtifactCoordinates.PUB_EXTENSION), pubPackageVersionMetadata);
+                        handleVersion(storageId, repositoryId, repositoryBaseUrl, pubPackageMetadata, PubCoordinates.of(pubPackageMetadata.getName(), pubPackageVersionMetadata.getVersion(), PubCoordinates.PUB_EXTENSION), pubPackageVersionMetadata);
                     }
                     Files.createDirectories(packageJsonRepositoryPath.getParent());
                     Files.writeString(packageJsonRepositoryPath, JSON.toJSONString(pubPackageMetadata, SerializerFeature.PrettyFormat));
@@ -138,11 +138,11 @@ public class PubProxyProvider implements PubProvider {
         return null;
     }
 
-    private void handleVersion(String storageId, String repositoryId, String repositoryBaseUrl, PubPackageMetadata pubPackageMetadata, PubArtifactCoordinates pubArtifactCoordinates, PubPackageVersionMetadata pubPackageVersionMetadata) {
+    private void handleVersion(String storageId, String repositoryId, String repositoryBaseUrl, PubPackageMetadata pubPackageMetadata, PubCoordinates pubArtifactCoordinates, PubPackageVersionMetadata pubPackageVersionMetadata) {
         try {
             if (StringUtils.isNotBlank(pubPackageVersionMetadata.getArchiveUrl())) {
                 pubPackageVersionMetadata.setSourceArchiveUrl(pubPackageVersionMetadata.getArchiveUrl());
-                pubArtifactCoordinates = PubArtifactCoordinates.of(pubPackageMetadata.getName(), pubPackageVersionMetadata.getVersion(), PubArtifactCoordinates.PUB_EXTENSION);
+                pubArtifactCoordinates = PubCoordinates.of(pubPackageMetadata.getName(), pubPackageVersionMetadata.getVersion(), PubCoordinates.PUB_EXTENSION);
                 URI uri = pubArtifactCoordinates.convertToResource(pubArtifactCoordinates);
                 pubPackageVersionMetadata.setArchiveUrl(repositoryBaseUrl + uri.toString());
             }

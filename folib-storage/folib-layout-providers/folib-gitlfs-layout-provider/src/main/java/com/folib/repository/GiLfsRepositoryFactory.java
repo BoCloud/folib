@@ -1,7 +1,7 @@
 package com.folib.repository;
 
 
-import com.folib.providers.layout.GitLfsLayoutProvider;
+import com.folib.providers.GitLfsLayoutProvider;
 import com.folib.storage.repository.GitLfsRepositoryFeatures;
 import com.folib.storage.repository.RepositoryDto;
 import com.folib.storage.repository.RepositoryFactory;

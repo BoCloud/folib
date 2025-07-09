@@ -1,7 +1,7 @@
 package com.folib.snippet;
 
 import com.folib.artifact.coordinates.ArtifactCoordinates;
-import com.folib.artifact.coordinates.DebianArtifactCoordinates;
+import com.folib.artifact.coordinates.DebianCoordinates;
 import com.folib.constant.DebianConstant;
 import com.folib.dependency.snippet.CompatibleDependencyFormatRegistry;
 import com.folib.dependency.snippet.DependencySynonymFormatter;
@@ -42,7 +42,7 @@ public class DebianSnippet
 
     @Override
     public String getDependencySnippet(ArtifactCoordinates artifactCoordinates) {
-        DebianArtifactCoordinates coordinates = (DebianArtifactCoordinates) artifactCoordinates;
+        DebianCoordinates coordinates = (DebianCoordinates) artifactCoordinates;
         return String.format("apt install %s=%s", coordinates.getFileName(), coordinates.getVersion());
     }
 

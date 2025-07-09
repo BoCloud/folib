@@ -1,7 +1,7 @@
 package com.folib.gremlin.adapters;
 
-import com.veadan.folib.db.schema.Edges;
-import com.veadan.folib.db.schema.Vertices;
+import com.folib.db.schema.Edges;
+import com.folib.db.schema.Vertices;
 import com.folib.domain.SecurityRole;
 import com.folib.domain.User;
 import com.folib.domain.UserEntity;

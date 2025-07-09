@@ -4,7 +4,7 @@ import com.folib.providers.io.RepositoryPath;
 import com.folib.storage.indexing.local.ArtifactEntryJarFileContentsIndexCreator;
 import com.folib.storage.indexing.local.ArtifactEntryMinimalArtifactInfoIndexCreator;
 import com.folib.storage.repository.Repository;
-import com.folib.yaml.configuration.repository.MavenRepositoryConfiguration;
+import com.folib.configuration.MavenRepositoryConfiguration;
 
 import java.io.IOException;
 import java.util.ArrayList;

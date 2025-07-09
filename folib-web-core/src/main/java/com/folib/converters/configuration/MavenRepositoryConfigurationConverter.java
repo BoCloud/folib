@@ -1,6 +1,6 @@
 package com.folib.converters.configuration;
 
-import com.folib.yaml.configuration.repository.MavenRepositoryConfigurationDto;
+import com.folib.configuration.MavenRepositoryConfigurationDto;
 import com.folib.forms.configuration.MavenRepositoryConfigurationForm;
 
 import org.springframework.core.convert.converter.Converter;

@@ -1,7 +1,7 @@
 package com.folib.repository;
 
 import com.folib.artifact.ArtifactTag;
-import com.folib.artifact.coordinates.PhpArtifactCoordinates;
+import com.folib.artifact.coordinates.PhpCoordinates;
 import com.folib.domain.Artifact;
 import com.folib.domain.ArtifactEntity;
 import com.folib.domain.ArtifactTagEntity;
@@ -54,11 +54,11 @@ public class PhpPackageFeedParser {
     private ArtifactEntity parseVersion(String storageId,
                                         String repositoryId,
                                         PhpSearchPackage phpSearchPackage) {
-        PhpArtifactCoordinates c = new PhpArtifactCoordinates();
-        c.setComposerVersion(PhpArtifactCoordinates.COMPOSER_P2.replace("/", ""));
+        PhpCoordinates c = new PhpCoordinates();
+        c.setComposerVersion(PhpCoordinates.COMPOSER_P2.replace("/", ""));
         c.setName(phpSearchPackage.getName());
         c.setDescription(phpSearchPackage.getDescription());
-        c.setExtension(PhpArtifactCoordinates.JSON);
+        c.setExtension(PhpCoordinates.JSON);
         LocalDateTime now = LocalDateTimeInstance.now();
 
         Artifact artifact = artifactRepository.findOneArtifact(storageId, repositoryId, c.buildPath());

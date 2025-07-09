@@ -1,6 +1,6 @@
 package com.folib.yaml.configuration.repository;
 
-import com.folib.providers.layout.NugetLayoutProvider;
+import com.folib.providers.NugetLayoutProvider;
 import com.folib.yaml.repository.CustomRepositoryConfiguration;
 
 import javax.annotation.concurrent.Immutable;

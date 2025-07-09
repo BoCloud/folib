@@ -7,7 +7,7 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.folib.domain.*;
 import com.google.common.collect.Lists;
-import com.folib.artifact.coordinates.DockerArtifactCoordinates;
+import com.folib.artifact.coordinates.DockerCoordinates;
 import com.folib.authentication.api.password.PasswordAuthentication;
 import com.folib.components.layout.DockerComponent;
 import com.folib.constant.GlobalConstants;
@@ -33,7 +33,7 @@ import com.folib.users.service.impl.RelationalDatabaseUserService;
 import com.folib.users.userdetails.SpringSecurityUser;
 import com.folib.util.RepositoryPathUtil;
 import com.folib.utils.FileUtils;
-import com.folib.web.RepositoryMapping;
+import com.folib.web.RepoMapping;
 import io.swagger.annotations.*;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -331,7 +331,7 @@ public class DockerArtifactController extends BaseArtifactController {
     @PreAuthorize("hasAuthority('ARTIFACTS_DEPLOY')")
     @RequestMapping(value = {"/v2/{storageId}/{repositoryId}/{name}/blobs/uploads/{uuid}", "/v2/{storageId}/{repositoryId}/{name}/**/blobs/uploads/{uuid}"}, method = {RequestMethod.PATCH}, consumes = MediaType.APPLICATION_OCTET_STREAM_VALUE)
     public ResponseEntity<String> chunkedUpload(
-            @RepositoryMapping Repository repository,
+            @RepoMapping Repository repository,
             @RequestHeader HttpHeaders httpHeaders,
             HttpServletRequest request,
             HttpServletResponse response,
@@ -749,7 +749,7 @@ public class DockerArtifactController extends BaseArtifactController {
             return null;
         }
         DirectoryListing directoryListing = directoryListingService.fromRepositoryPath(repositoryPath);
-        List<FileContent> fileContents = directoryListing.getFiles().stream().filter(file -> DockerArtifactCoordinates.include(file.getName())).collect(Collectors.toList());
+        List<FileContent> fileContents = directoryListing.getFiles().stream().filter(file -> DockerCoordinates.include(file.getName())).collect(Collectors.toList());
         FileContent fileContent = fileContents.get(0);
         String artifactPath = fileContent.getArtifactPath();
         return artifactRepository.findOneArtifact(storageId, repositoryId, artifactPath);

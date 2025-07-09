@@ -1,6 +1,6 @@
 package com.folib.util;
 
-import com.folib.artifact.coordinates.PypiArtifactCoordinates;
+import com.folib.artifact.coordinates.PypiCoordinates;
 import com.folib.constant.GlobalConstants;
 import com.folib.domain.PypiPackageInfo;
 import lombok.extern.slf4j.Slf4j;
@@ -34,32 +34,32 @@ public class PypiArtifactCoordinatesUtils {
      * @param path The filename of the PyPi artifact
      * @return Returns a PypiArtifactCoordinate object with all coordinates in the filename set
      */
-    public static PypiArtifactCoordinates parse(String path) {
+    public static PypiCoordinates parse(String path) {
         if (path.endsWith(".html")) {
-            PypiArtifactCoordinates pypiArtifactCoordinates = new PypiArtifactCoordinates();
+            PypiCoordinates pypiArtifactCoordinates = new PypiCoordinates();
             pypiArtifactCoordinates.setPath(path);
             pypiArtifactCoordinates.setId(path);
             return pypiArtifactCoordinates;
         }
-        if (PypiArtifactCoordinates.EXTENSION_LIST.stream().noneMatch(path::endsWith)) {
-            String message = String.format("The artifact packaging can be only %s path [%s]", String.join(" or ", PypiArtifactCoordinates.EXTENSION_LIST), path);
+        if (PypiCoordinates.EXTENSION_LIST.stream().noneMatch(path::endsWith)) {
+            String message = String.format("The artifact packaging can be only %s path [%s]", String.join(" or ", PypiCoordinates.EXTENSION_LIST), path);
             log.info(message);
             throw new IllegalArgumentException(message);
         }
 
         String fileName = FilenameUtils.getName(path);
-        PypiArtifactCoordinates pypiArtifactCoordinates = PypiArtifactCoordinates.WHEEL_EXTENSION_LIST.stream().noneMatch(path::endsWith) ? parseSourcePackage(fileName) :
+        PypiCoordinates pypiArtifactCoordinates = PypiCoordinates.WHEEL_EXTENSION_LIST.stream().noneMatch(path::endsWith) ? parseSourcePackage(fileName) :
                 parseWheelPackage(fileName);
         pypiArtifactCoordinates.setPath(path);
         return pypiArtifactCoordinates;
     }
 
 
-    private static PypiArtifactCoordinates parseSourcePackage(String path) {
+    private static PypiCoordinates parseSourcePackage(String path) {
         try {
             String extension = FilenameUtils.getExtension(path);
-            if (path.endsWith(PypiArtifactCoordinates.FULL_TAR_GZ_SUFFIX)) {
-                extension = PypiArtifactCoordinates.TAR_GZ_SUFFIX;
+            if (path.endsWith(PypiCoordinates.FULL_TAR_GZ_SUFFIX)) {
+                extension = PypiCoordinates.TAR_GZ_SUFFIX;
             }
             String fullExtension = GlobalConstants.POINT + extension;
             String packageNameWithoutExtension = path.substring(0, path.lastIndexOf(fullExtension));
@@ -77,7 +77,7 @@ public class PypiArtifactCoordinatesUtils {
                 throw new IllegalArgumentException(String.format("Invalid name [%s] for source package.", distribution));
             }
 
-            return new PypiArtifactCoordinates(distribution, version, extension);
+            return new PypiCoordinates(distribution, version, extension);
         } catch (IllegalArgumentException iae) {
             throw iae;
         } catch (Exception e) {
@@ -85,11 +85,11 @@ public class PypiArtifactCoordinatesUtils {
         }
     }
 
-    private static PypiArtifactCoordinates parseWheelPackage(String path) {
+    private static PypiCoordinates parseWheelPackage(String path) {
         String extension = FilenameUtils.getExtension(path);
         String fullExtension = GlobalConstants.POINT + extension;
         String[] splitArray = path.split("-");
-        boolean isWhl = PypiArtifactCoordinates.WHL.equalsIgnoreCase(extension);
+        boolean isWhl = PypiCoordinates.WHL.equalsIgnoreCase(extension);
         // check for invalid file format
         if (isWhl && splitArray.length != 5 && splitArray.length != 6) {
             throw new IllegalArgumentException(String.format("Invalid wheel package name specified path [%s]", path));
@@ -118,13 +118,13 @@ public class PypiArtifactCoordinatesUtils {
                 platform = splitArray[5].substring(0, splitArray[5].indexOf(fullExtension));
             }
         } else {
-            languageImplementationVersion = StringUtils.removeEnd(splitArray[2], PypiArtifactCoordinates.EGG);
+            languageImplementationVersion = StringUtils.removeEnd(splitArray[2], PypiCoordinates.EGG);
             if (splitArray.length >= 4) {
-                platform = StringUtils.removeEnd(splitArray[3], PypiArtifactCoordinates.EGG);
+                platform = StringUtils.removeEnd(splitArray[3], PypiCoordinates.EGG);
             }
         }
 
-        return new PypiArtifactCoordinates(distribution,
+        return new PypiCoordinates(distribution,
                 version,
                 build,
                 languageImplementationVersion,

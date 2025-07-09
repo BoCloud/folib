@@ -1,7 +1,7 @@
 package com.folib.repository;
 
 import com.alibaba.fastjson.JSONObject;
-import com.folib.artifact.coordinates.PypiArtifactCoordinates;
+import com.folib.artifact.coordinates.PypiCoordinates;
 import com.folib.config.CustomAuthenticationFeature;
 import com.folib.configuration.Configuration;
 import com.folib.configuration.ConfigurationManager;
@@ -306,7 +306,7 @@ public class PypiRepositoryFeatures
                         artifactUrl = artifactUrl.replace(finalPrefix, "/../../");
                     }
                     artifactUrl = resolveUrl(targetUrl, artifactUrl);
-                    return PypiSearchResult.builder().artifactName(artifactName).artifactUrl(artifactUrl).storageId(storageId).repositoryId(repositoryId).groupName(PypiArtifactCoordinates.parse(artifactName).getId()).build();
+                    return PypiSearchResult.builder().artifactName(artifactName).artifactUrl(artifactUrl).storageId(storageId).repositoryId(repositoryId).groupName(PypiCoordinates.parse(artifactName).getId()).build();
                 })
                 .collect(Collectors.toList());
     }

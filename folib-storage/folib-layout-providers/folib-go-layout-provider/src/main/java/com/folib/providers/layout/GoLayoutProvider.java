@@ -2,12 +2,12 @@ package com.folib.providers.layout;
 
 
 import cn.hutool.core.io.FileUtil;
-import com.folib.artifact.coordinates.GoArtifactCoordinates;
+import com.folib.artifact.coordinates.GoCoordinates;
 import com.folib.providers.io.RepositoryFileAttributeType;
 import com.folib.providers.io.RepositoryFiles;
 import com.folib.providers.io.RepositoryPath;
 import com.folib.repository.GoRepositoryFeatures;
-import com.folib.repository.GoRepositoryManagementStrategy;
+import com.folib.repository.GoRepositoryStrategy;
 import org.apache.commons.lang3.BooleanUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,11 +25,11 @@ import java.util.*;
  * @date 1/3/2024 15:31
  */
 @Component("goLayoutProvider")
-public class GoLayoutProvider extends AbstractLayoutProvider<GoArtifactCoordinates> {
+public class GoLayoutProvider extends AbstractLayoutProvider<GoCoordinates> {
 
     private static final Logger logger = LoggerFactory.getLogger(GoLayoutProvider.class);
 
-    public static final String ALIAS = GoArtifactCoordinates.LAYOUT_NAME;
+    public static final String ALIAS = GoCoordinates.LAYOUT_NAME;
 
     public static final Collection<String> GO_METADATA_SET;
 
@@ -42,7 +42,7 @@ public class GoLayoutProvider extends AbstractLayoutProvider<GoArtifactCoordinat
     }
 
     @Inject
-    private GoRepositoryManagementStrategy goRepositoryManagementStrategy;
+    private GoRepositoryStrategy goRepositoryManagementStrategy;
 
     @Inject
     private GoRepositoryFeatures goRepositoryFeatures;
@@ -54,9 +54,9 @@ public class GoLayoutProvider extends AbstractLayoutProvider<GoArtifactCoordinat
     }
 
     @Override
-    public GoArtifactCoordinates getArtifactCoordinates(RepositoryPath path) throws IOException {
+    public GoCoordinates getArtifactCoordinates(RepositoryPath path) throws IOException {
 
-        return GoArtifactCoordinates.parse(RepositoryFiles.relativizePath(path));
+        return GoCoordinates.parse(RepositoryFiles.relativizePath(path));
     }
 
     @Override
@@ -70,7 +70,7 @@ public class GoLayoutProvider extends AbstractLayoutProvider<GoArtifactCoordinat
 
 
     @Override
-    public GoRepositoryManagementStrategy getRepositoryManagementStrategy() {
+    public GoRepositoryStrategy getRepositoryManagementStrategy() {
         return goRepositoryManagementStrategy;
     }
 

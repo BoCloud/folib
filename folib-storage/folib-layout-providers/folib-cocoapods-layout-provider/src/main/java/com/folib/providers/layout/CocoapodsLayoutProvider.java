@@ -1,11 +1,11 @@
 package com.folib.providers.layout;
 
-import com.folib.artifact.coordinates.CocoapodsArtifactCoordinates;
+import com.folib.artifact.coordinates.CocoapodsCoordinates;
 import com.folib.providers.io.RepositoryFiles;
 import com.folib.providers.io.RepositoryPath;
 import com.folib.repository.CocoapodsRepositoryFeatures;
-import com.folib.repository.CocoapodsRepositoryManagementStrategy;
-import com.folib.repository.RepositoryManagementStrategy;
+import com.folib.repository.CocoapodsRepositoryStrategy;
+import com.folib.repository.RepositoryStrategy;
 import com.folib.util.CocoapodsArtifactUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -24,15 +24,15 @@ import java.util.Set;
  * @date 2023/8/2 15:09
  */
 @Component
-public class CocoapodsLayoutProvider extends AbstractLayoutProvider<CocoapodsArtifactCoordinates>
+public class CocoapodsLayoutProvider extends AbstractLayoutProvider<CocoapodsCoordinates>
 {
     private static final Logger logger = LoggerFactory.getLogger(CocoapodsLayoutProvider.class);
     
     
-    public static final String ALIAS = CocoapodsArtifactCoordinates.LAYOUT_NAME;
+    public static final String ALIAS = CocoapodsCoordinates.LAYOUT_NAME;
     
     @Inject
-    private CocoapodsRepositoryManagementStrategy cocoapodsRepositoryManagementStrategy;
+    private CocoapodsRepositoryStrategy cocoapodsRepositoryManagementStrategy;
     
     @Inject
     private CocoapodsRepositoryFeatures cocoapodsRepositoryFeatures;
@@ -46,7 +46,7 @@ public class CocoapodsLayoutProvider extends AbstractLayoutProvider<CocoapodsArt
     }
     
     @Override
-    public RepositoryManagementStrategy getRepositoryManagementStrategy() {
+    public RepositoryStrategy getRepositoryManagementStrategy() {
         return cocoapodsRepositoryManagementStrategy;
     }
 
@@ -66,15 +66,15 @@ public class CocoapodsLayoutProvider extends AbstractLayoutProvider<CocoapodsArt
     }
 
     @Override
-    public CocoapodsArtifactCoordinates getArtifactCoordinates(RepositoryPath repositoryPath) throws IOException
+    public CocoapodsCoordinates getArtifactCoordinates(RepositoryPath repositoryPath) throws IOException
     {
         final String relativizePath = RepositoryFiles.relativizePath(repositoryPath);
 
-        CocoapodsArtifactCoordinates coordinates = new CocoapodsArtifactCoordinates(relativizePath);
+        CocoapodsCoordinates coordinates = new CocoapodsCoordinates(relativizePath);
 
         if (null != repositoryPath.getArtifactEntry())
         {
-            final CocoapodsArtifactCoordinates artifactCoordinates = (CocoapodsArtifactCoordinates) repositoryPath.getArtifactEntry().getArtifactCoordinates();
+            final CocoapodsCoordinates artifactCoordinates = (CocoapodsCoordinates) repositoryPath.getArtifactEntry().getArtifactCoordinates();
             final String path = artifactCoordinates.getPath();
             final String version = artifactCoordinates.getVersion();
             final String baseName = artifactCoordinates.getBaseName();

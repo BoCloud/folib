@@ -1,7 +1,7 @@
 package com.folib.utils;
 
 import cn.hutool.extra.spring.SpringUtil;
-import com.folib.artifact.coordinates.DockerArtifactCoordinates;
+import com.folib.artifact.coordinates.DockerCoordinates;
 import com.folib.configuration.ConfigurationManager;
 import com.folib.domain.DockerSubsidiary;
 import com.folib.providers.io.RepositoryFiles;
@@ -40,7 +40,7 @@ public class DockerUtils {
     public static List<DockerSubsidiary> getDockerSubsidiaryFilePaths(RepositoryPath repositoryPath) {
         List<DockerSubsidiary> dockerSubsidiaries = Lists.newArrayList();
         try {
-            if (!DockerArtifactCoordinates.isDockerTag(repositoryPath)) {
+            if (!DockerCoordinates.isDockerTag(repositoryPath)) {
                 return null;
             }
             if (Files.isSameFile(repositoryPath.getRoot(), repositoryPath)) {

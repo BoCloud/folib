@@ -1,6 +1,6 @@
 package com.folib.providers.layout.p2;
 
-import com.folib.artifact.coordinates.P2ArtifactCoordinates;
+import com.folib.artifact.coordinates.P2Coordinates;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -78,7 +78,7 @@ public class P2ArtifactRuleProcessor
         return result;
     }
 
-    public String getOutput(P2ArtifactCoordinates p2artifact)
+    public String getOutput(P2Coordinates p2artifact)
     {
         Map<String, String> properties = p2artifact.getProperties();
         if (matches(properties))
@@ -123,7 +123,7 @@ public class P2ArtifactRuleProcessor
     }
 
     public static String getFilename(P2Mappings mappings,
-                                     P2ArtifactCoordinates p2artifact)
+                                     P2Coordinates p2artifact)
     {
         Collection<P2ArtifactRuleProcessor> artifacts = mappings.getRules().stream().map(
                 rule -> new P2ArtifactRuleProcessor(rule.getOutput(), rule.getFilter())).collect(

@@ -9,14 +9,14 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.folib.artifact.coordinates.ArtifactLayoutDescription;
 import com.folib.artifact.coordinates.ArtifactLayoutLocator;
-import com.folib.artifact.coordinates.GenericArtifactCoordinates;
+import com.folib.artifact.coordinates.GenericCoordinates;
 import com.folib.components.DistributedLockComponent;
 import com.folib.configuration.ConfigurationManager;
 import com.folib.configuration.ConfigurationUtils;
 import com.folib.constant.GlobalConstants;
-import com.veadan.folib.db.schema.Edges;
-import com.veadan.folib.db.schema.Properties;
-import com.veadan.folib.db.schema.Vertices;
+import com.folib.db.schema.Edges;
+import com.folib.db.schema.Properties;
+import com.folib.db.schema.Vertices;
 import com.folib.gremlin.adapters.ArtifactAdapter;
 import com.folib.gremlin.dsl.EntityTraversal;
 import com.folib.gremlin.dsl.EntityTraversalUtils;
@@ -146,7 +146,7 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
         if(Optional.ofNullable(repository).isEmpty()){
             artifactList = buildEntityTraversal(regex, artifactName, metadataSearch, storageIdAndRepositoryIdList, storageId, repositoryId, repositoryIds, beginDate, endDate, safeLevel, digestAlgorithm, digest, query, sortField, sortOrder)
                     .range(low, high)
-                    .map(artifactAdapter.searchFold(Optional.of(GenericArtifactCoordinatesEntity.class))).toList();
+                    .map(artifactAdapter.searchFold(Optional.of(GenericCoordinatesEntity.class))).toList();
         }else {
              artifactList = buildEntityTraversal(regex, artifactName, metadataSearch, storageIdAndRepositoryIdList, storageId, repositoryId, repositoryIds, beginDate, endDate, safeLevel, digestAlgorithm, digest, query, sortField, sortOrder)
                     .range(low, high)
@@ -201,7 +201,7 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
         artifactSearchRange.setEndPos(count);
         artifactSearchRange.setTotal(count);
         List<Artifact> artifactList = entityTraversal.skip(offset).limit(limit)
-                .map(artifactAdapter.aqlSearchFold(Optional.of(GenericArtifactCoordinatesEntity.class))).toList();
+                .map(artifactAdapter.aqlSearchFold(Optional.of(GenericCoordinatesEntity.class))).toList();
         artifactSearch.setResults(artifactList);
         return artifactSearch;
     }
@@ -309,7 +309,7 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
         orEntityTraversalList.add(__.has(Properties.METADATA, P.eq("{}")));
         EntityTraversal[] orEntityTraversalArray = orEntityTraversalList.toArray(new EntityTraversal[orEntityTraversalList.size()]);
         List<Artifact> artifactList = g().V().hasLabel(Vertices.ARTIFACT).has(Properties.STORAGE_ID_AND_REPOSITORY_ID, P.within(storageIdAndRepositoryIdList)).has(Properties.SAFE_LEVEL, P.within(safeLevels))
-                .or(orEntityTraversalArray).order().by(Properties.CREATED, Order.valueOf(order)).range(0, 250).map(artifactAdapter.baseFold(Optional.of(GenericArtifactCoordinates.class))).toList();
+                .or(orEntityTraversalArray).order().by(Properties.CREATED, Order.valueOf(order)).range(0, 250).map(artifactAdapter.baseFold(Optional.of(GenericCoordinates.class))).toList();
         return artifactList;
     }
 
@@ -333,7 +333,7 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
         long high = (pagination.getPageNumber() + 1) * pagination.getPageSize();
         List<Artifact> artifactList = buildEntityTraversalSafeLevels(storageIdAndRepositoryIdList, safeLevels).order().by(Properties.CREATED, Order.valueOf(order))
                 .range(low, high)
-                .map(artifactAdapter.baseFold(Optional.of(GenericArtifactCoordinates.class))).toList();
+                .map(artifactAdapter.baseFold(Optional.of(GenericCoordinates.class))).toList();
         return new PageImpl<>(artifactList, pagination, count);
     }
 
@@ -376,7 +376,7 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
         long high = (pageable.getPageNumber() + 1) * pageable.getPageSize();
         return buildEntityTraversalByStorageIdAndRepositoryId(storageId, repositoryId)
                 .range(low, high)
-                .map(artifactAdapter.baseFold(Optional.of(GenericArtifactCoordinates.class))).toList();
+                .map(artifactAdapter.baseFold(Optional.of(GenericCoordinates.class))).toList();
     }
 
     public Long artifactsBytesStatistics(List<String> storageIdAndRepositoryIdList) {
@@ -943,7 +943,7 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
         log.debug("Find storageId [{}] repositoryId [{}] path [{}] artifactExists", storageId, repositoryId, path);
         long startTime = System.currentTimeMillis();
         EntityTraversal<Vertex, Vertex> t = g().V()
-                .hasLabel(Vertices.GENERIC_ARTIFACT_COORDINATES)
+                .hasLabel(Vertices.GENERIC_COORDINATES)
                 .has(Properties.UUID, path)
                 .inE(Edges.ARTIFACT_HAS_ARTIFACT_COORDINATES)
                 .otherV()
@@ -1072,7 +1072,7 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
 
     public long countGenericArtifactCoordinatesByUUid(String uuid, String artifactPath) {
         return g().V()
-                .hasLabel(Vertices.GENERIC_ARTIFACT_COORDINATES).has(Properties.UUID, artifactPath)
+                .hasLabel(Vertices.GENERIC_COORDINATES).has(Properties.UUID, artifactPath)
                 .in(Edges.ARTIFACT_HAS_ARTIFACT_COORDINATES)
                 .hasLabel(Vertices.ARTIFACT).has(Properties.UUID, P.neq(uuid))
                 .count().tryNext().orElse(0L);
@@ -1088,7 +1088,7 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
             return;
         }
         log.info("Delete storageId [{}] repositoryId [{}] artifactPath [{}] artifactCoordinates [{}]", artifact.getStorageId(), artifact.getRepositoryId(), artifact.getArtifactPath(), artifactCoordinates);
-        g().V().hasLabel(Vertices.GENERIC_ARTIFACT_COORDINATES).has(Properties.UUID, artifact.getArtifactPath())
+        g().V().hasLabel(Vertices.GENERIC_COORDINATES).has(Properties.UUID, artifact.getArtifactPath())
                 .in(Edges.EXTENDS)
                 .hasLabel(artifactCoordinates).drop().iterate();
     }

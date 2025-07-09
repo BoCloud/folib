@@ -18,7 +18,7 @@ import com.folib.npm.metadata.PackageFeed;
 import com.folib.npm.metadata.PackageVersion;
 import com.folib.providers.io.RepositoryFiles;
 import com.folib.providers.io.RepositoryPath;
-import com.folib.providers.layout.NpmLayoutProvider;
+import com.folib.providers.NpmLayoutProvider;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.compress.archivers.ArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;

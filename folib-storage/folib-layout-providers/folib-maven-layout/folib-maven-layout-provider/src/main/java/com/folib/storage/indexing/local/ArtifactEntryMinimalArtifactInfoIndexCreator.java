@@ -3,7 +3,7 @@ package com.folib.storage.indexing.local;
 import java.time.ZoneOffset;
 import java.util.Map;
 
-import com.folib.artifact.coordinates.MavenArtifactCoordinates;
+import com.folib.artifact.coordinates.MavenCoordinates;
 import com.folib.domain.Artifact;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.maven.index.ArtifactAvailability;
@@ -34,7 +34,7 @@ public class ArtifactEntryMinimalArtifactInfoIndexCreator
         ArtifactEntryArtifactContext ac = (ArtifactEntryArtifactContext) artifactContext;
         Artifact artifactEntry = ac.getArtifactEntry();
 
-        MavenArtifactCoordinates coordinates = (MavenArtifactCoordinates) artifactEntry.getArtifactCoordinates();
+        MavenCoordinates coordinates = (MavenCoordinates) artifactEntry.getArtifactCoordinates();
 
         ArtifactInfo ai = ac.getArtifactInfo();
 

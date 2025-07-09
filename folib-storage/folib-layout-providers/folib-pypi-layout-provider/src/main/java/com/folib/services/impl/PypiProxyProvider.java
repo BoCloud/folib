@@ -1,7 +1,7 @@
 package com.folib.services.impl;
 
 import com.google.common.collect.Lists;
-import com.folib.artifact.coordinates.PypiArtifactCoordinates;
+import com.folib.artifact.coordinates.PypiCoordinates;
 import com.folib.components.DistributedCacheComponent;
 import com.folib.components.PypiBrowsePackageHtmlResponseBuilder;
 import com.folib.components.StorageClientComponent;
@@ -156,7 +156,7 @@ public class PypiProxyProvider implements PypiProvider {
             }
             String artifactPath = artifactUrl.substring(artifactUrl.indexOf("/packages/") + "/packages/".length());
             artifactUrl = PypiUtils.resolveUrl(packageTargetUrl, artifactUrl);
-            return PypiSearchResult.builder().artifactName(artifactName).artifactPath(artifactPath).artifactUrl(artifactUrl).storageId(storageId).repositoryId(repositoryId).groupName(PypiArtifactCoordinates.parse(artifactName).getId()).attributes(getAttributes(matchResult.group(0))).build();
+            return PypiSearchResult.builder().artifactName(artifactName).artifactPath(artifactPath).artifactUrl(artifactUrl).storageId(storageId).repositoryId(repositoryId).groupName(PypiCoordinates.parse(artifactName).getId()).attributes(getAttributes(matchResult.group(0))).build();
         } catch (Exception ex) {
             log.error("Pypi storageId [{}] repositoryId [{}] packageName [{}] parse error [{}]", storageId, repositoryId, artifactName, ExceptionUtils.getStackTrace(ex));
 //            throw new RuntimeException(ex.getMessage());

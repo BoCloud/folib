@@ -1,6 +1,6 @@
 package com.folib.providers.layout;
 
-import com.folib.artifact.coordinates.ConanArtifactCoordinates;
+import com.folib.artifact.coordinates.ConanCoordinates;
 import com.folib.artifact.coordinates.ConanArtifactIndex;
 import com.folib.constant.GlobalConstants;
 import com.folib.providers.header.HeaderMappingRegistry;
@@ -8,8 +8,8 @@ import com.folib.providers.io.RepositoryFileAttributeType;
 import com.folib.providers.io.RepositoryFiles;
 import com.folib.providers.io.RepositoryPath;
 import com.folib.repository.ConanRepositoryFeatures;
-import com.folib.repository.ConanRepositoryManagementStrategy;
-import com.folib.repository.RepositoryManagementStrategy;
+import com.folib.repository.ConanRepositoryStrategy;
+import com.folib.repository.RepositoryStrategy;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -26,11 +26,11 @@ import java.util.Map;
 import java.util.Set;
 
 @Component
-public class ConanLayoutProvider extends AbstractLayoutProvider<ConanArtifactCoordinates> {
+public class ConanLayoutProvider extends AbstractLayoutProvider<ConanCoordinates> {
     private static final Logger logger = LoggerFactory.getLogger(ConanLayoutProvider.class);
 
     @Inject
-    private ConanRepositoryManagementStrategy conanRepositoryManagementStrategy;
+    private ConanRepositoryStrategy conanRepositoryManagementStrategy;
 
     @Inject
     private ConanRepositoryFeatures conanRepositoryFeatures;
@@ -41,7 +41,7 @@ public class ConanLayoutProvider extends AbstractLayoutProvider<ConanArtifactCoo
     public static final String ALIAS = "conan";
 
     @Override
-    public RepositoryManagementStrategy getRepositoryManagementStrategy() {
+    public RepositoryStrategy getRepositoryManagementStrategy() {
         return conanRepositoryManagementStrategy;
     }
 
@@ -61,8 +61,8 @@ public class ConanLayoutProvider extends AbstractLayoutProvider<ConanArtifactCoo
     }
 
     @Override
-    public ConanArtifactCoordinates getArtifactCoordinates(RepositoryPath repositoryPath) throws IOException {
-        return ConanArtifactCoordinates.parse(RepositoryFiles.relativizePath(repositoryPath));
+    public ConanCoordinates getArtifactCoordinates(RepositoryPath repositoryPath) throws IOException {
+        return ConanCoordinates.parse(RepositoryFiles.relativizePath(repositoryPath));
     }
 
     @PostConstruct

@@ -1,7 +1,7 @@
 package com.folib.providers.layout;
 
 import com.google.common.collect.Lists;
-import com.folib.artifact.coordinates.DockerArtifactCoordinates;
+import com.folib.artifact.coordinates.DockerCoordinates;
 import com.folib.components.DockerLayoutComponent;
 import com.folib.enums.ProductTypeEnum;
 import com.folib.providers.io.RepositoryFiles;
@@ -74,7 +74,7 @@ public class DockerFileSystemProvider
         try {
             if (!artifactPath.equals(rootArtifactPath)) {
                 RepositoryPath parent = repositoryPath.getParent();
-                if (Files.exists(parent) && !Files.isSameFile(repositoryPath.getRoot(), parent) && DockerArtifactCoordinates.DOCKER_LAYER_DIR_NAME_LIST.stream().noneMatch(item -> item.equals(parent.getFileName().toString())) && RepositoryFiles.isDirectoryEmpty(parent)) {
+                if (Files.exists(parent) && !Files.isSameFile(repositoryPath.getRoot(), parent) && DockerCoordinates.DOCKER_LAYER_DIR_NAME_LIST.stream().noneMatch(item -> item.equals(parent.getFileName().toString())) && RepositoryFiles.isDirectoryEmpty(parent)) {
                     Files.deleteIfExists(parent);
                     logger.info("Delete parent root path {}", parent.toString());
                 }
@@ -105,7 +105,7 @@ public class DockerFileSystemProvider
      */
     public void handlerManifestAndBlob(RepositoryPath repositoryPath, boolean force, Path currentManifestPath) throws IOException {
         if (!Files.isDirectory(repositoryPath)) {
-            if (!DockerArtifactCoordinates.isDockerTag(repositoryPath)) {
+            if (!DockerCoordinates.isDockerTag(repositoryPath)) {
                 return;
             }
             currentManifestPath = repositoryPath;
@@ -118,7 +118,7 @@ public class DockerFileSystemProvider
                 public FileVisitResult visitFile(Path file,
                                                  BasicFileAttributes attrs)
                         throws IOException {
-                    if (DockerArtifactCoordinates.isTagPath(file)) {
+                    if (DockerCoordinates.isTagPath(file)) {
                         tagList.add(file);
                     }
                     return FileVisitResult.CONTINUE;

@@ -2,7 +2,7 @@ package com.folib.repository;
 
 import com.alibaba.fastjson.JSONObject;
 import com.folib.artifact.ArtifactTag;
-import com.folib.artifact.coordinates.NpmArtifactCoordinates;
+import com.folib.artifact.coordinates.NpmCoordinates;
 import com.folib.domain.Artifact;
 import com.folib.domain.ArtifactEntity;
 import com.folib.domain.ArtifactTagEntity;
@@ -104,7 +104,7 @@ public class NpmPackageFeedParser {
                                         String repositoryId,
                                         PackageVersion packageVersion,String packageSuffix) {
 
-        NpmArtifactCoordinates c = NpmArtifactCoordinates.of(packageVersion.getName(), packageVersion.getVersion(),packageSuffix);
+        NpmCoordinates c = NpmCoordinates.of(packageVersion.getName(), packageVersion.getVersion(),packageSuffix);
         Artifact artifact = artifactRepository.findOneArtifact(storageId, repositoryId, c.buildPath());
         ArtifactEntity remoteArtifactEntry = null;
         if (Objects.nonNull(artifact)) {
@@ -132,10 +132,10 @@ public class NpmPackageFeedParser {
                                         String repositoryId,
                                         PackageEntry packageEntry,String packageSuffix) {
         String scope = packageEntry.getScope();
-        String packageId = NpmArtifactCoordinates.calculatePackageId("unscoped".equals(scope) ? null : scope,
+        String packageId = NpmCoordinates.calculatePackageId("unscoped".equals(scope) ? null : scope,
                 packageEntry.getName());
 
-        NpmArtifactCoordinates c = NpmArtifactCoordinates.of(packageId, packageEntry.getVersion(),packageSuffix);
+        NpmCoordinates c = NpmCoordinates.of(packageId, packageEntry.getVersion(),packageSuffix);
 
         LocalDateTime now = LocalDateTimeInstance.now();
         Artifact artifact = artifactRepository.findOneArtifact(storageId, repositoryId, c.buildPath());

@@ -30,8 +30,8 @@ import com.folib.providers.layout.LayoutFileSystemProvider;
 import com.folib.repositories.ArtifactRepository;
 import com.folib.storage.repository.Repository;
 import com.folib.storage.validation.artifact.ArtifactCoordinatesValidationException;
-import com.folib.web.LayoutRequestMapping;
-import com.folib.web.RepositoryMapping;
+import com.folib.web.LayoutReqMapping;
+import com.folib.web.RepoMapping;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
@@ -66,7 +66,7 @@ import static com.folib.constant.MlModelConstants.LEAD_FILE_NAME;
 
 
 @RestController
-@LayoutRequestMapping(HuggingFaceLayoutProvider.ALIAS)
+@LayoutReqMapping(HuggingFaceLayoutProvider.ALIAS)
 @Api(value = "Hugging Face ML 坐标控制器", tags = "Hugging Face ML 坐标控制器")
 public class HuggingFaceMLControllers extends BaseArtifactController {
 
@@ -100,7 +100,7 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
     @RequestMapping(path = "{storageId}/{repositoryId}/{organization}/{modelName}/resolve/{revision}/{filename:.+}",
             method = RequestMethod.HEAD
     )
-    public ResponseEntity<?> getHead(@RepositoryMapping Repository repository,
+    public ResponseEntity<?> getHead(@RepoMapping Repository repository,
                                      HttpServletRequest request,
                                      @PathVariable("organization") String organizationName,
                                      @PathVariable("modelName") String modelName,
@@ -128,7 +128,7 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
     @RequestMapping(path = "{storageId}/{repositoryId}/{modelName}/resolve/{revision}/{filename:.+}",
             method = RequestMethod.HEAD
     )
-    public ResponseEntity<?> getHead(@RepositoryMapping Repository repository,
+    public ResponseEntity<?> getHead(@RepoMapping Repository repository,
                                      HttpServletRequest request,
                                      @PathVariable("modelName") String modelName,
                                      @PathVariable("revision") String revision,
@@ -153,7 +153,7 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
     @RequestMapping(path = "{storageId}/{repositoryId}/{organization}/{modelName}/resolve/{revision}/{filename:.+}",
             method = RequestMethod.GET
     )
-    public ResponseEntity<?> getFile(@RepositoryMapping Repository repository,
+    public ResponseEntity<?> getFile(@RepoMapping Repository repository,
                                      HttpServletRequest request,
                                      @PathVariable("organization") String organizationName,
                                      @PathVariable("modelName") String modelName,
@@ -180,7 +180,7 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
     @RequestMapping(path = "{storageId}/{repositoryId}/{modelName}/resolve/{revision}/{filename:.+}",
             method = RequestMethod.GET
     )
-    public ResponseEntity<?> getFile(@RepositoryMapping Repository repository,
+    public ResponseEntity<?> getFile(@RepoMapping Repository repository,
                                      HttpServletRequest request,
                                      @PathVariable("modelName") String modelName,
                                      @PathVariable("revision") String revision,
@@ -205,7 +205,7 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
     @RequestMapping(path = "{storageId}/{repositoryId}/api/models/{organization}/{modelName}",
             method = RequestMethod.GET
     )
-    public ResponseEntity<?> getMainRevisionData(@RepositoryMapping Repository repository,
+    public ResponseEntity<?> getMainRevisionData(@RepoMapping Repository repository,
                                                  HttpServletRequest request,
                                                  @PathVariable("organization") String organizationName,
                                                  @PathVariable("modelName") String modelName) throws Exception {
@@ -226,7 +226,7 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
     @RequestMapping(path = "{storageId}/{repositoryId}/api/models/{modelName}",
             method = RequestMethod.GET
     )
-    public ResponseEntity<?> getMainRevisionData(@RepositoryMapping Repository repository,
+    public ResponseEntity<?> getMainRevisionData(@RepoMapping Repository repository,
                                                  HttpServletRequest request,
                                                  @PathVariable("modelName") String modelName) throws Exception {
         MlModelRequestContext context = MlModelRequestContext.builder()
@@ -247,7 +247,7 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
     @RequestMapping(path = "{storageId}/{repositoryId}/api/models/{organization}/{modelName}/revision/{revision}",
             method = RequestMethod.GET
     )
-    public void getRevisionData(@RepositoryMapping Repository repository,
+    public void getRevisionData(@RepoMapping Repository repository,
                                 @PathVariable("storageId") String storageId,
                                 @PathVariable("repositoryId") String repositoryId,
                                 @PathVariable("organization") String organizationName,
@@ -281,7 +281,7 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
             method = RequestMethod.GET
     )
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
-    public void getRevisionData(@RepositoryMapping Repository repository,
+    public void getRevisionData(@RepoMapping Repository repository,
                                 HttpServletRequest request,
                                 HttpServletResponse response,
                                 @RequestHeader HttpHeaders headers,
@@ -311,7 +311,7 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
     @RequestMapping(path = "{storageId}/{repositoryId}/api/complete_multipart/{organization}/{modelName}/{oid}",
             method = RequestMethod.PUT
     )
-    public ResponseEntity<?> uploadMultipart(@RepositoryMapping Repository repository,
+    public ResponseEntity<?> uploadMultipart(@RepoMapping Repository repository,
                                              HttpServletRequest request,
                                              @PathVariable("organization") String organization,
                                              @PathVariable("modelName") String modelName,
@@ -335,7 +335,7 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
     @RequestMapping(path = "{storageId}/{repositoryId}/api/complete_multipart/{modelName}/{oid}",
             method = RequestMethod.PUT
     )
-    public ResponseEntity<?> uploadMultipart(@RepositoryMapping Repository repository,
+    public ResponseEntity<?> uploadMultipart(@RepoMapping Repository repository,
                                              HttpServletRequest request,
                                              @PathVariable("modelName") String modelName,
                                              @PathVariable("oid") String oid) throws IOException {
@@ -359,7 +359,7 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
             consumes = {"application/vnd.git-lfs+json"},
             produces = {"application/vnd.git-lfs+json"}
     )
-    public ResponseEntity<?> handleLfsObjects(@RepositoryMapping Repository repository,
+    public ResponseEntity<?> handleLfsObjects(@RepoMapping Repository repository,
                                               HttpServletRequest request,
                                               @PathVariable("organization") String organization,
                                               @PathVariable("modelName") String modelName,
@@ -383,7 +383,7 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
             consumes = {"application/vnd.git-lfs+json"},
             produces = {"application/vnd.git-lfs+json"}
     )
-    public ResponseEntity<?> handleLfsObjects(@RepositoryMapping Repository repository,
+    public ResponseEntity<?> handleLfsObjects(@RepoMapping Repository repository,
                                               HttpServletRequest request,
                                               @PathVariable("modelName") String modelName,
                                               @RequestBody GitLfsBatchJson lfsInfoPayload) throws IOException {
@@ -406,7 +406,7 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
             consumes = {"application/json"},
             produces = {"application/json"}
     )
-    public ResponseEntity<?> handlePreUpload(@RepositoryMapping Repository repository,
+    public ResponseEntity<?> handlePreUpload(@RepoMapping Repository repository,
                                              HttpServletRequest request,
                                              @PathVariable("organization") String organizationName,
                                              @PathVariable("modelName") String modelName,
@@ -435,7 +435,7 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
             consumes = {"application/json"},
             produces = {"application/json"}
     )
-    public ResponseEntity<?> handlePreUpload(@RepositoryMapping Repository repository,
+    public ResponseEntity<?> handlePreUpload(@RepoMapping Repository repository,
                                              HttpServletRequest request,
                                              @PathVariable("modelName") String modelName,
                                              @PathVariable("revision") String revision,
@@ -461,7 +461,7 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
             consumes = {"application/x-ndjson"},
             produces = {"application/json"}
     )
-    public ResponseEntity<?> handleCommit(@RepositoryMapping Repository repository,
+    public ResponseEntity<?> handleCommit(@RepoMapping Repository repository,
                                           HttpServletRequest request,
                                           @PathVariable("organization") String organization,
                                           @PathVariable("modelName") String modelName,
@@ -499,7 +499,7 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
             consumes = {"application/x-ndjson"},
             produces = {"application/json"}
     )
-    public ResponseEntity<?> handleCommit(@RepositoryMapping Repository repository,
+    public ResponseEntity<?> handleCommit(@RepoMapping Repository repository,
                                           HttpServletRequest request,
                                           @PathVariable("modelName") String modelName,
                                           @PathVariable("revision") String revision,
@@ -537,7 +537,7 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
             @ApiResponse(code = 503, message = "Repository currently not in service.")})
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     @RequestMapping(value = {"/{storageId}/{repositoryId}/models/{artifactPath:.+}"}, method = {RequestMethod.GET, RequestMethod.HEAD})
-    public void download(@RepositoryMapping Repository repository,
+    public void download(@RepoMapping Repository repository,
                          @PathVariable String artifactPath,
                          @RequestHeader HttpHeaders httpHeaders, HttpServletRequest request,
                          HttpServletResponse response)

@@ -14,7 +14,7 @@ import java.util.Enumeration;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
-import com.veadan.folib.db.schema.FolibSchema;
+import com.folib.db.schema.FolibSchema;
 import org.janusgraph.core.JanusGraph;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

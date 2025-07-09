@@ -4,18 +4,18 @@ import com.alibaba.fastjson.JSON;
 import com.folib.artifact.coordinates.ArtifactCoordinates;
 import com.folib.artifact.coordinates.ArtifactLayoutDescription;
 import com.folib.artifact.coordinates.ArtifactLayoutLocator;
-import com.folib.artifact.coordinates.GenericArtifactCoordinates;
+import com.folib.artifact.coordinates.GenericCoordinates;
 import com.folib.domain.*;
 import com.folib.artifact.ArtifactTag;
 import com.folib.configuration.ConfigurationManager;
-import com.veadan.folib.db.schema.Edges;
-import com.veadan.folib.db.schema.Properties;
-import com.veadan.folib.db.schema.Vertices;
+import com.folib.db.schema.Edges;
+import com.folib.db.schema.Properties;
+import com.folib.db.schema.Vertices;
 import com.folib.gremlin.dsl.EntityTraversal;
 import com.folib.gremlin.dsl.EntityTraversalUtils;
 import com.folib.gremlin.dsl.__;
 import com.folib.storage.repository.Repository;
-import com.folib.strategy.ArtifactCoordinatesStrategyFactory;
+import com.folib.strategy.ArtifactStrategyFactory;
 import com.folib.util.UserUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
@@ -62,7 +62,7 @@ public class ArtifactAdapter implements VertexEntityTraversalAdapter<Artifact> {
     ConfigurationManager configurationManager;
     @Inject
     @Lazy
-    ArtifactCoordinatesStrategyFactory strategyFactory;
+    ArtifactStrategyFactory strategyFactory;
 
     @Override
     public String label() {
@@ -71,10 +71,10 @@ public class ArtifactAdapter implements VertexEntityTraversalAdapter<Artifact> {
 
     @Override
     public EntityTraversal<Vertex, Artifact> fold() {
-        return fold(Optional.of(GenericArtifactCoordinatesEntity.class));
+        return fold(Optional.of(GenericCoordinatesEntity.class));
     }
 
-    public EntityTraversal<Vertex, Artifact> fold(Optional<Class<? extends GenericArtifactCoordinates>> layoutArtifactCoordinatesClass) {
+    public EntityTraversal<Vertex, Artifact> fold(Optional<Class<? extends GenericCoordinates>> layoutArtifactCoordinatesClass) {
         return __.<Vertex, Object>project("id",
                 "uuid",
                 "storageId",
@@ -177,7 +177,7 @@ public class ArtifactAdapter implements VertexEntityTraversalAdapter<Artifact> {
                 .map(this::map);
     }
 
-    public EntityTraversal<Vertex, Artifact> reportFold(Optional<Class<? extends GenericArtifactCoordinates>> layoutArtifactCoordinatesClass) {
+    public EntityTraversal<Vertex, Artifact> reportFold(Optional<Class<? extends GenericCoordinates>> layoutArtifactCoordinatesClass) {
         return __.<Vertex, Object>project("id",
                 "uuid",
                 "storageId",
@@ -280,7 +280,7 @@ public class ArtifactAdapter implements VertexEntityTraversalAdapter<Artifact> {
                 .map(this::map);
     }
 
-    public EntityTraversal<Vertex, Artifact> baseFold(Optional<Class<? extends GenericArtifactCoordinates>> layoutArtifactCoordinatesClass) {
+    public EntityTraversal<Vertex, Artifact> baseFold(Optional<Class<? extends GenericCoordinates>> layoutArtifactCoordinatesClass) {
         return __.<Vertex, Object>project("id",
                 "uuid",
                 "storageId",
@@ -334,7 +334,7 @@ public class ArtifactAdapter implements VertexEntityTraversalAdapter<Artifact> {
                 .map(this::map);
     }
 
-    public EntityTraversal<Vertex, Artifact> searchFold(Optional<Class<? extends GenericArtifactCoordinates>> layoutArtifactCoordinatesClass) {
+    public EntityTraversal<Vertex, Artifact> searchFold(Optional<Class<? extends GenericCoordinates>> layoutArtifactCoordinatesClass) {
         return __.<Vertex, Object>project("id",
                 "uuid",
                 "storageId",
@@ -391,7 +391,7 @@ public class ArtifactAdapter implements VertexEntityTraversalAdapter<Artifact> {
                 .map(this::map);
     }
 
-    public EntityTraversal<Vertex, Artifact> aqlSearchFold(Optional<Class<? extends GenericArtifactCoordinates>> layoutArtifactCoordinatesClass) {
+    public EntityTraversal<Vertex, Artifact> aqlSearchFold(Optional<Class<? extends GenericCoordinates>> layoutArtifactCoordinatesClass) {
         return __.<Vertex, Object>project("id",
                 "uuid",
                 "storageId",
@@ -505,7 +505,7 @@ public class ArtifactAdapter implements VertexEntityTraversalAdapter<Artifact> {
                 .by(__.enrichPropertyValues("checksums"))
                 .by(__.outE(Edges.ARTIFACT_HAS_ARTIFACT_COORDINATES)
                         .mapToObject(__.inV()
-                                .map(artifactCoordinatesAdapter.fold(Optional.of(GenericArtifactCoordinatesEntity.class)))
+                                .map(artifactCoordinatesAdapter.fold(Optional.of(GenericCoordinatesEntity.class)))
                                 .map(EntityTraversalUtils::castToObject)))
                 .by(__.outE(Edges.ARTIFACT_HAS_TAGS)
                         .inV()
@@ -525,12 +525,12 @@ public class ArtifactAdapter implements VertexEntityTraversalAdapter<Artifact> {
         String storageId = extractObject(String.class, t.get().get("storageId"));
         String repositoryId = extractObject(String.class, t.get().get("repositoryId"));
         ArtifactCoordinates artifactCoordinates = null;
-        if (t.get().get("artifactCoordinates") instanceof GenericArtifactCoordinatesEntity entity) {
+        if (t.get().get("artifactCoordinates") instanceof GenericCoordinatesEntity entity) {
             Repository repository = configurationManager.getRepository(storageId, repositoryId);
             if (repository == null) {
                 throw new IllegalStateException("Repository not found: " + storageId + ":" + repositoryId);
             }
-            Class<? extends GenericArtifactCoordinates> clazz = Optional.ofNullable(repository.getLayout())
+            Class<? extends GenericCoordinates> clazz = Optional.ofNullable(repository.getLayout())
                     .map(ArtifactLayoutLocator.getLayoutByNameEntityMap()::get)
                     .map(ArtifactLayoutDescription::getArtifactCoordinatesClass)
                     .orElseThrow(() -> new IllegalStateException("Coordinates class not found"));
@@ -594,12 +594,12 @@ public class ArtifactAdapter implements VertexEntityTraversalAdapter<Artifact> {
         String storageId = extractObject(String.class, t.get().get("storageId"));
         String repositoryId = extractObject(String.class, t.get().get("repositoryId"));
         ArtifactCoordinates artifactCoordinates = null;
-        if (t.get().get("artifactCoordinates") instanceof GenericArtifactCoordinatesEntity entity) {
+        if (t.get().get("artifactCoordinates") instanceof GenericCoordinatesEntity entity) {
             Repository repository = configurationManager.getRepository(storageId, repositoryId);
             if (repository == null) {
                 throw new IllegalStateException("Repository not found: " + storageId + ":" + repositoryId);
             }
-            Class<? extends GenericArtifactCoordinates> clazz = Optional.ofNullable(repository.getLayout())
+            Class<? extends GenericCoordinates> clazz = Optional.ofNullable(repository.getLayout())
                     .map(ArtifactLayoutLocator.getLayoutByNameEntityMap()::get)
                     .map(ArtifactLayoutDescription::getArtifactCoordinatesClass)
                     .orElseThrow(() -> new IllegalStateException("Coordinates class not found"));

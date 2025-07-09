@@ -1,7 +1,7 @@
 package com.folib.providers.layout;
 
 import com.google.common.collect.Lists;
-import com.folib.artifact.coordinates.DockerArtifactCoordinates;
+import com.folib.artifact.coordinates.DockerCoordinates;
 import com.folib.components.DockerAuthComponent;
 import com.folib.constant.GlobalConstants;
 import com.folib.domain.ArtifactIdGroup;
@@ -13,8 +13,8 @@ import com.folib.providers.io.RepositoryFiles;
 import com.folib.providers.io.RepositoryPath;
 import com.folib.repositories.ArtifactIdGroupRepository;
 import com.folib.repository.DockerRepositoryFeatures;
-import com.folib.repository.DockerRepositoryManagementStrategy;
-import com.folib.repository.RepositoryManagementStrategy;
+import com.folib.repository.DockerRepositoryStrategy;
+import com.folib.repository.RepositoryStrategy;
 import com.folib.storage.repository.RepositoryTypeEnum;
 import com.folib.storage.repository.remote.RemoteRepository;
 import com.folib.utils.DockerUtils;
@@ -43,10 +43,10 @@ import java.util.stream.Stream;
  */
 @Component
 public class DockerLayoutProvider
-        extends AbstractLayoutProvider<DockerArtifactCoordinates> {
+        extends AbstractLayoutProvider<DockerCoordinates> {
     private static final Logger logger = LoggerFactory.getLogger(DockerLayoutProvider.class);
 
-    public static final String ALIAS = DockerArtifactCoordinates.LAYOUT_NAME;
+    public static final String ALIAS = DockerCoordinates.LAYOUT_NAME;
 
     public static final String IMAGES_MANIFEST = "manifest.json";
 
@@ -60,13 +60,13 @@ public class DockerLayoutProvider
 
     public static final List<String> DOCKER_BLOBS_MANIFESTS_URL = Lists.newArrayList(MANIFESTS, BLOBS);
 
-    public static final List<String> DOCKER_SUBLAYOUT = Lists.newArrayList(DockerArtifactCoordinates.LAYOUT_NAME, "ollama");
+    public static final List<String> DOCKER_SUBLAYOUT = Lists.newArrayList(DockerCoordinates.LAYOUT_NAME, "ollama");
 
     @Inject
     private HeaderMappingRegistry headerMappingRegistry;
 
     @Inject
-    private DockerRepositoryManagementStrategy dockerRepositoryManagementStrategy;
+    private DockerRepositoryStrategy dockerRepositoryManagementStrategy;
 
     @Inject
     private DockerRepositoryFeatures dockerRepositoryFeatures;
@@ -85,9 +85,9 @@ public class DockerLayoutProvider
     }
 
     @Override
-    public DockerArtifactCoordinates getArtifactCoordinates(RepositoryPath path) throws IOException {
+    public DockerCoordinates getArtifactCoordinates(RepositoryPath path) throws IOException {
         logger.debug("DockerArtifactCoordinates parse path [{}]", path);
-        return DockerArtifactCoordinates.parse(RepositoryFiles.relativizePath(path));
+        return DockerCoordinates.parse(RepositoryFiles.relativizePath(path));
     }
 
     @Override
@@ -138,7 +138,7 @@ public class DockerLayoutProvider
                     break;
                 case EXPIRED:
                     final Instant tenSecondsAgo = Instant.now().minus(10, ChronoUnit.SECONDS);
-                    value = BooleanUtils.isTrue((Boolean) value) || ((DockerArtifactCoordinates.isDockerTag(repositoryPath) || DockerArtifactCoordinates.isRealManifestPath(repositoryPath))
+                    value = BooleanUtils.isTrue((Boolean) value) || ((DockerCoordinates.isDockerTag(repositoryPath) || DockerCoordinates.isRealManifestPath(repositoryPath))
                             &&
                             !RepositoryFiles.wasModifiedAfter(repositoryPath,
                                     tenSecondsAgo));
@@ -148,7 +148,7 @@ public class DockerLayoutProvider
                     break;
                 case REFRESH_CONTENT:
                     final Instant halfAnHourAgo = Instant.now().minus(refreshContentInterval(repositoryPath), ChronoUnit.MINUTES);
-                    value = BooleanUtils.isTrue((Boolean) value) || (!RepositoryTypeEnum.HOSTED.getType().equals(repositoryPath.getRepository().getType()) && (DockerArtifactCoordinates.isDockerTag(repositoryPath) || DockerArtifactCoordinates.isRealManifestPath(repositoryPath))
+                    value = BooleanUtils.isTrue((Boolean) value) || (!RepositoryTypeEnum.HOSTED.getType().equals(repositoryPath.getRepository().getType()) && (DockerCoordinates.isDockerTag(repositoryPath) || DockerCoordinates.isRealManifestPath(repositoryPath))
                             &&
                             !RepositoryFiles.wasModifiedAfter(repositoryPath,
                                     halfAnHourAgo));
@@ -166,7 +166,7 @@ public class DockerLayoutProvider
     }
 
     @Override
-    public RepositoryManagementStrategy getRepositoryManagementStrategy() {
+    public RepositoryStrategy getRepositoryManagementStrategy() {
         return dockerRepositoryManagementStrategy;
     }
 
@@ -205,9 +205,9 @@ public class DockerLayoutProvider
             try {
                 String artifactPath = RepositoryFiles.relativizePath(path), imagePath = "";
                 boolean concat = false;
-                DockerArtifactCoordinates dockerArtifactCoordinates;
+                DockerCoordinates dockerArtifactCoordinates;
                 if (DockerLayoutProvider.DOCKER_BLOBS_MANIFESTS_URL.stream().noneMatch(artifactPath::contains)) {
-                    dockerArtifactCoordinates = DockerArtifactCoordinates.parse(artifactPath);
+                    dockerArtifactCoordinates = DockerCoordinates.parse(artifactPath);
                     imagePath = dockerArtifactCoordinates.getName();
                     if (imagePath.split(GlobalConstants.SEPARATOR).length <= 1) {
                         concat = true;
@@ -216,7 +216,7 @@ public class DockerLayoutProvider
                     if(Objects.isNull(path.getTargetUrl())){
                         return;
                     }
-                    dockerArtifactCoordinates = DockerArtifactCoordinates.parse(path.getTargetUrl());
+                    dockerArtifactCoordinates = DockerCoordinates.parse(path.getTargetUrl());
                     imagePath = dockerArtifactCoordinates.getName();
                     if (imagePath.split(GlobalConstants.SEPARATOR).length <= 2) {
                         concat = true;
@@ -242,7 +242,7 @@ public class DockerLayoutProvider
         try {
             RemoteRepository remoteRepository = path.getRepository().getRemoteRepository();
             String storageId = path.getStorageId(), repositoryId = path.getRepositoryId();
-            DockerArtifactCoordinates dockerArtifactCoordinates = DockerArtifactCoordinates.parse(RepositoryFiles.relativizePath(path));
+            DockerCoordinates dockerArtifactCoordinates = DockerCoordinates.parse(RepositoryFiles.relativizePath(path));
             path.setHeaders(DockerHeaderEnum.acceptHeaders());
             String imagePath = dockerArtifactCoordinates.getName();
             if (StringUtils.isNotBlank(path.getArtifactPath())) {

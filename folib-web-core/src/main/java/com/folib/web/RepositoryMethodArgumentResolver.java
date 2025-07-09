@@ -43,7 +43,7 @@ public class RepositoryMethodArgumentResolver
     public boolean supportsParameter(final MethodParameter parameter) {
 
         // Check parameter annotation type
-        if (!parameter.hasParameterAnnotation(RepositoryMapping.class)) {
+        if (!parameter.hasParameterAnnotation(RepoMapping.class)) {
             return false;
         }
         // Check parameter type.
@@ -56,7 +56,7 @@ public class RepositoryMethodArgumentResolver
                                   final NativeWebRequest nativeWebRequest,
                                   final WebDataBinderFactory webDataBinderFactory)
             throws MissingPathVariableException {
-        final RepositoryMapping repositoryMapping = parameter.getParameterAnnotation(RepositoryMapping.class);
+        final RepoMapping repositoryMapping = parameter.getParameterAnnotation(RepoMapping.class);
         final String storageVariableName = repositoryMapping.storageVariableName();
         final String storageId = getRequiredPathVariable(parameter, nativeWebRequest, storageVariableName);
 

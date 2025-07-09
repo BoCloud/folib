@@ -13,9 +13,9 @@ import com.google.cloud.tools.jib.api.Jib;
 import com.google.cloud.tools.jib.api.RegistryImage;
 import com.google.cloud.tools.jib.api.TarImage;
 import com.folib.artifact.MavenArtifactUtils;
-import com.folib.artifact.coordinates.DebianArtifactCoordinates;
-import com.folib.artifact.coordinates.NpmArtifactCoordinates;
-import com.folib.artifact.coordinates.PubArtifactCoordinates;
+import com.folib.artifact.coordinates.DebianCoordinates;
+import com.folib.artifact.coordinates.NpmCoordinates;
+import com.folib.artifact.coordinates.PubCoordinates;
 import com.folib.components.DistributedCacheComponent;
 import com.folib.components.artifact.ArtifactComponent;
 import com.folib.domain.ArtifactIdGroupEntity;
@@ -43,9 +43,9 @@ import com.folib.providers.layout.DockerLayoutProvider;
 import com.folib.providers.layout.LayoutProvider;
 import com.folib.providers.layout.LayoutProviderRegistry;
 import com.folib.providers.layout.Maven2LayoutProvider;
-import com.folib.providers.layout.NpmLayoutProvider;
-import com.folib.providers.layout.PubLayoutProvider;
-import com.folib.providers.layout.RpmLayoutProvider;
+import com.folib.providers.NpmLayoutProvider;
+import com.folib.providers.PubLayoutProvider;
+import com.folib.providers.RpmLayoutProvider;
 import com.folib.repositories.ArtifactRepository;
 import com.folib.repository.MavenRepositoryFeatures;
 import com.folib.scanner.common.util.SpringContextUtil;
@@ -667,7 +667,7 @@ public class ArtifactUploadTask implements Callable<String> {
                     }
 
                     final String packagesuffix = NpmSubLayout.OHPM.getValue().equals(repositoryPath.getRepository().getSubLayout()) ? NpmPacketSuffix.HAR.getValue() : NpmPacketSuffix.TGZ.getValue();
-                    NpmArtifactCoordinates npmArtifactCoordinates = NpmArtifactCoordinates.of(name, version, packagesuffix);
+                    NpmCoordinates npmArtifactCoordinates = NpmCoordinates.of(name, version, packagesuffix);
                     String artifactPath = npmArtifactCoordinates.convertToPath(npmArtifactCoordinates);
                     log.info("The fileRelativePath：{} artifactPath：{}", fileRelativePath, artifactPath);
                     repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
@@ -765,7 +765,7 @@ public class ArtifactUploadTask implements Callable<String> {
             File artifactTempFile = new File(parentTempFile.getAbsolutePath() + File.separator + fileRelativePath);
             FileUtil.writeFromStream(is, artifactTempFile);
             Path path = Path.of(artifactTempFile.getAbsolutePath());
-            if (!fileRelativePath.endsWith(PubArtifactCoordinates.PUB_EXTENSION)) {
+            if (!fileRelativePath.endsWith(PubCoordinates.PUB_EXTENSION)) {
                 String errorMessage = "Only the .tar.gz suffix is supported";
                 throw new RuntimeException(errorMessage);
             }
@@ -773,7 +773,7 @@ public class ArtifactUploadTask implements Callable<String> {
             LayoutProvider layoutProvider = layoutProviderRegistry.getProvider(layout);
             if (Objects.nonNull(layoutProvider)) {
                 try {
-                    PubArtifactCoordinates pubArtifactCoordinates = PubArtifactCoordinates.packageNameParse(fileRelativePath);
+                    PubCoordinates pubArtifactCoordinates = PubCoordinates.packageNameParse(fileRelativePath);
                     String artifactPath = pubArtifactCoordinates.convertToPath(pubArtifactCoordinates);
                     log.info("The fileRelativePath：{} artifactPath：{}", fileRelativePath, artifactPath);
                     repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
@@ -975,7 +975,7 @@ public class ArtifactUploadTask implements Callable<String> {
             RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, debianPath);
             try (InputStream is = multipartFile.getInputStream()) {
                 artifactManagementService.store(repositoryPath, is);
-                DebianArtifactCoordinates coordinate = new DebianArtifactCoordinates();
+                DebianCoordinates coordinate = new DebianCoordinates();
                 coordinate.setArchitecture(architecture);
                 coordinate.setDistribution(distribution);
                 coordinate.setComponent(component);

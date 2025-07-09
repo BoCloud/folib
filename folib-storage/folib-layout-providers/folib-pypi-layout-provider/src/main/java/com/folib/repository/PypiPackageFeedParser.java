@@ -1,7 +1,7 @@
 package com.folib.repository;
 
 import com.folib.artifact.ArtifactTag;
-import com.folib.artifact.coordinates.PypiArtifactCoordinates;
+import com.folib.artifact.coordinates.PypiCoordinates;
 import com.folib.domain.Artifact;
 import com.folib.domain.ArtifactEntity;
 import com.folib.domain.ArtifactTagEntity;
@@ -51,7 +51,7 @@ public class PypiPackageFeedParser {
     private ArtifactEntity parseVersion(String storageId,
                                         String repositoryId,
                                         PypiSearchResult searchResult) {
-        PypiArtifactCoordinates c = PypiArtifactCoordinates.parse(searchResult.getArtifactName());
+        PypiCoordinates c = PypiCoordinates.parse(searchResult.getArtifactName());
         c.setPath(searchResult.getArtifactUrl());
         LocalDateTime now = LocalDateTimeInstance.now();
 

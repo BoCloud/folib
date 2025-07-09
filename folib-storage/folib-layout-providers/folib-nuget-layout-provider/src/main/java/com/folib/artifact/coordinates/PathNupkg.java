@@ -27,7 +27,7 @@ public class PathNupkg implements Nupkg
     private RepositoryPath path;
     private Nuspec nuspecFile;
     private String hash;
-    private NugetArtifactCoordinates artifactCoordinates;
+    private NugetCoordinates artifactCoordinates;
     
     public PathNupkg(RepositoryPath path)
         throws NugetFormatException,
@@ -38,7 +38,7 @@ public class PathNupkg implements Nupkg
         Assert.notNull(path.getArtifactEntry(), "artifact entry should not be null");
         
         this.path = path;
-        this.artifactCoordinates = (NugetArtifactCoordinates) path.getArtifactEntry().getArtifactCoordinates();
+        this.artifactCoordinates = (NugetCoordinates) path.getArtifactEntry().getArtifactCoordinates();
         this.nuspecFile = createNuspecFile();
         this.hash = createHash();
     }

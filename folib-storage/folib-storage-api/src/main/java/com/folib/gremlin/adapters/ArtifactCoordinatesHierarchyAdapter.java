@@ -6,8 +6,8 @@ import com.folib.gremlin.dsl.EntityTraversal;
 import com.folib.gremlin.dsl.__;
 import org.apache.tinkerpop.gremlin.structure.Element;
 import org.apache.tinkerpop.gremlin.structure.Vertex;
-import com.folib.artifact.coordinates.GenericArtifactCoordinates;
-import com.veadan.folib.db.schema.Edges;
+import com.folib.artifact.coordinates.GenericCoordinates;
+import com.folib.db.schema.Edges;
 import org.springframework.stereotype.Component;
 
 /**
@@ -15,7 +15,7 @@ import org.springframework.stereotype.Component;
  */
 @Component
 public class ArtifactCoordinatesHierarchyAdapter
-        extends EntityUpwardHierarchyAdapter<GenericArtifactCoordinates, ArtifactCoodrinatesNodeAdapter>
+        extends EntityUpwardHierarchyAdapter<GenericCoordinates, ArtifactCoodrinatesNodeAdapter>
 {
 
     public ArtifactCoordinatesHierarchyAdapter(Set<ArtifactCoodrinatesNodeAdapter> artifactAdapters)

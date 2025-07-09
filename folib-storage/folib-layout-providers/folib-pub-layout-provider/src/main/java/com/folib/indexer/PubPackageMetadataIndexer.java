@@ -4,7 +4,7 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.serializer.SerializerFeature;
 import com.google.common.collect.Lists;
-import com.folib.artifact.coordinates.PubArtifactCoordinates;
+import com.folib.artifact.coordinates.PubCoordinates;
 import com.folib.components.DistributedLockComponent;
 import com.folib.configuration.ConfigurationManager;
 import com.folib.constant.GlobalConstants;
@@ -77,16 +77,16 @@ public class PubPackageMetadataIndexer {
             return;
         }
         String storageId = repositoryPath.getStorageId(), repositoryId = repositoryPath.getRepositoryId();
-        PubArtifactCoordinates pubArtifactCoordinates = new PubArtifactCoordinates();
+        PubCoordinates pubArtifactCoordinates = new PubCoordinates();
         String artifactPath = RepositoryFiles.relativizePath(repositoryPath);
         if (artifactPath.startsWith(PubConstants.PACKAGE_JSON_PATH)) {
             return;
         }
-        if (!repositoryPath.getPath().endsWith(PubArtifactCoordinates.PUB_EXTENSION)) {
+        if (!repositoryPath.getPath().endsWith(PubCoordinates.PUB_EXTENSION)) {
             pubArtifactCoordinates.setName(artifactPath);
-            pubArtifactCoordinates.setExtension(PubArtifactCoordinates.PUB_EXTENSION);
+            pubArtifactCoordinates.setExtension(PubCoordinates.PUB_EXTENSION);
         } else {
-            pubArtifactCoordinates = PubArtifactCoordinates.parse(artifactPath);
+            pubArtifactCoordinates = PubCoordinates.parse(artifactPath);
         }
         String key = String.format("PubIndex_%s_%s_%s", storageId, repositoryId, pubArtifactCoordinates.getName());
         if (distributedLockComponent.lock(key, GlobalConstants.WAIT_LOCK_TIME)) {
@@ -109,7 +109,7 @@ public class PubPackageMetadataIndexer {
         }
     }
 
-    private PubPackageMetadata reindexPackage(RepositoryPath repositoryPath, PubArtifactCoordinates pubArtifactCoordinates, String storageId, String repositoryId, String packageName) throws Exception {
+    private PubPackageMetadata reindexPackage(RepositoryPath repositoryPath, PubCoordinates pubArtifactCoordinates, String storageId, String repositoryId, String packageName) throws Exception {
         log.info("Started reindexing for package '{}' in storage '{}' repository '{}'", packageName, storageId, repositoryId);
         PubPackageMetadata packageMetadata = PubPackageMetadata.builder().name(packageName).discontinued(false).build();
         RepositoryProvider repositoryProvider = repositoryProviderRegistry.getProvider(repositoryPath.getRepository().getType());
@@ -126,7 +126,7 @@ public class PubPackageMetadataIndexer {
                 try {
                     if (Files.exists(path)) {
                         RepositoryPath itemRepositoryPath = (RepositoryPath) path;
-                        PubArtifactCoordinates itemPubArtifactCoordinates = PubArtifactCoordinates.parse(RepositoryFiles.relativizePath(itemRepositoryPath));
+                        PubCoordinates itemPubArtifactCoordinates = PubCoordinates.parse(RepositoryFiles.relativizePath(itemRepositoryPath));
                         addPubPackage(itemRepositoryPath, itemPubArtifactCoordinates, packageName, packageMetadata);
                     }
                 } catch (Exception e) {
@@ -145,7 +145,7 @@ public class PubPackageMetadataIndexer {
         return PubIndexTypeEnum.REINDEX.getType().equals(pubIndexTypeEnum.getType());
     }
 
-    private void finalizePackageIndexing(RepositoryPath repositoryPath, PubArtifactCoordinates pubArtifactCoordinates, String storageId, String repositoryId, String packageName, PubIndexTypeEnum pubIndexTypeEnum, PubPackageMetadata packageMetadata) throws Exception {
+    private void finalizePackageIndexing(RepositoryPath repositoryPath, PubCoordinates pubArtifactCoordinates, String storageId, String repositoryId, String packageName, PubIndexTypeEnum pubIndexTypeEnum, PubPackageMetadata packageMetadata) throws Exception {
         List<PubPackageVersionMetadata> versions = packageMetadata.getVersions();
         if (CollectionUtils.isNotEmpty(versions)) {
             log.trace("Finished updating package '{}' metadata, package contains now {} versions", packageMetadata
@@ -156,7 +156,7 @@ public class PubPackageMetadataIndexer {
         writeOrDeletePackageMetadataFile(repositoryPath, pubArtifactCoordinates, storageId, repositoryId, packageName, pubIndexTypeEnum, packageMetadata);
     }
 
-    private void indexType(RepositoryPath repositoryPath, PubArtifactCoordinates pubArtifactCoordinates, String storageId, String repositoryId, String packageName, PubIndexTypeEnum pubIndexTypeEnum, PubPackageMetadata packageMetadata) {
+    private void indexType(RepositoryPath repositoryPath, PubCoordinates pubArtifactCoordinates, String storageId, String repositoryId, String packageName, PubIndexTypeEnum pubIndexTypeEnum, PubPackageMetadata packageMetadata) {
         try {
             switch (pubIndexTypeEnum.getType()) {
                 case "add":
@@ -173,7 +173,7 @@ public class PubPackageMetadataIndexer {
         }
     }
 
-    private void writeOrDeletePackageMetadataFile(RepositoryPath repositoryPath, PubArtifactCoordinates pubArtifactCoordinates, String storageId, String repositoryId, String packageName, PubIndexTypeEnum pubIndexTypeEnum, PubPackageMetadata packageMetadata) throws Exception {
+    private void writeOrDeletePackageMetadataFile(RepositoryPath repositoryPath, PubCoordinates pubArtifactCoordinates, String storageId, String repositoryId, String packageName, PubIndexTypeEnum pubIndexTypeEnum, PubPackageMetadata packageMetadata) throws Exception {
         String packageMetadataFilePath = PubUtils.getPackageMetadataFilePath(packageMetadata.getName());
         RepositoryPath packageJsonRepositoryPath = repositoryPathResolver.resolve(repositoryPath.getRepository(), packageMetadataFilePath);
         if (CollectionUtils.isNotEmpty(packageMetadata.getVersions())) {
@@ -189,19 +189,19 @@ public class PubPackageMetadataIndexer {
         }
     }
 
-    private void handleDeletePubPackage(PubPackageMetadata packageMetadata, RepositoryPath repositoryPath, PubArtifactCoordinates pubArtifactCoordinates, String storageId, String repositoryId, String packageName) throws Exception {
+    private void handleDeletePubPackage(PubPackageMetadata packageMetadata, RepositoryPath repositoryPath, PubCoordinates pubArtifactCoordinates, String storageId, String repositoryId, String packageName) throws Exception {
         log.debug("Handling Delete for package: '{}', version: '{}'", packageName, pubArtifactCoordinates.getVersion());
         Pubspec artifactMetadata = Pubspec.builder().version(pubArtifactCoordinates.getVersion()).build();
         PubPackageVersionMetadata versionMetadata = createPackageVersion(artifactMetadata, "");
         removeVersionFromPackageMetadata(packageMetadata, versionMetadata);
     }
 
-    private void handleAddPubPackage(PubPackageMetadata packageMetadata, RepositoryPath repositoryPath, PubArtifactCoordinates pubArtifactCoordinates, String storageId, String repositoryId, String packageName) throws Exception {
+    private void handleAddPubPackage(PubPackageMetadata packageMetadata, RepositoryPath repositoryPath, PubCoordinates pubArtifactCoordinates, String storageId, String repositoryId, String packageName) throws Exception {
         log.debug("Handling Add for package: '{}', version: '{}'", packageName, pubArtifactCoordinates.getVersion());
         addPubPackage(repositoryPath, pubArtifactCoordinates, packageName, packageMetadata);
     }
 
-    private void addPubPackage(RepositoryPath repositoryPath, PubArtifactCoordinates pubArtifactCoordinates, String packageName, PubPackageMetadata packageMetadata) throws Exception {
+    private void addPubPackage(RepositoryPath repositoryPath, PubCoordinates pubArtifactCoordinates, String packageName, PubPackageMetadata packageMetadata) throws Exception {
         PubMetadataExtractor pubMetadataExtractor = new PubMetadataExtractor();
         Pubspec artifactMetadata = pubMetadataExtractor.extractPubSpec(repositoryPath);
         if (PubUtils.isPackageMetadataValidForIndexing(packageName, artifactMetadata.getVersion())) {
@@ -234,7 +234,7 @@ public class PubPackageMetadataIndexer {
     }
 
     @NotNull
-    private PubPackageMetadata extractPackageMetadata(RepositoryPath repositoryPath, PubArtifactCoordinates pubArtifactCoordinates, String storageId, String repositoryId, String packageName) throws Exception {
+    private PubPackageMetadata extractPackageMetadata(RepositoryPath repositoryPath, PubCoordinates pubArtifactCoordinates, String storageId, String repositoryId, String packageName) throws Exception {
         JSONObject data = pubService.packages(repositoryPath.getRepository(), packageName, "");
         if (Objects.nonNull(data)) {
             return JSONObject.parseObject(data.toJSONString(), PubPackageMetadata.class);

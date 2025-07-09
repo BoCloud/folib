@@ -8,7 +8,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.github.zafarkhaja.semver.Version;
-import com.folib.artifact.coordinates.PubArtifactCoordinates;
+import com.folib.artifact.coordinates.PubCoordinates;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
@@ -78,7 +78,7 @@ public class PubUtils {
     }
 
     public static boolean isNameMatchConvention(String text) {
-        return PubArtifactCoordinates.PUB_NAME_PATTERN.matcher(text).matches();
+        return PubCoordinates.PUB_NAME_PATTERN.matcher(text).matches();
     }
 
     public static boolean isPackageMetadataValidForIndexing(String packageName, String packageVersion) {

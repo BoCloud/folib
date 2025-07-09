@@ -1,20 +1,20 @@
 package com.folib.domain.adapter.jfrog;
 
-import com.folib.artifact.coordinates.CocoapodsArtifactCoordinates;
-import com.folib.artifact.coordinates.ConanArtifactCoordinates;
-import com.folib.artifact.coordinates.DockerArtifactCoordinates;
-import com.folib.artifact.coordinates.GitLfsArtifactCoordinates;
-import com.folib.artifact.coordinates.GoArtifactCoordinates;
-import com.folib.artifact.coordinates.HelmArtifactCoordinates;
-import com.folib.artifact.coordinates.HuggingFaceArtifactCoordinates;
-import com.folib.artifact.coordinates.MavenArtifactCoordinates;
-import com.folib.artifact.coordinates.NpmArtifactCoordinates;
-import com.folib.artifact.coordinates.NugetArtifactCoordinates;
-import com.folib.artifact.coordinates.PhpArtifactCoordinates;
-import com.folib.artifact.coordinates.PubArtifactCoordinates;
-import com.folib.artifact.coordinates.PypiArtifactCoordinates;
-import com.folib.artifact.coordinates.RawArtifactCoordinates;
-import com.folib.artifact.coordinates.RpmArtifactCoordinates;
+import com.folib.artifact.coordinates.CocoapodsCoordinates;
+import com.folib.artifact.coordinates.ConanCoordinates;
+import com.folib.artifact.coordinates.DockerCoordinates;
+import com.folib.artifact.coordinates.GitLfsCoordinates;
+import com.folib.artifact.coordinates.GoCoordinates;
+import com.folib.artifact.coordinates.HelmCoordinates;
+import com.folib.artifact.coordinates.HuggingFaceCoordinates;
+import com.folib.artifact.coordinates.MavenCoordinates;
+import com.folib.artifact.coordinates.NpmCoordinates;
+import com.folib.artifact.coordinates.NugetCoordinates;
+import com.folib.artifact.coordinates.PhpCoordinates;
+import com.folib.artifact.coordinates.PubCoordinates;
+import com.folib.artifact.coordinates.PypiCoordinates;
+import com.folib.artifact.coordinates.RawCoordinates;
+import com.folib.artifact.coordinates.RpmCoordinates;
 import com.folib.constant.DebianConstant;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -56,39 +56,39 @@ import lombok.Getter;
  */
 public enum JfrogMappingEnum {
 
-    Maven("Maven", MavenArtifactCoordinates.LAYOUT_NAME, "maven"),
+    Maven("Maven", MavenCoordinates.LAYOUT_NAME, "maven"),
     /**
      * Ivy
      */
-    Ivy("helm", MavenArtifactCoordinates.LAYOUT_NAME, "ivy"),
+    Ivy("helm", MavenCoordinates.LAYOUT_NAME, "ivy"),
     /**
      * SBT
      */
-    SBT("SBT", MavenArtifactCoordinates.LAYOUT_NAME, "sbt"),
+    SBT("SBT", MavenCoordinates.LAYOUT_NAME, "sbt"),
     /**
      * Gradle
      */
-    Gradle("Gradle", MavenArtifactCoordinates.LAYOUT_NAME, "gradle"),
+    Gradle("Gradle", MavenCoordinates.LAYOUT_NAME, "gradle"),
     /**
      * Docker
      */
-    Docker( "Docker", DockerArtifactCoordinates.LAYOUT_NAME, "docker"),
+    Docker( "Docker", DockerCoordinates.LAYOUT_NAME, "docker"),
     /**
      * Helm
      */
-    Helm("Helm", HelmArtifactCoordinates.LAYOUT_NAME, "helm"),
+    Helm("Helm", HelmCoordinates.LAYOUT_NAME, "helm"),
     /**
      * Pypi
      */
-    Pypi("Pypi", PypiArtifactCoordinates.LAYOUT_NAME, "pypi"),
+    Pypi("Pypi", PypiCoordinates.LAYOUT_NAME, "pypi"),
     /**
      * Npm
      */
-    Npm("Npm", NpmArtifactCoordinates.LAYOUT_NAME, "npm"),
+    Npm("Npm", NpmCoordinates.LAYOUT_NAME, "npm"),
     /**
      * Yarn
      */
-    Yarn( "Yarn", NpmArtifactCoordinates.LAYOUT_NAME, "yarn"),
+    Yarn( "Yarn", NpmCoordinates.LAYOUT_NAME, "yarn"),
     /**
      * ohpm
      */
@@ -96,45 +96,45 @@ public enum JfrogMappingEnum {
     /**
 
      */
-    Raw( "Generic", RawArtifactCoordinates.LAYOUT_NAME, "raw"),
+    Raw( "Generic", RawCoordinates.LAYOUT_NAME, "raw"),
     /**
      * CocoaPods
      */
-    CocoaPods( "CocoaPods", CocoapodsArtifactCoordinates.LAYOUT_NAME, "cocoaPods"),
+    CocoaPods( "CocoaPods", CocoapodsCoordinates.LAYOUT_NAME, "cocoaPods"),
     /**
      * Go
      */
-    Go( "Go", GoArtifactCoordinates.LAYOUT_NAME, "go"),
+    Go( "Go", GoCoordinates.LAYOUT_NAME, "go"),
     /**
      * Php
      */
-    Php( "Composer", PhpArtifactCoordinates.LAYOUT_NAME, "php"),
+    Php( "Composer", PhpCoordinates.LAYOUT_NAME, "php"),
     /**
      * Conan
      */
-    Conan( "Conan", ConanArtifactCoordinates.LAYOUT_NAME, "conan"),
+    Conan( "Conan", ConanCoordinates.LAYOUT_NAME, "conan"),
     /**
      * NuGet
      */
-    NuGet("NuGet", NugetArtifactCoordinates.LAYOUT_NAME, "nuget"),
+    NuGet("NuGet", NugetCoordinates.LAYOUT_NAME, "nuget"),
     /**
      * Rpm
      */
-    Rpm("Rpm", RpmArtifactCoordinates.LAYOUT_NAME, "rpm"),
+    Rpm("Rpm", RpmCoordinates.LAYOUT_NAME, "rpm"),
 
-    Yum("YUM",RpmArtifactCoordinates.LAYOUT_NAME,"rpm"),
+    Yum("YUM", RpmCoordinates.LAYOUT_NAME,"rpm"),
     /**
      * GitLFS
      */
-    GitLFS( "GitLfs", GitLfsArtifactCoordinates.LAYOUT_NAME, "gitlfs"),
+    GitLFS( "GitLfs", GitLfsCoordinates.LAYOUT_NAME, "gitlfs"),
     /**
      * HuggingFace
      */
-    HuggingFace( "HuggingFaceML", HuggingFaceArtifactCoordinates.LAYOUT_NAME, "HuggingFace"),
+    HuggingFace( "HuggingFaceML", HuggingFaceCoordinates.LAYOUT_NAME, "HuggingFace"),
     /**
      * Pub
      */
-    Pub("Pub", PubArtifactCoordinates.LAYOUT_NAME, "pub"),
+    Pub("Pub", PubCoordinates.LAYOUT_NAME, "pub"),
     /**
      * Debian
      */

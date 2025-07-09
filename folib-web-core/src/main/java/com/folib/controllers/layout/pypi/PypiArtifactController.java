@@ -1,7 +1,7 @@
 package com.folib.controllers.layout.pypi;
 
 import com.google.common.collect.Sets;
-import com.folib.artifact.coordinates.PypiArtifactCoordinates;
+import com.folib.artifact.coordinates.PypiCoordinates;
 import com.folib.components.PypiBrowsePackageHtmlResponseBuilder;
 import com.folib.components.artifact.ArtifactComponent;
 import com.folib.controllers.BaseArtifactController;
@@ -14,8 +14,8 @@ import com.folib.storage.metadata.pypi.PypiArtifactMetadata;
 import com.folib.storage.repository.Repository;
 import com.folib.storage.validation.artifact.ArtifactCoordinatesValidationException;
 import com.folib.utils.PypiPackageNameConverter;
-import com.folib.web.LayoutRequestMapping;
-import com.folib.web.RepositoryMapping;
+import com.folib.web.LayoutReqMapping;
+import com.folib.web.RepoMapping;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
@@ -50,7 +50,7 @@ import java.util.Set;
  * @author veadan
  */
 @RestController
-@LayoutRequestMapping(PypiArtifactCoordinates.LAYOUT_NAME)
+@LayoutReqMapping(PypiCoordinates.LAYOUT_NAME)
 @Api(description = "python坐标控制器", tags = "python坐标控制器")
 public class PypiArtifactController extends BaseArtifactController {
 
@@ -83,7 +83,7 @@ public class PypiArtifactController extends BaseArtifactController {
     @PreAuthorize("hasAuthority('ARTIFACTS_DEPLOY')")
     @RequestMapping(path = "/{storageId}/{repositoryId}", method = RequestMethod.POST, consumes = MediaType.MULTIPART_FORM_DATA)
     public ResponseEntity<String> uploadPackage(
-            @RepositoryMapping Repository repository,
+            @RepoMapping Repository repository,
             @RequestParam(name = "comment", required = false) String comment,
             @RequestParam(name = "metadata_version", required = true) String metadataVersion,
             @RequestParam(name = "filetype", required = true) String filetype,
@@ -151,7 +151,7 @@ public class PypiArtifactController extends BaseArtifactController {
             @ApiResponse(code = HttpURLConnection.HTTP_UNAVAILABLE, message = "Service Unavailable.")})
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     @RequestMapping(path = "/{storageId}/{repositoryId}/{packageName}", method = RequestMethod.GET)
-    public ResponseEntity<String> downloadPackage(@RepositoryMapping Repository repository,
+    public ResponseEntity<String> downloadPackage(@RepoMapping Repository repository,
                                                   @PathVariable(name = "packageName") String packageName,
                                                   HttpServletRequest request) {
 
@@ -185,7 +185,7 @@ public class PypiArtifactController extends BaseArtifactController {
             @ApiResponse(code = HttpURLConnection.HTTP_UNAVAILABLE, message = "Service Unavailable.")})
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     @RequestMapping(path = "/{storageId}/{repositoryId}/packages/{artifactName:.+}", method = RequestMethod.GET)
-    public void downloadPackage(@RepositoryMapping Repository repository,
+    public void downloadPackage(@RepoMapping Repository repository,
                                 @PathVariable(name = "artifactName") String artifactName,
                                 HttpServletRequest request,
                                 HttpServletResponse response,
@@ -196,9 +196,9 @@ public class PypiArtifactController extends BaseArtifactController {
                 repository.getStorage().getId(),
                 repository.getId(), artifactName);
 
-        PypiArtifactCoordinates coordinates;
+        PypiCoordinates coordinates;
         try {
-            coordinates = PypiArtifactCoordinates.parse(artifactName);
+            coordinates = PypiCoordinates.parse(artifactName);
         } catch (IllegalArgumentException e) {
             logger.error("Invalid package name - {}", e.getMessage());
             response.setStatus(HttpStatus.NOT_FOUND.value());
@@ -212,7 +212,7 @@ public class PypiArtifactController extends BaseArtifactController {
         provideArtifactDownloadResponse(request, response, headers, repositoryPath);
     }
 
-    private ArtifactIdGroup getArtifactIdGroup(Repository repository, PypiArtifactCoordinates coordinates) {
+    private ArtifactIdGroup getArtifactIdGroup(Repository repository, PypiCoordinates coordinates) {
         ArtifactIdGroup artifactIdGroup = new ArtifactIdGroupEntity(repository.getStorage().getId(), repository.getId(), coordinates.getId());
         artifactIdGroup = artifactComponent.getArtifactIdGroup(artifactIdGroup.getUuid());
         if (Objects.isNull(artifactIdGroup)) {
@@ -239,7 +239,7 @@ public class PypiArtifactController extends BaseArtifactController {
             @ApiResponse(code = HttpURLConnection.HTTP_UNAVAILABLE, message = "Service Unavailable.")})
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     @RequestMapping(path = "/{storageId}/{repositoryId}/simple/{packageName}", method = RequestMethod.GET, produces = MediaType.TEXT_HTML)
-    public ResponseEntity<String> browsePackage(@RepositoryMapping Repository repository,
+    public ResponseEntity<String> browsePackage(@RepoMapping Repository repository,
                                                 @PathVariable(name = "packageName") String packageName,
                                                 HttpServletRequest request,
                                                 HttpServletResponse response,
@@ -286,7 +286,7 @@ public class PypiArtifactController extends BaseArtifactController {
                     .body("Invalid value for \"filetype\" parameter.Valid values are " + VALID_FILE_TYPES);
         }
 
-        PypiArtifactCoordinates coordinates = PypiArtifactCoordinates.parse(file.getOriginalFilename());
+        PypiCoordinates coordinates = PypiCoordinates.parse(file.getOriginalFilename());
 
         RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId,
                 repositoryId,

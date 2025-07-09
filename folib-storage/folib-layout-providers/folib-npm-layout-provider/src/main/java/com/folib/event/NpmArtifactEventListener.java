@@ -5,7 +5,7 @@ import com.folib.event.artifact.ArtifactEvent;
 import com.folib.event.artifact.ArtifactEventTypeEnum;
 import com.folib.indexer.NpmPackageMetadataIndexer;
 import com.folib.providers.io.RepositoryPath;
-import com.folib.providers.layout.NpmLayoutProvider;
+import com.folib.providers.NpmLayoutProvider;
 import com.folib.storage.repository.Repository;
 import com.folib.storage.repository.RepositoryTypeEnum;
 import org.springframework.stereotype.Component;

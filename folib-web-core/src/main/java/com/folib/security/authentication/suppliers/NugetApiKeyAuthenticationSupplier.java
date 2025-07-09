@@ -7,7 +7,7 @@ import javax.inject.Inject;
 import jakarta.servlet.http.HttpServletRequest;
 
 import com.folib.authentication.api.nuget.SecurityTokenAuthentication;
-import com.folib.providers.layout.NugetLayoutProvider;
+import com.folib.providers.NugetLayoutProvider;
 import com.folib.security.exceptions.InvalidTokenException;
 import com.folib.users.security.SecurityTokenProvider;
 

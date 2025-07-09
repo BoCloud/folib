@@ -9,7 +9,7 @@ import com.folib.configuration.ConfigurationManager;
 import com.folib.constant.GlobalConstants;
 import com.folib.domain.ArtifactGroup;
 import com.folib.domain.ArtifactIdGroup;
-import com.folib.domain.LayoutArtifactCoordinatesEntity;
+import com.folib.domain.LayoutCoordinatesEntity;
 import com.folib.providers.io.LayoutFileSystem;
 import com.folib.providers.io.RepositoryFileAttributeType;
 import com.folib.providers.io.RepositoryFiles;
@@ -39,7 +39,7 @@ import java.util.stream.Stream;
 /**
  * @author veadan
  */
-public abstract class AbstractLayoutProvider<T extends LayoutArtifactCoordinatesEntity>
+public abstract class AbstractLayoutProvider<T extends LayoutCoordinatesEntity>
         implements LayoutProvider<T> {
 
     private static final Logger logger = LoggerFactory.getLogger(AbstractLayoutProvider.class);

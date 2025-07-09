@@ -7,7 +7,7 @@ import com.folib.domain.*;
 import com.folib.domain.adapter.jfrog.*;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import com.folib.artifact.coordinates.DockerArtifactCoordinates;
+import com.folib.artifact.coordinates.DockerCoordinates;
 import com.folib.components.layout.DockerComponent;
 import com.folib.constant.GlobalConstants;
 import com.folib.enums.ArtifactFieldTypeEnum;
@@ -272,7 +272,7 @@ public class ArtifactSearchController extends JFrogBaseController {
         if (Objects.isNull(artifact)) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(handlerErrors(null, String.format(DOCKER_MANIFEST_NOT_FOUND_MESSAGE, artifactPath)));
         }
-        DockerArtifactCoordinates dockerArtifactCoordinates = (DockerArtifactCoordinates) artifact.getArtifactCoordinates();
+        DockerCoordinates dockerArtifactCoordinates = (DockerCoordinates) artifact.getArtifactCoordinates();
         Long totalSize = imageManifest.getLayers().stream().filter(item -> Objects.nonNull(item.getSize())).mapToLong(LayerManifest::getSize).sum();
         DockerTagInfo dockerTagInfo = DockerTagInfo.builder().title(dockerArtifactCoordinates.getId()).digest(imageManifest.getDigest()).totalSize(FileUtils.formatSize(totalSize)).totalSizeLong(totalSize)
                 .ports(ports).volumes(volumes).labels(labels).build();
@@ -483,8 +483,8 @@ public class ArtifactSearchController extends JFrogBaseController {
 
     private String getName(Artifact artifact) {
         String name = artifact.getArtifactName();
-        if (artifact.getArtifactCoordinates() instanceof DockerArtifactCoordinates) {
-            DockerArtifactCoordinates dockerArtifactCoordinates = (DockerArtifactCoordinates) artifact.getArtifactCoordinates();
+        if (artifact.getArtifactCoordinates() instanceof DockerCoordinates) {
+            DockerCoordinates dockerArtifactCoordinates = (DockerCoordinates) artifact.getArtifactCoordinates();
             name = dockerArtifactCoordinates.getTAG();
         }
         return name;
@@ -492,8 +492,8 @@ public class ArtifactSearchController extends JFrogBaseController {
 
     private String getPath(Artifact artifact) {
         String path = artifact.getArtifactPath(), name = artifact.getArtifactName();
-        if (artifact.getArtifactCoordinates() instanceof DockerArtifactCoordinates) {
-            DockerArtifactCoordinates dockerArtifactCoordinates = (DockerArtifactCoordinates) artifact.getArtifactCoordinates();
+        if (artifact.getArtifactCoordinates() instanceof DockerCoordinates) {
+            DockerCoordinates dockerArtifactCoordinates = (DockerCoordinates) artifact.getArtifactCoordinates();
             path = dockerArtifactCoordinates.getName();
         } else {
             if (StringUtils.isBlank(path)) {

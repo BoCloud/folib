@@ -2,7 +2,7 @@ package com.folib.domain;
 
 import com.folib.artifact.ArtifactTag;
 import com.folib.data.domain.DomainEntity;
-import com.veadan.folib.db.schema.Vertices;
+import com.folib.db.schema.Vertices;
 import org.neo4j.ogm.annotation.NodeEntity;
 
 /**

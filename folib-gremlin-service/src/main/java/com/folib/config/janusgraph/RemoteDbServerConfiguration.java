@@ -1,6 +1,6 @@
 package com.folib.config.janusgraph;
 
-import com.veadan.folib.db.schema.FolibSchema;
+import com.folib.db.schema.FolibSchema;
 import org.janusgraph.core.JanusGraph;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Condition;

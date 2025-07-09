@@ -3,7 +3,7 @@ package com.folib.security.authentication.suppliers;
 import com.folib.authentication.api.jwt.JwtAuthentication;
 import com.folib.constant.GlobalConstants;
 import com.folib.enums.NpmSubLayout;
-import com.folib.providers.layout.NpmLayoutProvider;
+import com.folib.providers.NpmLayoutProvider;
 import com.folib.security.exceptions.InvalidTokenException;
 import com.folib.services.ConfigurationManagementService;
 import com.folib.storage.Storage;

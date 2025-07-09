@@ -1,7 +1,7 @@
 package com.folib.controllers.layout.cargo;
 
 
-import com.folib.artifact.coordinates.CargoArtifactCoordinates;
+import com.folib.artifact.coordinates.CargoCoordinates;
 import com.folib.controllers.BaseArtifactController;
 import com.folib.extractor.CargoIndex;
 import com.folib.extractor.CargoMetadataIndexer;
@@ -16,8 +16,8 @@ import com.folib.storage.repository.Repository;
 import com.folib.utils.CargoConstants;
 import com.folib.utils.CargoUtil;
 import com.folib.utils.CollectionUtils;
-import com.folib.web.LayoutRequestMapping;
-import com.folib.web.RepositoryMapping;
+import com.folib.web.LayoutReqMapping;
+import com.folib.web.RepoMapping;
 import lombok.extern.slf4j.Slf4j;
 
 
@@ -51,7 +51,7 @@ import java.util.stream.Collectors;
 
 @Slf4j
 @RestController
-@LayoutRequestMapping(CargoArtifactCoordinates.LAYOUT_NAME)
+@LayoutReqMapping(CargoCoordinates.LAYOUT_NAME)
 public class CargoArtifactController extends BaseArtifactController {
 
 
@@ -82,7 +82,7 @@ public class CargoArtifactController extends BaseArtifactController {
      */
     //@PreAuthorize("hasAuthority('ARTIFACTS_DEPLOY')")
     @GetMapping(value = "{storageId}/{repositoryId}/index/{pkg:.+}")
-    public void downloadIndex(@RepositoryMapping Repository repository,
+    public void downloadIndex(@RepoMapping Repository repository,
                               @RequestHeader HttpHeaders httpHeaders,
                               @PathVariable("storageId") String storageId,
                               @PathVariable("repositoryId") String repositoryId,
@@ -127,7 +127,7 @@ public class CargoArtifactController extends BaseArtifactController {
      */
     //@PreAuthorize("hasAuthority('ARTIFACTS_DEPLOY')")
     @GetMapping(value = "/{storageId}/{repositoryId}/api/v1/crates/{packageName}/{version}/download")
-    public void download(@RepositoryMapping Repository repository,
+    public void download(@RepoMapping Repository repository,
                          @RequestHeader HttpHeaders httpHeaders,
                          @PathVariable("storageId") String storageId,
                          @PathVariable("repositoryId") String repositoryId,
@@ -152,7 +152,7 @@ public class CargoArtifactController extends BaseArtifactController {
 
     @PreAuthorize("hasAuthority('ARTIFACTS_VIEW')")
     @GetMapping(value = {"/{storageId}/{repositoryId}/config.json", "/{storageId}/{repositoryId}/crates/{path:.+}"})
-    public void downloadPackage(@RepositoryMapping Repository repository,
+    public void downloadPackage(@RepoMapping Repository repository,
                                 @RequestHeader HttpHeaders httpHeaders,
                                 @PathVariable("storageId") String storageId,
                                 @PathVariable("repositoryId") String repositoryId,
@@ -171,7 +171,7 @@ public class CargoArtifactController extends BaseArtifactController {
      */
     @PreAuthorize("hasAuthority('ARTIFACTS_DEPLOY')")
     @PutMapping(value = "/{storageId}/{repositoryId}/api/v1/crates/new")
-    public ResponseEntity<?> publish(@RepositoryMapping Repository repository,
+    public ResponseEntity<?> publish(@RepoMapping Repository repository,
                                      @PathVariable("repositoryId") String repositoryId,
                                      HttpServletRequest request) {
         List<String> errors = new ArrayList<>();

@@ -1,6 +1,6 @@
 package com.folib.storage.validation;
 
-import com.folib.providers.layout.PypiLayoutProvider;
+import com.folib.providers.PypiLayoutProvider;
 import com.folib.storage.repository.Repository;
 
 import java.util.Set;

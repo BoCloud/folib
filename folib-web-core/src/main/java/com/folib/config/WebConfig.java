@@ -19,7 +19,7 @@ import com.folib.jtwig.extensions.ByteSizeConversionExtension;
 import com.folib.services.DirectoryListingService;
 import com.folib.services.DirectoryListingServiceImpl;
 import com.folib.utils.CustomAntPathMatcher;
-import com.folib.web.CustomRequestMappingHandlerMapping;
+import com.folib.web.CustomReqHandlerMapping;
 import com.folib.web.DirectoryTraversalFilter;
 import com.folib.web.RepositoryMethodArgumentResolver;
 import com.folib.yaml.YAMLMapperFactory;
@@ -157,7 +157,7 @@ public class WebConfig
 
     @Override
     public RequestMappingHandlerMapping getRequestMappingHandlerMapping() {
-       return new CustomRequestMappingHandlerMapping();
+       return new CustomReqHandlerMapping();
     }
 
     //@Override

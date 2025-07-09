@@ -15,7 +15,7 @@ import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.maven.index.context.IndexingContext;
 import org.springframework.web.servlet.HandlerMapping;
-import static com.folib.artifact.coordinates.MavenArtifactCoordinates.LAYOUT_NAME;
+import static com.folib.artifact.coordinates.MavenCoordinates.LAYOUT_NAME;
 import static com.folib.storage.metadata.MetadataHelper.*;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 

@@ -1,7 +1,7 @@
 package com.folib.storage.validation.artifactid;
 
 import com.folib.artifact.coordinates.ArtifactCoordinates;
-import com.folib.artifact.coordinates.MavenArtifactCoordinates;
+import com.folib.artifact.coordinates.MavenCoordinates;
 import com.folib.providers.io.RepositoryFileAttributes;
 import com.folib.providers.io.RepositoryPath;
 import com.folib.storage.validation.artifact.ArtifactCoordinatesValidationException;
@@ -65,7 +65,7 @@ public class MavenArtifactIdLowercaseValidator
                          ArtifactCoordinates coordinates)
             throws ArtifactCoordinatesValidationException
     {
-        MavenArtifactCoordinates mac = (MavenArtifactCoordinates) coordinates;
+        MavenCoordinates mac = (MavenCoordinates) coordinates;
         if (!mac.getArtifactId().toLowerCase().equals(mac.getArtifactId()))
         {
             throw new LowercaseValidationException("The artifactId should be defined in lowercase.");

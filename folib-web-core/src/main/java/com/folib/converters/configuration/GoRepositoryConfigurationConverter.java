@@ -1,6 +1,6 @@
 package com.folib.converters.configuration;
 
-import com.folib.yaml.configuration.repository.GoRepositoryConfigurationDto;
+import com.folib.configuration.GoRepositoryConfigurationDto;
 import com.folib.forms.configuration.GoRepositoryConfigurationForm;
 import org.springframework.core.convert.converter.Converter;
 

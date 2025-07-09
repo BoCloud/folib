@@ -5,8 +5,8 @@ import com.folib.controllers.BaseArtifactController;
 import com.folib.providers.io.RepositoryPath;
 import com.folib.providers.layout.GoLayoutProvider;
 import com.folib.storage.repository.Repository;
-import com.folib.web.LayoutRequestMapping;
-import com.folib.web.RepositoryMapping;
+import com.folib.web.LayoutReqMapping;
+import com.folib.web.RepoMapping;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
@@ -29,7 +29,7 @@ import jakarta.servlet.http.HttpServletResponse;
  * @date 1/3/2024 15:31
  */
 @RestController
-@LayoutRequestMapping(GoLayoutProvider.ALIAS)
+@LayoutReqMapping(GoLayoutProvider.ALIAS)
 @Slf4j
 @Api(description = "go坐标控制器",tags = "go坐标控制器")
 public class GoArtifactController extends BaseArtifactController {
@@ -58,7 +58,7 @@ public class GoArtifactController extends BaseArtifactController {
     @ApiResponse(code = 400, message = "An error occurred.")})
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     @GetMapping(value = {"{storageId}/{repositoryId}/{artifactPath:.+}"})
-    public ResponseEntity<Object> download(@RepositoryMapping Repository repository,
+    public ResponseEntity<Object> download(@RepoMapping Repository repository,
                                            @RequestHeader HttpHeaders httpHeaders,
                                            @PathVariable String artifactPath,
                                            HttpServletRequest request,

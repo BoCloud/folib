@@ -4,7 +4,7 @@ import com.alibaba.fastjson.JSONObject;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.databind.SerializationFeature;
-import com.folib.artifact.coordinates.CargoArtifactCoordinates;
+import com.folib.artifact.coordinates.CargoCoordinates;
 import com.folib.configuration.ConfigurationManager;
 import com.folib.constant.GlobalConstants;
 import com.folib.providers.io.RepositoryFileAttributeType;
@@ -15,7 +15,7 @@ import com.folib.providers.layout.AbstractLayoutProvider;
 import com.folib.services.ArtifactManagementService;
 import com.folib.services.ArtifactResolutionService;
 import com.folib.storage.repository.CargoRepositoryFeatures;
-import com.folib.storage.repository.CargoRepositoryManagementStrategy;
+import com.folib.storage.repository.CargoRepositoryStrategy;
 import com.folib.storage.repository.Repository;
 import com.folib.storage.repository.RepositoryTypeEnum;
 import com.folib.utils.CargoConstants;
@@ -40,13 +40,13 @@ import java.util.Objects;
 import java.util.Set;
 
 @Component("cargoLayoutProvider")
-public class CargoLayoutProvider extends AbstractLayoutProvider<CargoArtifactCoordinates> {
+public class CargoLayoutProvider extends AbstractLayoutProvider<CargoCoordinates> {
 
     private static final Logger logger = LoggerFactory.getLogger(CargoLayoutProvider.class);
-    public  static final String ALIAS = CargoArtifactCoordinates.LAYOUT_NAME;
+    public  static final String ALIAS = CargoCoordinates.LAYOUT_NAME;
     @Lazy
     @Inject
-    private CargoRepositoryManagementStrategy cargoRepositoryManagementStrategy;
+    private CargoRepositoryStrategy cargoRepositoryManagementStrategy;
     @Lazy
     @Inject
     private CargoRepositoryFeatures cargoRepositoryFeatures;
@@ -99,12 +99,12 @@ public class CargoLayoutProvider extends AbstractLayoutProvider<CargoArtifactCoo
     }
 
     @Override
-    public CargoArtifactCoordinates getArtifactCoordinates(RepositoryPath repositoryPath) throws IOException {
-        return new CargoArtifactCoordinates(RepositoryFiles.relativizePath(repositoryPath));
+    public CargoCoordinates getArtifactCoordinates(RepositoryPath repositoryPath) throws IOException {
+        return new CargoCoordinates(RepositoryFiles.relativizePath(repositoryPath));
     }
 
     @Override
-    public CargoRepositoryManagementStrategy getRepositoryManagementStrategy() {
+    public CargoRepositoryStrategy getRepositoryManagementStrategy() {
         return cargoRepositoryManagementStrategy;
     }
 

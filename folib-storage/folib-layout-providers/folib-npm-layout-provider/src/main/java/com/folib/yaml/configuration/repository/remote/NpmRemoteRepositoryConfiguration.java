@@ -1,6 +1,6 @@
 package com.folib.yaml.configuration.repository.remote;
 
-import com.folib.providers.layout.NpmLayoutProvider;
+import com.folib.providers.NpmLayoutProvider;
 import com.folib.yaml.repository.remote.CustomRemoteRepositoryConfigurationData;
 
 

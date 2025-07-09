@@ -1,8 +1,8 @@
 package com.folib.indexer;
 
 import com.folib.constant.DebianConstant;
-import com.veadan.folib.db.schema.Properties;
-import com.veadan.folib.db.schema.Vertices;
+import com.folib.db.schema.Properties;
+import com.folib.db.schema.Vertices;
 import com.folib.domain.Artifact;
 import com.folib.gremlin.adapters.ArtifactAdapter;
 import com.folib.gremlin.adapters.EntityTraversalAdapter;

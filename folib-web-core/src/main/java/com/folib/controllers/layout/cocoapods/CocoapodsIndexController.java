@@ -1,7 +1,7 @@
 package com.folib.controllers.layout.cocoapods;
 
 import cn.hutool.core.io.FileUtil;
-import com.folib.artifact.coordinates.CocoapodsArtifactCoordinates;
+import com.folib.artifact.coordinates.CocoapodsCoordinates;
 import com.folib.controllers.BaseArtifactController;
 import com.folib.domain.Artifact;
 import com.folib.providers.io.RepositoryPath;
@@ -9,8 +9,8 @@ import com.folib.service.CocoapodsIndexService;
 import com.folib.storage.repository.Repository;
 import com.folib.storage.repository.RepositoryTypeEnum;
 import com.folib.util.CocoapodsArtifactUtil;
-import com.folib.web.LayoutRequestMapping;
-import com.folib.web.RepositoryMapping;
+import com.folib.web.LayoutReqMapping;
+import com.folib.web.RepoMapping;
 import jakarta.servlet.ServletOutputStream;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
@@ -39,7 +39,7 @@ import java.nio.file.Path;
  * @date 2023/8/2 14:58
  */
 @RestController
-@LayoutRequestMapping(CocoapodsArtifactCoordinates.LAYOUT_NAME)
+@LayoutReqMapping(CocoapodsCoordinates.LAYOUT_NAME)
 public class CocoapodsIndexController
         extends BaseArtifactController {
 
@@ -49,7 +49,7 @@ public class CocoapodsIndexController
     
     @PreAuthorize("authenticated")
     @GetMapping(value = "/{storageId}/{repositoryId}/index/fetchIndex")
-    public ResponseEntity repoArtIndex(@RepositoryMapping Repository repository, HttpServletRequest request, HttpServletResponse response) throws Exception {
+    public ResponseEntity repoArtIndex(@RepoMapping Repository repository, HttpServletRequest request, HttpServletResponse response) throws Exception {
         final String type = repository.getType();
 
         ResponseEntity responseEntity = null;

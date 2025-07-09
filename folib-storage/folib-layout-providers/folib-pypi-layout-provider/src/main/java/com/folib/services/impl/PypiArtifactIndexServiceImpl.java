@@ -9,7 +9,7 @@ import com.folib.indexer.PypiPackageMetadataIndexer;
 import com.folib.providers.io.RepositoryFiles;
 import com.folib.providers.io.RepositoryPath;
 import com.folib.providers.io.RepositoryPathResolver;
-import com.folib.providers.layout.PypiLayoutProvider;
+import com.folib.providers.PypiLayoutProvider;
 import com.folib.services.PypiArtifactIndexService;
 import com.folib.storage.Storage;
 import com.folib.storage.repository.Repository;

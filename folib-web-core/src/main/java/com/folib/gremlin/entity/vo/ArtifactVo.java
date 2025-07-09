@@ -1,7 +1,7 @@
 package com.folib.gremlin.entity.vo;
 
 import com.folib.artifact.ArtifactTag;
-import com.folib.artifact.coordinates.GenericArtifactCoordinates;
+import com.folib.artifact.coordinates.GenericCoordinates;
 import com.folib.domain.ArtifactArchiveListing;
 import com.folib.domain.Vulnerability;
 import lombok.AllArgsConstructor;
@@ -28,7 +28,7 @@ public class ArtifactVo {
 
     private String repositoryId;
 
-    private GenericArtifactCoordinates artifactCoordinates;
+    private GenericCoordinates artifactCoordinates;
 
     private Set<ArtifactTag> tagSet;
 

@@ -3,7 +3,7 @@ package com.folib.services.impl;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.github.pagehelper.PageInfo;
-import com.folib.artifact.coordinates.DockerArtifactCoordinates;
+import com.folib.artifact.coordinates.DockerCoordinates;
 import com.folib.components.DistributedCacheComponent;
 import com.folib.components.DistributedCounterComponent;
 import com.folib.components.DistributedQueueComponent;
@@ -305,7 +305,7 @@ public class JfrogMigrateServiceImpl extends BaseController implements JfrogMigr
             RemoteRepositoryDto remoteDTO = new RemoteRepositoryDto();
             remoteDTO.setUsername(info.getUsername());
             remoteDTO.setPassword(info.getPassword());
-            if (repository.getLayout().equals(DockerArtifactCoordinates.LAYOUT_NAME)) {
+            if (repository.getLayout().equals(DockerCoordinates.LAYOUT_NAME)) {
                 remoteDTO.setUrl(info.getRemotePreUrl() + "/v2/" + repositoryId);
             } else {
                 remoteDTO.setUrl(info.getRemotePreUrl() + "/" + repositoryId);
@@ -619,7 +619,7 @@ public class JfrogMigrateServiceImpl extends BaseController implements JfrogMigr
                 RemoteRepositoryDto remoteDTO = new RemoteRepositoryDto();
                 remoteDTO.setUsername(info.getUsername());
                 remoteDTO.setPassword(info.getPassword());
-                if (repository.getLayout().equals(DockerArtifactCoordinates.LAYOUT_NAME)) {
+                if (repository.getLayout().equals(DockerCoordinates.LAYOUT_NAME)) {
                     remoteDTO.setUrl(info.getRemotePreUrl() + "/v2/" + repositoryId);
                 } else {
                     remoteDTO.setUrl(info.getRemotePreUrl() + "/" + repositoryId);

@@ -7,7 +7,7 @@ import com.folib.controllers.BaseController;
 import com.folib.providers.layout.IndexingDisabledException;
 import com.folib.providers.layout.MavenFileSystem;
 import com.folib.storage.repository.Repository;
-import com.folib.web.RepositoryMapping;
+import com.folib.web.RepoMapping;
 
 import javax.inject.Inject;
 import java.io.IOException;
@@ -42,7 +42,7 @@ public class MavenIndexController
     @PreAuthorize("hasAuthority('MANAGEMENT_REBUILD_INDEXES')")
     @PostMapping(value = "/{storageId}/{repositoryId}", produces = { MediaType.TEXT_PLAIN_VALUE,
                                                                      MediaType.APPLICATION_JSON_VALUE })
-    public ResponseEntity rebuildIndex(@RepositoryMapping Repository repository)
+    public ResponseEntity rebuildIndex(@RepoMapping Repository repository)
     {
         try
         {

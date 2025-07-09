@@ -1,6 +1,6 @@
 package com.folib.services.impl;
 
-import com.folib.artifact.coordinates.GenericArtifactCoordinates;
+import com.folib.artifact.coordinates.GenericCoordinates;
 import com.folib.repositories.ArtifactCoordinatesRepository;
 import com.folib.services.ArtifactCoordinatesService;
 import lombok.extern.slf4j.Slf4j;
@@ -17,8 +17,8 @@ public class ArtifactCoordinatesServiceImpl implements ArtifactCoordinatesServic
     @Inject
     private ArtifactCoordinatesRepository artifactCoordinatesRepository;
 
-    public GenericArtifactCoordinates findById(String uuid) {
-        Optional<GenericArtifactCoordinates> artifactCoordinates = artifactCoordinatesRepository.findById(uuid);
+    public GenericCoordinates findById(String uuid) {
+        Optional<GenericCoordinates> artifactCoordinates = artifactCoordinatesRepository.findById(uuid);
         return artifactCoordinates.orElse(null);
     }
 }

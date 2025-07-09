@@ -1,7 +1,7 @@
 package com.folib.services;
 
-import com.folib.artifact.coordinates.GenericArtifactCoordinates;
+import com.folib.artifact.coordinates.GenericCoordinates;
 
 public interface ArtifactCoordinatesService {
-    GenericArtifactCoordinates findById(String uuid);
+    GenericCoordinates findById(String uuid);
 }

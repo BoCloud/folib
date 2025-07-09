@@ -1,8 +1,8 @@
 package com.folib.domain;
 
-import static com.veadan.folib.db.schema.Vertices.USER;
+import static com.folib.db.schema.Vertices.USER;
 import static org.neo4j.ogm.annotation.Relationship.OUTGOING;
-import static com.veadan.folib.db.schema.Edges.USER_HAS_SECURITY_ROLES;
+import static com.folib.db.schema.Edges.USER_HAS_SECURITY_ROLES;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.folib.data.domain.DomainEntity;

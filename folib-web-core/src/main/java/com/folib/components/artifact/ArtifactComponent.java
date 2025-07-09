@@ -8,7 +8,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
 import com.folib.artifact.archive.JarArchiveListingFunction;
-import com.folib.artifact.coordinates.DockerArtifactCoordinates;
+import com.folib.artifact.coordinates.DockerCoordinates;
 import com.folib.components.DistributedLockComponent;
 import com.folib.components.common.CommonComponent;
 import com.folib.config.NpmLayoutProviderConfig;
@@ -41,30 +41,30 @@ import com.folib.providers.layout.ConanLayoutProvider;
 import com.folib.providers.layout.DebianLayoutProvider;
 import com.folib.providers.layout.DockerFileSystem;
 import com.folib.providers.layout.DockerLayoutProvider;
-import com.folib.providers.layout.GitFlsFileSystem;
-import com.folib.providers.layout.GitLfsLayoutProvider;
+import com.folib.providers.GitFlsFileSystem;
+import com.folib.providers.GitLfsLayoutProvider;
 import com.folib.providers.layout.GoFileSystem;
 import com.folib.providers.layout.GoLayoutProvider;
-import com.folib.providers.layout.HelmFileSystem;
-import com.folib.providers.layout.HelmLayoutProvider;
+import com.folib.providers.HelmFileSystem;
+import com.folib.providers.HelmLayoutProvider;
 import com.folib.providers.layout.HuggingFaceFileSystem;
 import com.folib.providers.layout.HuggingFaceLayoutProvider;
 import com.folib.providers.layout.Maven2LayoutProvider;
 import com.folib.providers.layout.MavenFileSystem;
-import com.folib.providers.layout.NpmFileSystem;
-import com.folib.providers.layout.NpmLayoutProvider;
-import com.folib.providers.layout.NugetFileSystem;
-import com.folib.providers.layout.NugetLayoutProvider;
-import com.folib.providers.layout.PhpFileSystem;
-import com.folib.providers.layout.PhpLayoutProvider;
-import com.folib.providers.layout.PubFileSystem;
-import com.folib.providers.layout.PubLayoutProvider;
-import com.folib.providers.layout.PypiFileSystem;
-import com.folib.providers.layout.PypiLayoutProvider;
-import com.folib.providers.layout.RawFileSystem;
-import com.folib.providers.layout.RawLayoutProvider;
-import com.folib.providers.layout.RpmFileSystem;
-import com.folib.providers.layout.RpmLayoutProvider;
+import com.folib.providers.NpmFileSystem;
+import com.folib.providers.NpmLayoutProvider;
+import com.folib.providers.NugetFileSystem;
+import com.folib.providers.NugetLayoutProvider;
+import com.folib.providers.PhpFileSystem;
+import com.folib.providers.PhpLayoutProvider;
+import com.folib.providers.PubFileSystem;
+import com.folib.providers.PubLayoutProvider;
+import com.folib.providers.PypiFileSystem;
+import com.folib.providers.PypiLayoutProvider;
+import com.folib.providers.RawFileSystem;
+import com.folib.providers.RawLayoutProvider;
+import com.folib.providers.RpmFileSystem;
+import com.folib.providers.RpmLayoutProvider;
 import com.folib.repositories.ArtifactIdGroupRepository;
 import com.folib.repositories.ArtifactRepository;
 import com.folib.service.ProxyRepositoryConnectionPoolConfigurationService;
@@ -322,10 +322,10 @@ public class ArtifactComponent {
             String manifest = "manifest";
             String path = repositoryPath.toAbsolutePath().toString();
             if (Boolean.TRUE.equals(block)) {
-                if (DockerArtifactCoordinates.include(path)) {
+                if (DockerCoordinates.include(path)) {
                     flag = true;
                 }
-            } else if (path.contains("sha256") && !path.contains(blobs) && !path.contains(manifest) && DockerArtifactCoordinates.include(path)) {
+            } else if (path.contains("sha256") && !path.contains(blobs) && !path.contains(manifest) && DockerCoordinates.include(path)) {
                 flag = true;
             }
         } else if (repositoryPath.getFileSystem() instanceof MavenFileSystem) {
@@ -426,7 +426,7 @@ public class ArtifactComponent {
                 log.debug("docker布局");
                 String blobs = "blobs";
                 String manifest = "manifest";
-                if (filePath.contains("sha256") && !filePath.contains(blobs) && !filePath.contains(manifest) && DockerArtifactCoordinates.include(filePath)) {
+                if (filePath.contains("sha256") && !filePath.contains(blobs) && !filePath.contains(manifest) && DockerCoordinates.include(filePath)) {
                     flag = true;
                 }
             } else if (Maven2LayoutProvider.ALIAS.equals(layout)) {
@@ -981,7 +981,7 @@ public class ArtifactComponent {
                 return null;
             }
             DirectoryListing directoryListing = directoryListingService.fromRepositoryPath(repositoryPath);
-            List<FileContent> fileContents = directoryListing.getFiles().stream().filter(file -> DockerArtifactCoordinates.include(file.getName())).collect(Collectors.toList());
+            List<FileContent> fileContents = directoryListing.getFiles().stream().filter(file -> DockerCoordinates.include(file.getName())).collect(Collectors.toList());
             if (CollectionUtils.isEmpty(fileContents)) {
                 return null;
             }

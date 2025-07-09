@@ -1,12 +1,12 @@
 package com.folib.providers.layout;
 
 
-import com.folib.artifact.coordinates.HuggingFaceArtifactCoordinates;
+import com.folib.artifact.coordinates.HuggingFaceCoordinates;
 import com.folib.providers.io.RepositoryFileAttributeType;
 import com.folib.providers.io.RepositoryFiles;
 import com.folib.providers.io.RepositoryPath;
 import com.folib.storage.repository.HuggingFaceRepositoryFeatures;
-import com.folib.storage.repository.HuggingFaceRepositoryManagementStrategy;
+import com.folib.storage.repository.HuggingFaceRepositoryStrategy;
 import org.apache.commons.lang3.BooleanUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,14 +25,14 @@ import static com.folib.constant.MlModelConstants.LATEST_LEAD_FILE_NAME;
 import static com.folib.constant.MlModelConstants.LEAD_FILE_NAME;
 
 @Component("huggingFaceLayoutProvider")
-public class HuggingFaceLayoutProvider extends AbstractLayoutProvider<HuggingFaceArtifactCoordinates> {
+public class HuggingFaceLayoutProvider extends AbstractLayoutProvider<HuggingFaceCoordinates> {
 
     private static final Logger logger = LoggerFactory.getLogger(HuggingFaceLayoutProvider.class);
 
-    public  static final String ALIAS = HuggingFaceArtifactCoordinates.LAYOUT_NAME;
+    public  static final String ALIAS = HuggingFaceCoordinates.LAYOUT_NAME;
 
     @Inject
-    private HuggingFaceRepositoryManagementStrategy huggingFaceRepositoryManagementStrategy;
+    private HuggingFaceRepositoryStrategy huggingFaceRepositoryManagementStrategy;
     @Inject
     private HuggingFaceRepositoryFeatures huggingFaceRepositoryFeatures;
 
@@ -43,8 +43,8 @@ public class HuggingFaceLayoutProvider extends AbstractLayoutProvider<HuggingFac
     }
 
     @Override
-    public HuggingFaceArtifactCoordinates getArtifactCoordinates(RepositoryPath repositoryPath) throws IOException {
-        return new HuggingFaceArtifactCoordinates(RepositoryFiles.relativizePath(repositoryPath));
+    public HuggingFaceCoordinates getArtifactCoordinates(RepositoryPath repositoryPath) throws IOException {
+        return new HuggingFaceCoordinates(RepositoryFiles.relativizePath(repositoryPath));
     }
 
     @Override
@@ -53,7 +53,7 @@ public class HuggingFaceLayoutProvider extends AbstractLayoutProvider<HuggingFac
     }
 
     @Override
-    public HuggingFaceRepositoryManagementStrategy getRepositoryManagementStrategy() {
+    public HuggingFaceRepositoryStrategy getRepositoryManagementStrategy() {
         return huggingFaceRepositoryManagementStrategy;
     }
 

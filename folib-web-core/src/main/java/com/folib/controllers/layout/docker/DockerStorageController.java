@@ -1,6 +1,6 @@
 package com.folib.controllers.layout.docker;
 
-import com.folib.artifact.coordinates.DockerArtifactCoordinates;
+import com.folib.artifact.coordinates.DockerCoordinates;
 import com.folib.controllers.BaseArtifactController;
 import com.folib.providers.io.RepositoryPath;
 import com.folib.storage.repository.Repository;
@@ -9,8 +9,8 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.folib.components.layout.DockerComponent;
-import com.folib.web.LayoutRequestMapping;
-import com.folib.web.RepositoryMapping;
+import com.folib.web.LayoutReqMapping;
+import com.folib.web.RepoMapping;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
@@ -41,7 +41,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-@LayoutRequestMapping(DockerArtifactCoordinates.LAYOUT_NAME)
+@LayoutReqMapping(DockerCoordinates.LAYOUT_NAME)
 @RestController
 @Api(description = "docker存储空间控制器", tags = "docker存储空间控制器")
 public class DockerStorageController extends BaseArtifactController {
@@ -58,7 +58,7 @@ public class DockerStorageController extends BaseArtifactController {
             @ApiResponse(code = 400, message = "An error occurred.")})
     @PreAuthorize("hasAuthority('ARTIFACTS_DEPLOY')")
     @PutMapping(value = "{storageId}/{repositoryId}/{artifactPath:.+}")
-    public ResponseEntity upload(@RepositoryMapping Repository repository,
+    public ResponseEntity upload(@RepoMapping Repository repository,
                                  @PathVariable String artifactPath,
                                  HttpServletRequest request) {
         final String storageId = repository.getStorage().getId();
@@ -84,7 +84,7 @@ public class DockerStorageController extends BaseArtifactController {
             @ApiResponse(code = 503, message = "Repository currently not in service.")})
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     @RequestMapping(value = {"/{storageId}/{repositoryId}/{artifactPath:.+}"}, method = {RequestMethod.GET, RequestMethod.HEAD})
-    public void download(@RepositoryMapping Repository repository,
+    public void download(@RepoMapping Repository repository,
                          @PathVariable String artifactPath,
                          @RequestHeader HttpHeaders httpHeaders, HttpServletRequest request,
                          HttpServletResponse response)
@@ -107,7 +107,7 @@ public class DockerStorageController extends BaseArtifactController {
             @ApiResponse(code = 503, message = "Repository currently not in service.")})
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     @RequestMapping(value = {"/{storageId}/{repositoryId}/download/{artifactPath:.+}"}, method = {RequestMethod.GET, RequestMethod.HEAD})
-    public void downloadImage(@RepositoryMapping Repository repository,
+    public void downloadImage(@RepoMapping Repository repository,
                               @PathVariable String artifactPath,
                               @RequestParam(value = "platform", required = false) String platform,
                               @RequestHeader HttpHeaders httpHeaders,

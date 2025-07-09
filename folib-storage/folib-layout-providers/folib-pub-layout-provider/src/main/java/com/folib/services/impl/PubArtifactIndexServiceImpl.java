@@ -9,7 +9,7 @@ import com.folib.indexer.PubPackageMetadataIndexer;
 import com.folib.providers.io.RepositoryFiles;
 import com.folib.providers.io.RepositoryPath;
 import com.folib.providers.io.RepositoryPathResolver;
-import com.folib.providers.layout.PubLayoutProvider;
+import com.folib.providers.PubLayoutProvider;
 import com.folib.services.PubArtifactIndexService;
 import com.folib.storage.Storage;
 import com.folib.storage.repository.Repository;

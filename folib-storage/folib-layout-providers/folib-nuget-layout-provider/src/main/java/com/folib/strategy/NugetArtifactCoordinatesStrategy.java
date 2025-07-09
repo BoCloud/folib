@@ -1,19 +1,19 @@
 package com.folib.strategy;
 
 import com.folib.artifact.coordinates.ArtifactCoordinates;
-import com.folib.artifact.coordinates.NugetArtifactCoordinates;
-import com.folib.domain.GenericArtifactCoordinatesEntity;
+import com.folib.artifact.coordinates.NugetCoordinates;
+import com.folib.domain.GenericCoordinatesEntity;
 import org.springframework.stereotype.Component;
 
-@Component("nugetArtifactCoordinatesStrategy")
-public class NugetArtifactCoordinatesStrategy implements ArtifactCoordinatesStrategy{
+@Component("nugetCoordinatesStrategy")
+public class NugetArtifactCoordinatesStrategy implements ArtifactStrategy {
 
-    public ArtifactCoordinates getArtifactCoordinates(GenericArtifactCoordinatesEntity entity) {
+    public ArtifactCoordinates getArtifactCoordinates(GenericCoordinatesEntity entity) {
 
         if (entity == null || entity.getCoordinates() == null) return null;
-        NugetArtifactCoordinates nugetArtifactCoordinates = new NugetArtifactCoordinates(entity.getCoordinates().get(NugetArtifactCoordinates.ID),
-                entity.getCoordinates().get(NugetArtifactCoordinates.VERSION),
-                entity.getCoordinates().get(NugetArtifactCoordinates.EXTENSION));
+        NugetCoordinates nugetArtifactCoordinates = new NugetCoordinates(entity.getCoordinates().get(NugetCoordinates.ID),
+                entity.getCoordinates().get(NugetCoordinates.VERSION),
+                entity.getCoordinates().get(NugetCoordinates.EXTENSION));
         nugetArtifactCoordinates.setNativeId(entity.getNativeId());
         nugetArtifactCoordinates.setUuid(entity.getUuid());
         nugetArtifactCoordinates.setVersion(entity.getVersion());

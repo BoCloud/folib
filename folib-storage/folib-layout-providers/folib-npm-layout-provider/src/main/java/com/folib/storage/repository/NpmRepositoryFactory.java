@@ -1,6 +1,6 @@
 package com.folib.storage.repository;
 
-import com.folib.providers.layout.NpmLayoutProvider;
+import com.folib.providers.NpmLayoutProvider;
 import com.folib.repository.NpmRepositoryFeatures;
 
 import javax.inject.Inject;

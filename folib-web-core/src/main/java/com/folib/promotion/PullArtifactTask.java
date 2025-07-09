@@ -2,7 +2,7 @@ package com.folib.promotion;
 
 import cn.hutool.extra.spring.SpringUtil;
 import com.alibaba.fastjson.JSON;
-import com.folib.artifact.coordinates.DockerArtifactCoordinates;
+import com.folib.artifact.coordinates.DockerCoordinates;
 import com.folib.components.security.SecurityComponent;
 import com.folib.dto.ArtifactDto;
 import com.folib.providers.io.RepositoryFiles;
@@ -73,7 +73,7 @@ public class PullArtifactTask implements Callable<String> {
             response = builder.post(Entity.entity(artifac, MediaType.APPLICATION_JSON));
             boolean isDocker = destPath.getRepository().getLayout().equalsIgnoreCase("docker");
             if (isDocker) {
-                if (!path.contains("sha256") && !DockerArtifactCoordinates.exclude(path)) {
+                if (!path.contains("sha256") && !DockerCoordinates.exclude(path)) {
                     try (InputStream is = response.readEntity(InputStream.class);) {
                         Files.copy(is, destPath);
                     }
@@ -118,7 +118,7 @@ public class PullArtifactTask implements Callable<String> {
             RepositoryPath destPath = repositoryPathResolver.resolve(targetStorageId, targetRepostoryId, path);
             boolean isDocker = destPath.getRepository().getLayout().equalsIgnoreCase("docker");
             if (isDocker) {
-                if (!path.contains("sha256") && !DockerArtifactCoordinates.exclude(path)) {
+                if (!path.contains("sha256") && !DockerCoordinates.exclude(path)) {
                     try (InputStream is = response.readEntity(InputStream.class);) {
                         Files.copy(is, destPath);
                     }

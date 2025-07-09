@@ -7,8 +7,8 @@ import com.folib.providers.io.RepositoryPath;
 import com.folib.providers.repository.proxied.ProxyRepositoryArtifactResolver;
 import com.folib.storage.repository.Repository;
 import com.folib.storage.repository.RepositoryTypeEnum;
-import com.folib.web.LayoutRequestMapping;
-import com.folib.web.RepositoryMapping;
+import com.folib.web.LayoutReqMapping;
+import com.folib.web.RepoMapping;
 import io.swagger.annotations.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
@@ -30,7 +30,7 @@ import java.util.Objects;
  *
  * @author veadan
  */
-@LayoutRequestMapping("helm")
+@LayoutReqMapping("helm")
 @RestController
 @Api(description = "Helm坐标控制器",tags = "Helm坐标控制器")
 public class HelmArtifactController extends BaseArtifactController {
@@ -53,7 +53,7 @@ public class HelmArtifactController extends BaseArtifactController {
             @ApiResponse(code = 400, message = "An error occurred.")})
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     @RequestMapping(value = {"/{storageId}/{repositoryId}/{path:.+}"}, method = {RequestMethod.GET, RequestMethod.HEAD})
-    public void download(@RepositoryMapping Repository repository,
+    public void download(@RepoMapping Repository repository,
                          @RequestHeader HttpHeaders httpHeaders,
                          @PathVariable String path,
                          HttpServletRequest request,
@@ -110,7 +110,7 @@ public class HelmArtifactController extends BaseArtifactController {
             @ApiResponse(code = 400, message = "An error occurred.")})
     @PreAuthorize("hasAuthority('ARTIFACTS_DEPLOY')")
     @RequestMapping(value = {"{storageId}/{repositoryId}/charts","/{storageId}/{repositoryId}/api/charts"}, method = {RequestMethod.POST})
-    public ResponseEntity upload(@RepositoryMapping Repository repository,
+    public ResponseEntity upload(@RepoMapping Repository repository,
                                  @RequestHeader HttpHeaders httpHeaders,
                                  HttpServletRequest request,
                                  HttpServletResponse response,
@@ -144,7 +144,7 @@ public class HelmArtifactController extends BaseArtifactController {
             @ApiResponse(code = 400, message = "An error occurred.")})
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     @RequestMapping(value ="{storageId}/{repositoryId}/index.yaml", method = {RequestMethod.GET})
-    public void downloadIndex(@RepositoryMapping Repository repository,
+    public void downloadIndex(@RepoMapping Repository repository,
                               @RequestHeader HttpHeaders httpHeaders,
                               HttpServletRequest request,
                               HttpServletResponse response) {

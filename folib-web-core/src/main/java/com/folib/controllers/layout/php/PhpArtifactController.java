@@ -3,7 +3,7 @@ package com.folib.controllers.layout.php;
 
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
-import com.folib.artifact.coordinates.PhpArtifactCoordinates;
+import com.folib.artifact.coordinates.PhpCoordinates;
 import com.folib.components.artifact.ArtifactComponent;
 import com.folib.controllers.BaseArtifactController;
 import com.folib.data.criteria.Paginator;
@@ -12,16 +12,16 @@ import com.folib.php.PhpSearchRequest;
 import com.folib.php.PhpSearchResult;
 import com.folib.providers.io.RepositoryPath;
 import com.folib.providers.io.RepositoryPathResolver;
-import com.folib.providers.layout.PhpLayoutProvider;
-import com.folib.providers.layout.PhpSearchResultSupplier;
+import com.folib.providers.PhpLayoutProvider;
+import com.folib.providers.PhpSearchResultSupplier;
 import com.folib.providers.repository.RepositoryProvider;
 import com.folib.providers.repository.RepositoryProviderRegistry;
 import com.folib.providers.repository.RepositorySearchRequest;
 import com.folib.repository.PhpRepositoryFeatures;
 import com.folib.storage.repository.Repository;
 import com.folib.web.Constants;
-import com.folib.web.LayoutRequestMapping;
-import com.folib.web.RepositoryMapping;
+import com.folib.web.LayoutReqMapping;
+import com.folib.web.RepoMapping;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
@@ -49,7 +49,7 @@ import java.util.Objects;
  * @author veadan
  */
 @RestController
-@LayoutRequestMapping(PhpLayoutProvider.ALIAS)
+@LayoutReqMapping(PhpLayoutProvider.ALIAS)
 @Slf4j
 @Api(description = "php坐标控制器",tags = "php坐标控制器")
 public class PhpArtifactController extends BaseArtifactController {
@@ -80,7 +80,7 @@ public class PhpArtifactController extends BaseArtifactController {
 
     @GetMapping(path = "{storageId}/{repositoryId}/search")
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
-    public void search(@RepositoryMapping Repository repository,
+    public void search(@RepoMapping Repository repository,
                        @RequestParam(name = "q") String q,
                        @RequestParam(name = "type") String type,
                        @RequestParam(name = "size", defaultValue = "20") Integer size,
@@ -88,7 +88,7 @@ public class PhpArtifactController extends BaseArtifactController {
             throws IOException {
         final String storageId = repository.getStorage().getId();
         final String repositoryId = repository.getId();
-        RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, PhpArtifactCoordinates.DEFAULT_PACKAGES);
+        RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, PhpCoordinates.DEFAULT_PACKAGES);
         JSONObject packageJson = JSONObject.parseObject(artifactComponent.readRepositoryPathContent(repositoryPath));
         PhpSearchRequest phpSearchRequest = new PhpSearchRequest();
         phpSearchRequest.setQ(q);
@@ -124,7 +124,7 @@ public class PhpArtifactController extends BaseArtifactController {
             @ApiResponse(code = 400, message = "An error occurred.")})
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     @GetMapping(value = {"{storageId}/{repositoryId}/dists/{path:.+}"})
-    public ResponseEntity<Object> distDownload(@RepositoryMapping Repository repository,
+    public ResponseEntity<Object> distDownload(@RepoMapping Repository repository,
                                                @RequestHeader HttpHeaders httpHeaders,
                                                @PathVariable String path,
                                                HttpServletRequest request,
@@ -133,27 +133,27 @@ public class PhpArtifactController extends BaseArtifactController {
         String storageId = repository.getStorage().getId();
         String repositoryId = repository.getId();
         logger.info("Requested /{}/{}/{}.", storageId, repositoryId, path);
-        RepositoryPath repositoryPath = getLocalRepositoryPath(storageId, repositoryId, PhpArtifactCoordinates.DEFAULT_PACKAGES);
+        RepositoryPath repositoryPath = getLocalRepositoryPath(storageId, repositoryId, PhpCoordinates.DEFAULT_PACKAGES);
         storageId = repositoryPath.getStorageId();
         repositoryId = repositoryPath.getRepositoryId();
         JSONObject packageJson = getSourcePackagesJson(repositoryPath);
         String mirrorsKey = "mirrors";
         if (packageJson.containsKey(mirrorsKey)) {
-            repositoryPath = artifactResolutionService.resolvePath(storageId, repositoryId, PhpArtifactCoordinates.COMPOSER_DISTS + path);
+            repositoryPath = artifactResolutionService.resolvePath(storageId, repositoryId, PhpCoordinates.COMPOSER_DISTS + path);
         } else {
-            PhpArtifactCoordinates phpArtifactCoordinates = PhpArtifactCoordinates.parse(path);
+            PhpCoordinates phpArtifactCoordinates = PhpCoordinates.parse(path);
             String reference = path.substring(path.lastIndexOf("/"), path.lastIndexOf("."));
             String name = phpArtifactCoordinates.getName().replace(reference, "");
             String artifactPath = "%s%s.%s";
-            artifactPath = String.format(artifactPath, PhpArtifactCoordinates.COMPOSER_P2, name, PhpArtifactCoordinates.JSON);
+            artifactPath = String.format(artifactPath, PhpCoordinates.COMPOSER_P2, name, PhpCoordinates.JSON);
             String url = getTargetUrl(storageId, repositoryId, artifactPath, name, reference);
             if (StringUtils.isBlank(url)) {
                 artifactPath = "%s%s~dev.%s";
-                artifactPath = String.format(artifactPath, PhpArtifactCoordinates.COMPOSER_P2, name, PhpArtifactCoordinates.JSON);
+                artifactPath = String.format(artifactPath, PhpCoordinates.COMPOSER_P2, name, PhpCoordinates.JSON);
                 url = getTargetUrl(storageId, repositoryId, artifactPath, name, reference);
             }
             if (StringUtils.isNotBlank(url)) {
-                repositoryPath = artifactResolutionService.resolvePath(storageId, repositoryId, url, PhpArtifactCoordinates.COMPOSER_DISTS + path);
+                repositoryPath = artifactResolutionService.resolvePath(storageId, repositoryId, url, PhpCoordinates.COMPOSER_DISTS + path);
             }
         }
         vulnerabilityBlock(repositoryPath);
@@ -166,7 +166,7 @@ public class PhpArtifactController extends BaseArtifactController {
             @ApiResponse(code = 400, message = "An error occurred.")})
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     @GetMapping(value = {"{storageId}/{repositoryId}/{path:.+}"})
-    public ResponseEntity<Object> download(@RepositoryMapping Repository repository,
+    public ResponseEntity<Object> download(@RepoMapping Repository repository,
                                            @RequestHeader HttpHeaders httpHeaders,
                                            @PathVariable String path,
                                            HttpServletRequest request,
@@ -178,7 +178,7 @@ public class PhpArtifactController extends BaseArtifactController {
 
         RepositoryPath repositoryPath = artifactResolutionService.resolvePath(storageId, repositoryId, path);
         vulnerabilityBlock(repositoryPath);
-        if (PhpArtifactCoordinates.DEFAULT_PACKAGES.equals(path) && Objects.nonNull(repositoryPath)) {
+        if (PhpCoordinates.DEFAULT_PACKAGES.equals(path) && Objects.nonNull(repositoryPath)) {
             return ResponseEntity.ok(getPackagesJson(repositoryPath));
         }
         provideArtifactDownloadResponse(request, response, httpHeaders, repositoryPath);

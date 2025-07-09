@@ -1,6 +1,6 @@
 package com.folib.security.resolvepath;
 
-import com.folib.artifact.coordinates.PypiArtifactCoordinates;
+import com.folib.artifact.coordinates.PypiCoordinates;
 import com.folib.security.enums.ResolvePathTypeEnum;
 import com.folib.storage.repository.Repository;
 import lombok.extern.slf4j.Slf4j;
@@ -41,9 +41,9 @@ public class PypiResolvePathProvider implements ResolvePathProvider {
             relativePath = "";
         } else if (relativePath.startsWith(PACKAGES)) {
             relativePath = relativePath.replace("packages/", "");
-            PypiArtifactCoordinates coordinates;
+            PypiCoordinates coordinates;
             try {
-                coordinates = PypiArtifactCoordinates.parse(relativePath);
+                coordinates = PypiCoordinates.parse(relativePath);
                 relativePath = coordinates.buildPath();
             } catch (Exception e) {
                 log.error("Invalid package name - {}", e.getMessage());

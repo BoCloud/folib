@@ -2,7 +2,7 @@ package com.folib.storage.indexing.local;
 
 import java.io.File;
 
-import com.folib.artifact.coordinates.MavenArtifactCoordinates;
+import com.folib.artifact.coordinates.MavenCoordinates;
 import com.folib.domain.Artifact;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.maven.index.ArtifactContext;
@@ -33,7 +33,7 @@ public class ArtifactEntryArtifactContext
 
     private static ArtifactInfo asArtifactInfo(Artifact artifactEntry)
     {
-        final MavenArtifactCoordinates coordinates = (MavenArtifactCoordinates) artifactEntry.getArtifactCoordinates();
+        final MavenCoordinates coordinates = (MavenCoordinates) artifactEntry.getArtifactCoordinates();
         ArtifactInfo artifactInfo = new ArtifactInfo(artifactEntry.getRepositoryId(),
                                                      coordinates.getGroupId(),
                                                      coordinates.getArtifactId(),
@@ -49,7 +49,7 @@ public class ArtifactEntryArtifactContext
     /**
      * @see org.apache.maven.index.DefaultArtifactContextProducer#getArtifactContext(org.apache.maven.index.context.IndexingContext, java.io.File)
      */
-    private static void produce(MavenArtifactCoordinates coordinates,
+    private static void produce(MavenCoordinates coordinates,
                                 ArtifactInfo artifactInfo)
     {
         if (!StringUtils.isEmpty(coordinates.getClassifier()))

@@ -4,7 +4,7 @@ import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.folib.components.node.NodeComponent;
-import com.veadan.folib.db.schema.util.SchemaUtils;
+import com.folib.db.schema.util.SchemaUtils;
 import com.folib.domain.JanusGraphIndex;
 import com.folib.util.CommonUtils;
 import io.swagger.annotations.Api;

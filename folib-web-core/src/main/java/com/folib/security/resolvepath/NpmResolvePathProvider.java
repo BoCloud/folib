@@ -1,6 +1,6 @@
 package com.folib.security.resolvepath;
 
-import com.folib.artifact.coordinates.NpmArtifactCoordinates;
+import com.folib.artifact.coordinates.NpmCoordinates;
 import com.folib.security.enums.ResolvePathTypeEnum;
 import com.folib.storage.repository.Repository;
 import lombok.extern.slf4j.Slf4j;
@@ -40,8 +40,8 @@ public class NpmResolvePathProvider implements ResolvePathProvider {
             return "";
         }
         String extension = FilenameUtils.getExtension(relativePath);
-        if (!relativePath.startsWith(STORAGE) && !relativePath.startsWith(BINARY) && StringUtils.isNotBlank(extension) && NpmArtifactCoordinates.NPM_EXTENSION_PATTERN.matcher(extension).matches()) {
-            NpmArtifactCoordinates npmArtifactCoordinates = NpmArtifactCoordinates.parseByResolvePath(relativePath);
+        if (!relativePath.startsWith(STORAGE) && !relativePath.startsWith(BINARY) && StringUtils.isNotBlank(extension) && NpmCoordinates.NPM_EXTENSION_PATTERN.matcher(extension).matches()) {
+            NpmCoordinates npmArtifactCoordinates = NpmCoordinates.parseByResolvePath(relativePath);
             if (Objects.nonNull(npmArtifactCoordinates)) {
                 relativePath = npmArtifactCoordinates.buildPath();
             }

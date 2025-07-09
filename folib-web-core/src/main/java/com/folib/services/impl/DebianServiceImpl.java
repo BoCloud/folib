@@ -1,8 +1,8 @@
 package com.folib.services.impl;
 
 import cn.hutool.core.lang.UUID;
-import com.folib.artifact.coordinates.DebianArtifactCoordinates;
-import com.folib.artifact.coordinates.DebianArtifactCoordinatesAdapter;
+import com.folib.artifact.coordinates.DebianCoordinates;
+import com.folib.artifact.coordinates.DebianCoordinatesAdapter;
 import com.folib.constant.DebianConstant;
 import com.folib.domain.DebianMetadata;
 import com.folib.domain.debian.DebianParserVO;
@@ -56,7 +56,7 @@ public class DebianServiceImpl implements DebianService {
     private RepositoryPathResolver repositoryPathResolver;
 
     @Resource
-    private DebianArtifactCoordinatesAdapter debianArtifactCoordinatesAdapter;
+    private DebianCoordinatesAdapter debianArtifactCoordinatesAdapter;
 
     @Resource
     private DebianIncrementalIndexer debianIncrementalIndexer;
@@ -104,7 +104,7 @@ public class DebianServiceImpl implements DebianService {
     public String upload(DebianUploadBO uploadBO) {
         // 目录
         Path temArtifact = Path.of(uploadBO.getPath());
-        DebianArtifactCoordinates coordinates = DebianArtifactCoordinates.of(uploadBO.getComponent(), temArtifact.getFileName().toString(), DebianConstant.DEFAULT_EXTENSION);
+        DebianCoordinates coordinates = DebianCoordinates.of(uploadBO.getComponent(), temArtifact.getFileName().toString(), DebianConstant.DEFAULT_EXTENSION);
         coordinates.setDistribution(uploadBO.getDistribution());
         coordinates.setArchitecture(uploadBO.getArchitecture());
         coordinates.setVersion(uploadBO.getVersion());
@@ -151,7 +151,7 @@ public class DebianServiceImpl implements DebianService {
                 try (InputStream is = new FileInputStream(tempFile)) {
                     DebianMetadata extract = DebianUtils.extract(is);
                     Assert.notNull(extract, "valid artifact ");
-                    DebianArtifactCoordinates coordinate = DebianArtifactCoordinates.of(component, fileName, DebianConstant.DEFAULT_EXTENSION);
+                    DebianCoordinates coordinate = DebianCoordinates.of(component, fileName, DebianConstant.DEFAULT_EXTENSION);
                     coordinate.setVersion(extract.getVersion());
                     coordinate.setArchitecture(extract.getArchitecture());
                     coordinate.setFileName(extract.getPackageName());

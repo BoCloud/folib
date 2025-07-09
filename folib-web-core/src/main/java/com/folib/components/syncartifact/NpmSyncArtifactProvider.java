@@ -2,7 +2,7 @@ package com.folib.components.syncartifact;
 
 import cn.hutool.core.io.FileUtil;
 import com.google.common.collect.Lists;
-import com.folib.artifact.coordinates.NpmArtifactCoordinates;
+import com.folib.artifact.coordinates.NpmCoordinates;
 import com.folib.components.DistributedCacheComponent;
 import com.folib.components.DistributedCounterComponent;
 import com.folib.components.artifact.ArtifactComponent;
@@ -278,7 +278,7 @@ public class NpmSyncArtifactProvider implements SyncArtifactProvider {
                 return false;
             }
             Elements links = doc.select(dom);
-            NpmArtifactCoordinates npmArtifactCoordinates;
+            NpmCoordinates npmArtifactCoordinates;
             for (Element link : links) {
                 String absUrl = link.absUrl("href");
                 if (isSuffix(absUrl)) {
@@ -319,11 +319,11 @@ public class NpmSyncArtifactProvider implements SyncArtifactProvider {
         return true;
     }
 
-    private NpmArtifactCoordinates resolveNpmArtifactCoordinates(String path, String separator) {
+    private NpmCoordinates resolveNpmArtifactCoordinates(String path, String separator) {
         if (StringUtils.isBlank(path) || !path.contains(separator)) {
             return null;
         }
-        return NpmArtifactCoordinates.parseByResolvePath(path);
+        return NpmCoordinates.parseByResolvePath(path);
     }
 
     /**
@@ -333,7 +333,7 @@ public class NpmSyncArtifactProvider implements SyncArtifactProvider {
      * @return true 后缀匹配 false 后缀不匹配
      */
     private boolean isSuffix(String url) {
-        return NpmArtifactCoordinates.NPM_EXTENSION_LIST.stream().anyMatch(url::endsWith);
+        return NpmCoordinates.NPM_EXTENSION_LIST.stream().anyMatch(url::endsWith);
     }
 
     private boolean handlerPath(String dirPath, SyncArtifactForm syncArtifactForm) {
@@ -418,7 +418,7 @@ public class NpmSyncArtifactProvider implements SyncArtifactProvider {
             futureTask = new FutureTask<String>(() -> {
                 for (String artifactPath : itemArtifactPathList) {
                     try {
-                        if (NpmArtifactCoordinates.NPM_EXTENSION_LIST.stream().anyMatch(artifactPath::endsWith)) {
+                        if (NpmCoordinates.NPM_EXTENSION_LIST.stream().anyMatch(artifactPath::endsWith)) {
                             //制品
                             RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
                             if (Files.exists(repositoryPath)) {
@@ -441,7 +441,7 @@ public class NpmSyncArtifactProvider implements SyncArtifactProvider {
                             }
                         } else {
                             //索引
-                            NpmArtifactCoordinates npmArtifactCoordinates = NpmArtifactCoordinates.resolveName(null, artifactPath);
+                            NpmCoordinates npmArtifactCoordinates = NpmCoordinates.resolveName(null, artifactPath);
                             String packageId = npmArtifactCoordinates.getId();
                             npmService.packageFeed(rootRepositoryPath.getRepository(), packageId,  NpmUtils.getPackageMetadataPath(packageId));
                         }

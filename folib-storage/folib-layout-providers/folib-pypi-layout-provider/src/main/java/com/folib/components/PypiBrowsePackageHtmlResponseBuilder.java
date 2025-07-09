@@ -5,7 +5,7 @@ package com.folib.components;
  * @date 2024/7/2
  **/
 
-import com.folib.artifact.coordinates.PypiArtifactCoordinates;
+import com.folib.artifact.coordinates.PypiCoordinates;
 import com.folib.providers.io.RepositoryFiles;
 import com.folib.providers.io.RepositoryPath;
 import com.folib.pypi.PypiSearchResult;
@@ -37,7 +37,7 @@ public class PypiBrowsePackageHtmlResponseBuilder {
                     "</html>";
         } else {
 
-            PypiArtifactCoordinates artifactCoordinates = (PypiArtifactCoordinates) RepositoryFiles.readCoordinates((RepositoryPath) filePaths.get(0));
+            PypiCoordinates artifactCoordinates = (PypiCoordinates) RepositoryFiles.readCoordinates((RepositoryPath) filePaths.get(0));
             final String packageName = artifactCoordinates.getId();
 
             htmlResponse = "<!DOCTYPE html>\n<html>\n" +
@@ -61,7 +61,7 @@ public class PypiBrowsePackageHtmlResponseBuilder {
 
         for (Path path : filePaths) {
             RepositoryPath repositoryPath = (RepositoryPath) path;
-            PypiArtifactCoordinates artifactCoordinates = (PypiArtifactCoordinates) RepositoryFiles.readCoordinates(repositoryPath);
+            PypiCoordinates artifactCoordinates = (PypiCoordinates) RepositoryFiles.readCoordinates(repositoryPath);
 
             Repository repository = repositoryPath.getRepository();
             packageLinks.append("<a href=\"" + "/storages/").append(repository.getStorage().getId()).append("/").append(repository.getId()).append("/packages/").append(artifactCoordinates.buildPath()).append("\">").append(artifactCoordinates.getFileName()).append("</a><br>\n");
@@ -83,7 +83,7 @@ public class PypiBrowsePackageHtmlResponseBuilder {
                     "        </body>\n" +
                     "</html>";
         } else {
-            PypiArtifactCoordinates artifactCoordinates = PypiArtifactCoordinates.parse(pypiSearchResultList.get(0).getArtifactName());
+            PypiCoordinates artifactCoordinates = PypiCoordinates.parse(pypiSearchResultList.get(0).getArtifactName());
             final String packageName = artifactCoordinates.getId();
             htmlResponse = "<!DOCTYPE html>\n<html>\n" +
                     "        <head>\n" +
@@ -101,9 +101,9 @@ public class PypiBrowsePackageHtmlResponseBuilder {
 
     private String getProxyPackageLinks(List<PypiSearchResult> pypiSearchResultList) {
         StringBuilder packageLinks = new StringBuilder();
-        PypiArtifactCoordinates artifactCoordinates = null;
+        PypiCoordinates artifactCoordinates = null;
         for (PypiSearchResult pypiSearchResult : pypiSearchResultList) {
-            artifactCoordinates = PypiArtifactCoordinates.parse(pypiSearchResult.getArtifactName());
+            artifactCoordinates = PypiCoordinates.parse(pypiSearchResult.getArtifactName());
             packageLinks.append("<a href=\"" + "/storages/").append(pypiSearchResult.getStorageId()).append("/").append(pypiSearchResult.getRepositoryId()).append("/packages/").append(pypiSearchResult.getArtifactPath()).append("\"");
             if (StringUtils.isNotBlank(pypiSearchResult.getAttributes())) {
                 packageLinks.append(" ");

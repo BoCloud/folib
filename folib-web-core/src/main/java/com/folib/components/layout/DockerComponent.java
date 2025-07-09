@@ -2,7 +2,7 @@ package com.folib.components.layout;
 
 import com.alibaba.fastjson.JSON;
 import com.google.common.collect.Lists;
-import com.folib.artifact.coordinates.DockerArtifactCoordinates;
+import com.folib.artifact.coordinates.DockerCoordinates;
 import com.folib.constant.GlobalConstants;
 import com.folib.domain.Artifact;
 import com.folib.domain.ArtifactEntity;
@@ -71,7 +71,7 @@ public class DockerComponent {
         }
         if (Files.isDirectory(repositoryPath)) {
             DirectoryListing directoryListing = directoryListingService.fromRepositoryPath(repositoryPath);
-            List<FileContent> fileContents = directoryListing.getFiles().stream().filter(file -> DockerArtifactCoordinates.isManifestPath(file.getName())).collect(Collectors.toList());
+            List<FileContent> fileContents = directoryListing.getFiles().stream().filter(file -> DockerCoordinates.isManifestPath(file.getName())).collect(Collectors.toList());
             if (CollectionUtils.isEmpty(fileContents)) {
                 return null;
             }
@@ -81,7 +81,7 @@ public class DockerComponent {
         if (!Files.exists(repositoryPath)) {
             return null;
         }
-        DockerArtifactCoordinates dockerArtifactCoordinates = DockerArtifactCoordinates.parse(RepositoryFiles.relativizePath(repositoryPath));
+        DockerCoordinates dockerArtifactCoordinates = DockerCoordinates.parse(RepositoryFiles.relativizePath(repositoryPath));
         String imageName = dockerArtifactCoordinates.getName();
         List<ImageManifest> imageManifestList = Lists.newArrayList();
         String manifestString = readManifest(repositoryPath);
@@ -110,7 +110,7 @@ public class DockerComponent {
 
     public List<LayerManifest> getImageLayers(RepositoryPath repositoryPath) {
         try {
-            DockerArtifactCoordinates dockerArtifactCoordinates = DockerArtifactCoordinates.parse(RepositoryFiles.relativizePath(repositoryPath));
+            DockerCoordinates dockerArtifactCoordinates = DockerCoordinates.parse(RepositoryFiles.relativizePath(repositoryPath));
             String imageName = dockerArtifactCoordinates.getName();
             List<LayerManifest> layerManifests = Lists.newArrayList();
             String manifestString = readManifest(repositoryPath);
@@ -144,7 +144,7 @@ public class DockerComponent {
     }
 
     public String readManifest(RepositoryPath manifestPath) {
-        if (!DockerArtifactCoordinates.isManifestPath(manifestPath)) {
+        if (!DockerCoordinates.isManifestPath(manifestPath)) {
             log.warn(String.format("RepositoryPath [%s] not is a manifest path or not exists", manifestPath));
             return "";
         }
@@ -227,7 +227,7 @@ public class DockerComponent {
             }
             if (isTag) {
                 DirectoryListing directoryListing = directoryListingService.fromRepositoryPath(repositoryPath);
-                List<FileContent> fileContents = directoryListing.getFiles().stream().filter(file -> DockerArtifactCoordinates.include(file.getName())).collect(Collectors.toList());
+                List<FileContent> fileContents = directoryListing.getFiles().stream().filter(file -> DockerCoordinates.include(file.getName())).collect(Collectors.toList());
                 if (CollectionUtils.isNotEmpty(fileContents)) {
                     FileContent fileContent = fileContents.get(0);
                     repositoryPath = repositoryPathResolver.resolve(fileContent.getStorageId(), fileContent.getRepositoryId(), fileContent.getArtifactPath());

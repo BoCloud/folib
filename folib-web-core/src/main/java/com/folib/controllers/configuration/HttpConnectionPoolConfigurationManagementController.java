@@ -6,7 +6,7 @@ import com.folib.controllers.support.PoolStatsEntityBody;
 import com.folib.services.ConfigurationManagementService;
 import com.folib.storage.repository.RepositoryData;
 import com.folib.storage.repository.Repository;
-import com.folib.web.RepositoryMapping;
+import com.folib.web.RepoMapping;
 
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -51,7 +51,7 @@ public class HttpConnectionPoolConfigurationManagementController
     @PutMapping(value = "{storageId}/{repositoryId}/{numberOfConnections}",
                 produces = { MediaType.TEXT_PLAIN_VALUE,
                              MediaType.APPLICATION_JSON_VALUE })
-    public ResponseEntity setNumberOfConnectionsForProxyRepository(@RepositoryMapping Repository repository,
+    public ResponseEntity setNumberOfConnectionsForProxyRepository(@RepoMapping Repository repository,
                                                                    @PathVariable(value = "numberOfConnections") int numberOfConnections,
                                                                    @RequestHeader(HttpHeaders.ACCEPT) String accept) throws IOException
     { 
@@ -85,7 +85,7 @@ public class HttpConnectionPoolConfigurationManagementController
     @GetMapping(value = "{storageId}/{repositoryId}",
                 produces = { MediaType.TEXT_PLAIN_VALUE,
                              MediaType.APPLICATION_JSON_VALUE })
-    public ResponseEntity getPoolStatsForProxyRepository(@RepositoryMapping Repository repository,
+    public ResponseEntity getPoolStatsForProxyRepository(@RepoMapping Repository repository,
                                                          @RequestHeader(HttpHeaders.ACCEPT) String accept)
     {
         final RepositoryData immutableRepository = (RepositoryData) repository;

@@ -2,7 +2,7 @@ package com.folib.storage.indexing.local;
 
 import java.util.Set;
 
-import com.folib.artifact.coordinates.MavenArtifactCoordinates;
+import com.folib.artifact.coordinates.MavenCoordinates;
 import com.folib.domain.Artifact;
 import com.folib.domain.ArtifactArchiveListing;
 import org.apache.commons.collections4.CollectionUtils;
@@ -36,7 +36,7 @@ public class ArtifactEntryJarFileContentsIndexCreator
         Artifact artifactEntry = artifactEntryArtifactContext.getArtifactEntry();
         ArtifactInfo artifactInfo = artifactEntryArtifactContext.getArtifactInfo();
 
-        final MavenArtifactCoordinates coordinates = (MavenArtifactCoordinates) artifactEntry.getArtifactCoordinates();
+        final MavenCoordinates coordinates = (MavenCoordinates) artifactEntry.getArtifactCoordinates();
         final String extension = coordinates.getExtension();
 
         if ("jar" .equals(extension) ||
@@ -53,7 +53,7 @@ public class ArtifactEntryJarFileContentsIndexCreator
     private void updateArtifactInfo(final ArtifactInfo artifactInfo,
                                     final Artifact artifactEntry)
     {
-        final MavenArtifactCoordinates coordinates = (MavenArtifactCoordinates) artifactEntry.getArtifactCoordinates();
+        final MavenCoordinates coordinates = (MavenCoordinates) artifactEntry.getArtifactCoordinates();
 
         String strippedPrefix = null;
         if ("war" .equals(coordinates.getExtension()))

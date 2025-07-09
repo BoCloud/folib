@@ -20,7 +20,7 @@ import org.apache.tinkerpop.gremlin.process.traversal.Traverser;
 import org.apache.tinkerpop.gremlin.structure.Vertex;
 import com.folib.data.domain.DomainObject;
 import com.folib.data.domain.EntityHierarchyNode;
-import com.veadan.folib.db.schema.Edges;
+import com.folib.db.schema.Edges;
 
 /**
  * Adapts hierarchical entities to the Graph structure. 

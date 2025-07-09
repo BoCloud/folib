@@ -2,7 +2,7 @@ package com.folib.config;
 
 import com.folib.providers.layout.P2LayoutProvider;
 import com.folib.repository.P2RepositoryFeatures;
-import com.folib.repository.P2RepositoryManagementStrategy;
+import com.folib.repository.P2RepositoryStrategy;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -30,9 +30,9 @@ public class P2LayoutProviderConfig
     }
 
     @Bean(name = "p2RepositoryManagementStrategy")
-    P2RepositoryManagementStrategy p2RepositoryManagementStrategy()
+    P2RepositoryStrategy p2RepositoryManagementStrategy()
     {
-        return new P2RepositoryManagementStrategy();
+        return new P2RepositoryStrategy();
     }
 
 }

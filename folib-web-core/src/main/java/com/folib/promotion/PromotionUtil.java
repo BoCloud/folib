@@ -5,7 +5,7 @@ import cn.hutool.json.JSONUtil;
 import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import com.folib.artifact.coordinates.DebianArtifactCoordinates;
+import com.folib.artifact.coordinates.DebianCoordinates;
 import com.folib.components.DistributedCacheComponent;
 import com.folib.components.artifact.ArtifactComponent;
 import com.folib.components.layout.DockerComponent;
@@ -659,7 +659,7 @@ public class PromotionUtil {
             String distribution = repositoryPath.getExtAttribute().get(DebianConstant.ATTR_DISTRIBUTION);
             String component = repositoryPath.getExtAttribute().get(DebianConstant.ATTR_COMPONENT);
             String architecture = repositoryPath.getExtAttribute().get(DebianConstant.ATTR_ARCHITECTURE);
-            DebianArtifactCoordinates coordinate = new DebianArtifactCoordinates();
+            DebianCoordinates coordinate = new DebianCoordinates();
             coordinate.setArchitecture(architecture);
             coordinate.setDistribution(distribution);
             coordinate.setComponent(component);

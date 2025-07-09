@@ -31,7 +31,7 @@ import com.folib.layout.providers.CargoLayoutProvider;
 import com.folib.providers.io.RepositoryPath;
 import com.folib.providers.layout.LayoutProvider;
 import com.folib.providers.layout.LayoutProviderRegistry;
-import com.folib.providers.layout.RpmLayoutProvider;
+import com.folib.providers.RpmLayoutProvider;
 import com.folib.providers.storage.FileSystemStorageProvider;
 import com.folib.scanner.common.msg.TableResultResponse;
 import com.folib.service.ProxyRepositoryConnectionPoolConfigurationService;
@@ -53,7 +53,7 @@ import com.folib.users.service.UserService;
 import com.folib.users.service.impl.RelationalDatabaseUserService;
 import com.folib.users.userdetails.SpringSecurityUser;
 import com.folib.validation.RequestBodyValidationException;
-import com.folib.web.RepositoryMapping;
+import com.folib.web.RepoMapping;
 import io.swagger.annotations.*;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
@@ -1146,7 +1146,7 @@ public class StoragesConfigurationController
     @PreAuthorize("hasAuthority('CONFIGURATION_VIEW_REPOSITORY')")
     @GetMapping(value = "/{storageId}/{repositoryId}",
             produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity getRepositoryResponseEntity(@RepositoryMapping(allowOutOfServiceRepository = true) Repository repository) {
+    public ResponseEntity getRepositoryResponseEntity(@RepoMapping(allowOutOfServiceRepository = true) Repository repository) {
         if (repository.isGroupRepository()) {
             repository = configurationManagementService.getMutableConfigurationClone().getStorage(repository.getStorage().getId()).getRepository(repository.getId());
             Set<String> vulnerabilityWhites = repository.getVulnerabilityWhites(), vulnerabilityBlacks = repository.getVulnerabilityBlacks();
@@ -1171,7 +1171,7 @@ public class StoragesConfigurationController
     @PreAuthorize("hasAuthority('CONFIGURATION_DELETE_REPOSITORY')")
     @DeleteMapping(value = "/{storageId}/{repositoryId}",
             produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity removeRepository(@RepositoryMapping(allowOutOfServiceRepository = true) Repository repository,
+    public ResponseEntity removeRepository(@RepoMapping(allowOutOfServiceRepository = true) Repository repository,
                                            @ApiParam(value = "Whether to force delete the repository from the file system")
                                            @RequestParam(name = "force", defaultValue = "false") final boolean force,
                                            @RequestParam(name = "cleanup", defaultValue = "false") final boolean cleanup,

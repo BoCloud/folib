@@ -1,7 +1,7 @@
 package com.folib.controllers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.folib.artifact.coordinates.DockerArtifactCoordinates;
+import com.folib.artifact.coordinates.DockerCoordinates;
 import com.folib.authorization.dto.Role;
 import com.folib.components.auth.AuthComponent;
 import com.folib.configuration.Configuration;
@@ -446,7 +446,7 @@ public abstract class BaseController {
             return null;
         }
         DirectoryListing directoryListing = directoryListingService.fromRepositoryPath(repositoryPath);
-        List<FileContent> fileContents = directoryListing.getFiles().stream().filter(file -> DockerArtifactCoordinates.include(file.getName())).collect(Collectors.toList());
+        List<FileContent> fileContents = directoryListing.getFiles().stream().filter(file -> DockerCoordinates.include(file.getName())).collect(Collectors.toList());
         if (CollectionUtils.isEmpty(fileContents)) {
             return null;
         }

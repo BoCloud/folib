@@ -2,9 +2,9 @@ package com.folib.gremlin.adapters;
 
 import com.folib.gremlin.adapters.UnfoldEntityTraversal;
 import com.folib.gremlin.adapters.VertexEntityTraversalAdapter;
-import com.veadan.folib.db.schema.Edges;
-import com.veadan.folib.db.schema.Properties;
-import com.veadan.folib.db.schema.Vertices;
+import com.folib.db.schema.Edges;
+import com.folib.db.schema.Properties;
+import com.folib.db.schema.Vertices;
 import com.folib.domain.Component;
 import com.folib.domain.ComponentEntity;
 import com.folib.gremlin.dsl.EntityTraversal;

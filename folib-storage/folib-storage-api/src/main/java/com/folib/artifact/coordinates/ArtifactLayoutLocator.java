@@ -13,7 +13,7 @@ import org.slf4j.LoggerFactory;
  * 
  * @author veadan
  * 
- * @see ArtifactCoordinatesLayout 
+ * @see CoordinatesLayout
  * @see ArtifactLayoutCoordinate
  * @see ArtifactCoordinates
  * 
@@ -58,11 +58,11 @@ public class ArtifactLayoutLocator
         Reflections reflections = new Reflections("com.folib.artifact.coordinates");
         for (Class<? extends ArtifactCoordinates> artifactCoordinatesClass : reflections.getSubTypesOf(ArtifactCoordinates.class))
         {
-            ArtifactCoordinatesLayout artifactLayout = artifactCoordinatesClass.getAnnotation(ArtifactCoordinatesLayout.class);
+            CoordinatesLayout artifactLayout = artifactCoordinatesClass.getAnnotation(CoordinatesLayout.class);
             if (artifactLayout == null)
             {
                 logger.warn("[{}] should be provided for [{}] class",
-                            ArtifactCoordinatesLayout.class.getSimpleName(),
+                            CoordinatesLayout.class.getSimpleName(),
                             artifactCoordinatesClass.getSimpleName());
                 continue;
             }

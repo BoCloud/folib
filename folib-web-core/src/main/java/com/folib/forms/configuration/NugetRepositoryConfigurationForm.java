@@ -1,7 +1,7 @@
 package com.folib.forms.configuration;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
-import com.folib.providers.layout.NugetLayoutProvider;
+import com.folib.providers.NugetLayoutProvider;
 
 /**
  * @author veadan

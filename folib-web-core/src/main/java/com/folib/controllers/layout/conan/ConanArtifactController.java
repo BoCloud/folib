@@ -4,7 +4,7 @@ import cn.hutool.json.JSONUtil;
 import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import com.folib.artifact.coordinates.ConanArtifactCoordinates;
+import com.folib.artifact.coordinates.ConanCoordinates;
 import com.folib.artifact.coordinates.ConanArtifactIndex;
 import com.folib.constant.GlobalConstants;
 import com.folib.controllers.BaseArtifactController;
@@ -19,8 +19,8 @@ import com.folib.users.security.JwtAuthenticationClaimsProvider;
 import com.folib.users.security.JwtClaimsProvider;
 import com.folib.users.security.SecurityTokenProvider;
 import com.folib.users.userdetails.SpringSecurityUser;
-import com.folib.web.LayoutRequestMapping;
-import com.folib.web.RepositoryMapping;
+import com.folib.web.LayoutReqMapping;
+import com.folib.web.RepoMapping;
 import io.swagger.annotations.Api;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -45,7 +45,7 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.util.*;
 
-@LayoutRequestMapping(ConanArtifactCoordinates.LAYOUT_NAME)
+@LayoutReqMapping(ConanCoordinates.LAYOUT_NAME)
 @RestController
 @Slf4j
 @Api(description = "Conan坐标控制器", tags = "Conan坐标控制器")
@@ -114,14 +114,14 @@ public class ConanArtifactController extends BaseArtifactController {
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     @GetMapping(value = "{storageId}/{repositoryId}/v1/conans/search")
     public ResponseEntity search(
-            @RepositoryMapping Repository repository,
+            @RepoMapping Repository repository,
             @RequestParam(value = "q", required = false) String query) {
         return ResponseEntity.ok(conanService.search("v1", repository, query));
     }
 
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     @GetMapping(value = {"{storageId}/{repositoryId}/v1/conans/{name}/{version}/{user}/{channel}/search"})
-    public ResponseEntity search(@RepositoryMapping Repository repository,
+    public ResponseEntity search(@RepoMapping Repository repository,
                                  @PathVariable("storageId") String storageId,
                                  @PathVariable("repositoryId") String repositoryId,
                                  @PathVariable("name") String name,
@@ -137,14 +137,14 @@ public class ConanArtifactController extends BaseArtifactController {
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     @GetMapping(value = "{storageId}/{repositoryId}/v2/conans/search")
     public ResponseEntity conanSearch(
-            @RepositoryMapping Repository repository,
+            @RepoMapping Repository repository,
             @RequestParam(value = "q", required = false) String query) {
         return ResponseEntity.ok(conanService.search("v2", repository, query));
     }
 
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     @GetMapping(value = "{storageId}/{repositoryId}/v1/conans/{name}/{version}/{user}/{channel}/digest")
-    public ResponseEntity exportDigest(@RepositoryMapping Repository repository,
+    public ResponseEntity exportDigest(@RepoMapping Repository repository,
                                        @PathVariable("name") String name,
                                        @PathVariable("version") String version,
                                        @PathVariable("user") String user,
@@ -158,7 +158,7 @@ public class ConanArtifactController extends BaseArtifactController {
 
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     @GetMapping(value = "{storageId}/{repositoryId}/v1/conans/{name}/{version}/{user}/{channel}/packages/{packageId}/digest")
-    public ResponseEntity packagesDigest(@RepositoryMapping Repository repository,
+    public ResponseEntity packagesDigest(@RepoMapping Repository repository,
                                          @PathVariable("name") String name,
                                          @PathVariable("version") String version,
                                          @PathVariable("user") String user,
@@ -173,7 +173,7 @@ public class ConanArtifactController extends BaseArtifactController {
 
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     @GetMapping(value = "{storageId}/{repositoryId}/v1/conans/{name}/{version}/{user}/{channel}")
-    public ResponseEntity checkExport(@RepositoryMapping Repository repository,
+    public ResponseEntity checkExport(@RepoMapping Repository repository,
                                       @PathVariable("storageId") String storageId,
                                       @PathVariable("repositoryId") String repositoryId,
                                       @PathVariable("name") String name,
@@ -204,7 +204,7 @@ public class ConanArtifactController extends BaseArtifactController {
 
     @PreAuthorize("hasAuthority('ARTIFACTS_DEPLOY')")
     @PostMapping(value = "{storageId}/{repositoryId}/v1/conans/{name}/{version}/{user}/{channel}/upload_urls")
-    public ResponseEntity getExportUploadUrls(@RepositoryMapping Repository repository,
+    public ResponseEntity getExportUploadUrls(@RepoMapping Repository repository,
                                               @PathVariable("name") String name,
                                               @PathVariable("version") String version,
                                               @PathVariable("user") String user,
@@ -224,7 +224,7 @@ public class ConanArtifactController extends BaseArtifactController {
 
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     @GetMapping(value = "{storageId}/{repositoryId}/v1/conans/{name}/{version}/{user}/{channel}/packages/{packageId}")
-    public ResponseEntity getPackageInfo(@RepositoryMapping Repository repository,
+    public ResponseEntity getPackageInfo(@RepoMapping Repository repository,
                                          @PathVariable("name") String name,
                                          @PathVariable("version") String version,
                                          @PathVariable("user") String user,
@@ -241,7 +241,7 @@ public class ConanArtifactController extends BaseArtifactController {
 
     @PreAuthorize("hasAuthority('ARTIFACTS_DEPLOY')")
     @PostMapping(value = "{storageId}/{repositoryId}/v1/conans/{name}/{version}/{user}/{channel}/packages/{packageId}/upload_urls")
-    public ResponseEntity getPackagesUploadUrls(@RepositoryMapping Repository repository,
+    public ResponseEntity getPackagesUploadUrls(@RepoMapping Repository repository,
                                                 @PathVariable("name") String name,
                                                 @PathVariable("version") String version,
                                                 @PathVariable("user") String user,
@@ -259,7 +259,7 @@ public class ConanArtifactController extends BaseArtifactController {
     @RequestMapping(value = "{storageId}/{repositoryId}/v1/files/{user}/{name}/{version}/{channel}/{revisionId}/export/{filePath:.+}",
             method = {RequestMethod.PUT})
     public ResponseEntity uploadExports(HttpServletRequest request,
-                                        @RepositoryMapping Repository repository,
+                                        @RepoMapping Repository repository,
                                         @PathVariable("storageId") String storageId,
                                         @PathVariable("repositoryId") String repositoryId,
                                         @PathVariable("user") String user,
@@ -298,7 +298,7 @@ public class ConanArtifactController extends BaseArtifactController {
     @RequestMapping(value = "{storageId}/{repositoryId}/v1/files/{user}/{name}/{version}/{channel}/{revisionId}/package/{packageId}/{packageRevisionId}/{filePath:.+}",
             method = {RequestMethod.PUT})
     public ResponseEntity uploadPackages(HttpServletRequest request,
-                                         @RepositoryMapping Repository repository,
+                                         @RepoMapping Repository repository,
                                          @PathVariable("storageId") String storageId,
                                          @PathVariable("repositoryId") String repositoryId,
                                          @PathVariable("user") String user,
@@ -337,7 +337,7 @@ public class ConanArtifactController extends BaseArtifactController {
 
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     @GetMapping(value = {"{storageId}/{repositoryId}/v1/conans/{name}/{version}/{user}/{channel}/download_urls"})
-    public ResponseEntity getExportDownloadUrls(@RepositoryMapping Repository repository,
+    public ResponseEntity getExportDownloadUrls(@RepoMapping Repository repository,
                                                 @PathVariable("name") String name,
                                                 @PathVariable("version") String version,
                                                 @PathVariable("user") String user,
@@ -352,7 +352,7 @@ public class ConanArtifactController extends BaseArtifactController {
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     @GetMapping(value = "{storageId}/{repositoryId}/v1/conans/{name}/{version}/{user}/{channel}/packages/{packageId}/download_urls")
     public ResponseEntity getPackagesDownloadUrls(
-            @RepositoryMapping Repository repository,
+            @RepoMapping Repository repository,
             @PathVariable("name") String name,
             @PathVariable("version") String version,
             @PathVariable("user") String user,
@@ -368,7 +368,7 @@ public class ConanArtifactController extends BaseArtifactController {
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     @RequestMapping(value = "{storageId}/{repositoryId}/v1/files/{path:.+}",
             method = {RequestMethod.GET})
-    public void downloadFiles(@RepositoryMapping Repository repository,
+    public void downloadFiles(@RepoMapping Repository repository,
                               @PathVariable("path") String path,
                               @RequestHeader HttpHeaders httpHeaders, HttpServletRequest request, HttpServletResponse response) throws Exception {
         final String storageId = repository.getStorage().getId();
@@ -398,7 +398,7 @@ public class ConanArtifactController extends BaseArtifactController {
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     @GetMapping(value = "{storageId}/{repositoryId}/v2/conans/{name}/{version}/{user}/{channel}/{revisions}")
     public ResponseEntity revisions(
-            @RepositoryMapping Repository repository,
+            @RepoMapping Repository repository,
             @PathVariable("storageId") String storageId,
             @PathVariable("repositoryId") String repositoryId,
             @PathVariable("name") String name,
@@ -428,7 +428,7 @@ public class ConanArtifactController extends BaseArtifactController {
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     @GetMapping(value = "{storageId}/{repositoryId}/v2/conans/{name}/{version}/{user}/{channel}/revisions/{revisionId}/files")
     public ResponseEntity revisionsFiles(
-            @RepositoryMapping Repository repository,
+            @RepoMapping Repository repository,
             @PathVariable("storageId") String storageId,
             @PathVariable("repositoryId") String repositoryId,
             @PathVariable("name") String name,
@@ -446,7 +446,7 @@ public class ConanArtifactController extends BaseArtifactController {
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     @GetMapping(value = "{storageId}/{repositoryId}/v2/conans/{name}/{version}/{user}/{channel}/revisions/{revisionId}/search")
     public ResponseEntity revisionsSearch(
-            @RepositoryMapping Repository repository,
+            @RepoMapping Repository repository,
             @PathVariable("storageId") String storageId,
             @PathVariable("repositoryId") String repositoryId,
             @PathVariable("name") String name,
@@ -465,7 +465,7 @@ public class ConanArtifactController extends BaseArtifactController {
     @GetMapping(value = "{storageId}/{repositoryId}/v2/conans/{name}/{version}/{user}/{channel}/revisions/{revisionId}/files/{filePath:.+}")
     public void downloadRevisionsFiles(
             @RequestHeader HttpHeaders httpHeaders,
-            @RepositoryMapping Repository repository,
+            @RepoMapping Repository repository,
             @PathVariable("storageId") String storageId,
             @PathVariable("repositoryId") String repositoryId,
             @PathVariable("name") String name,
@@ -496,7 +496,7 @@ public class ConanArtifactController extends BaseArtifactController {
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     @GetMapping(value = "{storageId}/{repositoryId}/v2/conans/{name}/{version}/{user}/{channel}/revisions/{revisionId}/packages/{packageId}/{revisions}")
     public ResponseEntity revisionsPackages(
-            @RepositoryMapping Repository repository,
+            @RepoMapping Repository repository,
             @PathVariable("storageId") String storageId,
             @PathVariable("repositoryId") String repositoryId,
             @PathVariable("name") String name,
@@ -529,7 +529,7 @@ public class ConanArtifactController extends BaseArtifactController {
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     @GetMapping(value = "{storageId}/{repositoryId}/v2/conans/{name}/{version}/{user}/{channel}/revisions/{revisionId}/packages/{packageId}/{revisions}/{packageRevisionId}/files")
     public ResponseEntity packagesFiles(
-            @RepositoryMapping Repository repository,
+            @RepoMapping Repository repository,
             @PathVariable("storageId") String storageId,
             @PathVariable("repositoryId") String repositoryId,
             @PathVariable("name") String name,
@@ -551,7 +551,7 @@ public class ConanArtifactController extends BaseArtifactController {
     @GetMapping(value = "{storageId}/{repositoryId}/v2/conans/{name}/{version}/{user}/{channel}/revisions/{revisionId}/packages/{packageId}/{revisions}/{packageRevisionId}/files/{filePath:.+}")
     public void downloadPackagesFiles(
             @RequestHeader HttpHeaders httpHeaders,
-            @RepositoryMapping Repository repository,
+            @RepoMapping Repository repository,
             @PathVariable("storageId") String storageId,
             @PathVariable("repositoryId") String repositoryId,
             @PathVariable("name") String name,
@@ -579,7 +579,7 @@ public class ConanArtifactController extends BaseArtifactController {
     @PreAuthorize("hasAuthority('ARTIFACTS_DEPLOY')")
     @PutMapping(value = "{storageId}/{repositoryId}/v2/conans/{name}/{version}/{user}/{channel}/revisions/{revisionId}/files/{filePath:.+}")
     public ResponseEntity uploadExportsV2(
-            @RepositoryMapping Repository repository,
+            @RepoMapping Repository repository,
             @PathVariable("storageId") String storageId,
             @PathVariable("repositoryId") String repositoryId,
             @PathVariable("name") String name,
@@ -617,7 +617,7 @@ public class ConanArtifactController extends BaseArtifactController {
     @PreAuthorize("hasAuthority('ARTIFACTS_DEPLOY')")
     @PutMapping(value = "{storageId}/{repositoryId}/v2/conans/{name}/{version}/{user}/{channel}/revisions/{revisionId}/packages/{packageId}/revisions/{packageRevisionId}/files/{filePath:.+}")
     public ResponseEntity uploadPackages(
-            @RepositoryMapping Repository repository,
+            @RepoMapping Repository repository,
             @PathVariable("storageId") String storageId,
             @PathVariable("repositoryId") String repositoryId,
             @PathVariable("name") String name,
@@ -657,7 +657,7 @@ public class ConanArtifactController extends BaseArtifactController {
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     @GetMapping(value = "{storageId}/{repositoryId}/{user}/{name}/{version}/{channel}/{revisionId}/package/{packageId}/index.json")
     public void downloadPackageIndexJSON(
-            @RepositoryMapping Repository repository,
+            @RepoMapping Repository repository,
             @RequestHeader HttpHeaders httpHeaders,
             @PathVariable("storageId") String storageId,
             @PathVariable("repositoryId") String repositoryId,
@@ -678,7 +678,7 @@ public class ConanArtifactController extends BaseArtifactController {
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     @GetMapping(value = "{storageId}/{repositoryId}/{user}/{name}/{version}/{channel}/index.json")
     public void downloadIndexJSON(
-            @RepositoryMapping Repository repository,
+            @RepoMapping Repository repository,
             @RequestHeader HttpHeaders httpHeaders,
             @PathVariable("storageId") String storageId,
             @PathVariable("repositoryId") String repositoryId,
@@ -696,7 +696,7 @@ public class ConanArtifactController extends BaseArtifactController {
 
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     @RequestMapping(value = {"/{storageId}/{repositoryId}/download/{artifactPath:.+}"}, method = {RequestMethod.GET, RequestMethod.HEAD})
-    public void download(@RepositoryMapping Repository repository,
+    public void download(@RepoMapping Repository repository,
                          @RequestHeader HttpHeaders httpHeaders,
                          @PathVariable("storageId") String storageId,
                          @PathVariable("repositoryId") String repositoryId,

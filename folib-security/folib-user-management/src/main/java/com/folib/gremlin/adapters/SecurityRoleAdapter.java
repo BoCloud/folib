@@ -4,7 +4,7 @@ import static com.folib.gremlin.dsl.EntityTraversalUtils.extractObject;
 
 import com.folib.gremlin.dsl.EntityTraversal;
 import com.folib.gremlin.dsl.__;
-import com.veadan.folib.db.schema.Vertices;
+import com.folib.db.schema.Vertices;
 import com.folib.domain.SecurityRole;
 import com.folib.domain.SecurityRoleEntity;
 

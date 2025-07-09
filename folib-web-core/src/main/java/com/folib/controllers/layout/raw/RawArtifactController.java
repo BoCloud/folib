@@ -2,10 +2,10 @@ package com.folib.controllers.layout.raw;
 
 import com.folib.providers.io.RepositoryPath;
 import com.folib.controllers.BaseArtifactController;
-import com.folib.providers.layout.RawLayoutProvider;
+import com.folib.providers.RawLayoutProvider;
 import com.folib.storage.repository.Repository;
-import com.folib.web.LayoutRequestMapping;
-import com.folib.web.RepositoryMapping;
+import com.folib.web.LayoutReqMapping;
+import com.folib.web.RepoMapping;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -34,7 +34,7 @@ import java.util.zip.ZipOutputStream;
  * @author Veadan
  */
 @RestController
-@LayoutRequestMapping(RawLayoutProvider.ALIAS)
+@LayoutReqMapping(RawLayoutProvider.ALIAS)
 @Api(description = "raw坐标控制器",tags = "raw坐标控制器")
 public class RawArtifactController
         extends BaseArtifactController
@@ -54,7 +54,7 @@ public class RawArtifactController
                             @ApiResponse(code = 400, message = "An error occurred.") })
     @PreAuthorize("hasAuthority('ARTIFACTS_DEPLOY')")
     @PutMapping(value = "{storageId}/{repositoryId}/{path:.+}")
-    public ResponseEntity upload(@RepositoryMapping Repository repository,
+    public ResponseEntity upload(@RepoMapping Repository repository,
                                  @PathVariable String path,
                                  HttpServletRequest request)
     {
@@ -80,7 +80,7 @@ public class RawArtifactController
                             @ApiResponse(code = 400, message = "An error occurred.") })
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     @GetMapping(value = { "{storageId}/{repositoryId}/{path:.+}" })
-    public void download(@RepositoryMapping Repository repository,
+    public void download(@RepoMapping Repository repository,
                          @RequestHeader HttpHeaders httpHeaders,
                          @PathVariable String path,
                          HttpServletRequest request,

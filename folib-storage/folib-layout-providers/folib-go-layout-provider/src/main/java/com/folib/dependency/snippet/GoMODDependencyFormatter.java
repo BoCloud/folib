@@ -1,7 +1,7 @@
 package com.folib.dependency.snippet;
 
 import com.folib.artifact.coordinates.ArtifactCoordinates;
-import com.folib.artifact.coordinates.GoArtifactCoordinates;
+import com.folib.artifact.coordinates.GoCoordinates;
 import com.folib.providers.layout.GoLayoutProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,7 +47,7 @@ public class GoMODDependencyFormatter implements DependencySynonymFormatter {
     @Override
     public String getDependencySnippet(ArtifactCoordinates artifactCoordinates)
     {
-        GoArtifactCoordinates coordinates = (GoArtifactCoordinates) artifactCoordinates;
+        GoCoordinates coordinates = (GoCoordinates) artifactCoordinates;
         return "go get "+coordinates.getName()+"@"+ coordinates.getVersion();
     }
 }

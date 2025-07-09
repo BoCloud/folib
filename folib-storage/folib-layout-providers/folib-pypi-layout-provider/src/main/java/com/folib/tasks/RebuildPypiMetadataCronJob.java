@@ -6,7 +6,7 @@ import com.folib.job.cron.domain.CronTaskConfigurationDto;
 import com.folib.job.cron.jobs.CronJobDefinition;
 import com.folib.job.cron.jobs.JavaCronJob;
 import com.folib.providers.io.RepositoryPathResolver;
-import com.folib.providers.layout.PypiLayoutProvider;
+import com.folib.providers.PypiLayoutProvider;
 import com.folib.services.ConfigurationManagementService;
 import com.folib.services.PypiArtifactIndexService;
 import com.folib.storage.Storage;

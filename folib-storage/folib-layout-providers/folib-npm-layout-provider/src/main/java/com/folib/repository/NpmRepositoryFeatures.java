@@ -8,7 +8,7 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.folib.artifact.coordinates.NpmArtifactCoordinates;
+import com.folib.artifact.coordinates.NpmCoordinates;
 import com.folib.components.DistributedCacheComponent;
 import com.folib.config.CustomAuthenticationFeature;
 import com.folib.config.NpmLayoutProviderConfig.NpmObjectMapper;
@@ -529,12 +529,12 @@ public class NpmRepositoryFeatures implements RepositoryFeatures {
             Versions versions = packageFeed.getVersions();
             if (Objects.nonNull(versions) && MapUtils.isNotEmpty(versions.getAdditionalProperties())) {
                 long startTime = System.currentTimeMillis();
-                NpmArtifactCoordinates npmArtifactCoordinates = null;
+                NpmCoordinates npmArtifactCoordinates = null;
                 URI uri = null;
                 for (Map.Entry<String, PackageVersion> versionEntry : versions.getAdditionalProperties().entrySet()) {
                     Dist dist = versionEntry.getValue().getDist();
                     if (Objects.nonNull(dist) && StringUtils.isNotBlank(dist.getTarball())) {
-                        npmArtifactCoordinates = NpmArtifactCoordinates.of(versionEntry.getValue().getName(), versionEntry.getValue().getVersion(),packageSuffix);
+                        npmArtifactCoordinates = NpmCoordinates.of(versionEntry.getValue().getName(), versionEntry.getValue().getVersion(),packageSuffix);
                         uri = npmArtifactCoordinates.convertToResource(npmArtifactCoordinates);
                         dist.setTarball(repositoryBaseUrl + uri.toString());
                     }

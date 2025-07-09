@@ -2,11 +2,11 @@ package com.folib.controllers.layout.npm;
 
 import com.alibaba.fastjson.JSONObject;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.folib.providers.layout.*;
+import com.folib.providers.*;
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.folib.artifact.coordinates.NpmArtifactCoordinates;
+import com.folib.artifact.coordinates.NpmCoordinates;
 import com.folib.authentication.api.password.PasswordAuthentication;
 import com.folib.components.NpmComponent;
 import com.folib.config.NpmLayoutProviderConfig.NpmObjectMapper;
@@ -23,7 +23,6 @@ import com.folib.npm.NpmViewRequest;
 import com.folib.npm.metadata.PackageFeed;
 import com.folib.npm.metadata.PackageVersion;
 import com.folib.npm.metadata.SearchResults;
-import com.folib.providers.ProviderImplementationException;
 import com.folib.providers.io.RepositoryPath;
 import com.folib.providers.repository.RepositoryProvider;
 import com.folib.providers.repository.RepositoryProviderRegistry;
@@ -36,8 +35,8 @@ import com.folib.storage.validation.artifact.ArtifactCoordinatesValidationExcept
 import com.folib.users.service.UserService;
 import com.folib.users.service.impl.RelationalDatabaseUserService;
 import com.folib.users.userdetails.SpringSecurityUser;
-import com.folib.web.LayoutRequestMapping;
-import com.folib.web.RepositoryMapping;
+import com.folib.web.LayoutReqMapping;
+import com.folib.web.RepoMapping;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
@@ -80,7 +79,7 @@ import java.util.stream.Collectors;
  * @author @author veadan
  */
 @RestController
-@LayoutRequestMapping(NpmArtifactCoordinates.LAYOUT_NAME)
+@LayoutReqMapping(NpmCoordinates.LAYOUT_NAME)
 @Api(description = "npm坐标控制器", tags = "npm坐标控制器")
 public class NpmArtifactController
         extends BaseArtifactController {
@@ -141,7 +140,7 @@ public class NpmArtifactController
 
     @GetMapping(path = "{storageId}/{repositoryId}/-/v1/search")
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
-    public void search(@RepositoryMapping Repository repository,
+    public void search(@RepoMapping Repository repository,
                        @RequestParam(name = "text") String text,
                        @RequestParam(name = "size", defaultValue = "20") Integer size,
                        HttpServletResponse response)
@@ -180,7 +179,7 @@ public class NpmArtifactController
 
     @GetMapping(path = "{storageId}/{repositoryId}/-/binary/{artifactPath:.+}")
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
-    public void viewBinaryFeedWithScope(@RepositoryMapping Repository repository,
+    public void viewBinaryFeedWithScope(@RepoMapping Repository repository,
                                         @PathVariable(name = "storageId") String storageId,
                                         @PathVariable(name = "repositoryId") String repositoryId,
                                         @PathVariable(name = "artifactPath") String artifactPath,
@@ -221,7 +220,7 @@ public class NpmArtifactController
 
     @GetMapping(path = "{storageId}/{repositoryId}/{packageScope:[^-].+}/{packageName:[^-].+}/{packageVersion}")
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
-    public void viewPackageWithScope(@RepositoryMapping Repository repository,
+    public void viewPackageWithScope(@RepoMapping Repository repository,
                                      @PathVariable(name = "packageScope") String packageScope,
                                      @PathVariable(name = "packageName") String packageName,
                                      @PathVariable(name = "packageVersion") String packageVersion,
@@ -230,9 +229,9 @@ public class NpmArtifactController
         final String storageId = repository.getStorage().getId();
         final String repositoryId = repository.getId();
 
-        String packageId = NpmArtifactCoordinates.calculatePackageId(packageScope, packageName);
+        String packageId = NpmCoordinates.calculatePackageId(packageScope, packageName);
         final String packageSuffix = NpmSubLayout.OHPM.getValue().equals(repository.getSubLayout()) ? NpmPacketSuffix.HAR.getValue() : NpmPacketSuffix.TGZ.getValue();
-        NpmArtifactCoordinates c = NpmArtifactCoordinates.of(packageId, packageVersion, packageSuffix);
+        NpmCoordinates c = NpmCoordinates.of(packageId, packageVersion, packageSuffix);
 
         NpmViewRequest npmSearchRequest = new NpmViewRequest();
         npmSearchRequest.setPackageId(packageId);
@@ -255,7 +254,7 @@ public class NpmArtifactController
 
     @GetMapping(path = "{storageId}/{repositoryId}/{packageScope:[^-].+}/{packageName}")
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
-    public void viewPackageFeedWithScope(@RepositoryMapping Repository repository,
+    public void viewPackageFeedWithScope(@RepoMapping Repository repository,
                                          @PathVariable(name = "packageScope") String packageScope,
                                          @PathVariable(name = "packageName") String packageName,
                                          HttpServletRequest request,
@@ -264,7 +263,7 @@ public class NpmArtifactController
             throws Exception {
         long startTime = System.currentTimeMillis();
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-        String packageId = NpmArtifactCoordinates.calculatePackageId(packageScope, packageName);
+        String packageId = NpmCoordinates.calculatePackageId(packageScope, packageName);
         PackageFeed packageFeed = npmService.packageFeed(repository, packageId, packageId);
         if (Objects.isNull(packageFeed)) {
             String msg = "{\"error\":\"[NOT_FOUND] %s not found\"}";
@@ -291,7 +290,7 @@ public class NpmArtifactController
 
     @GetMapping(path = "{storageId}/{repositoryId}/{packageName}")
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
-    public void viewPackageFeed(@RepositoryMapping Repository repository,
+    public void viewPackageFeed(@RepoMapping Repository repository,
                                 @PathVariable(name = "packageName") String packageName,
                                 HttpServletRequest request,
                                 HttpServletResponse response,
@@ -304,7 +303,7 @@ public class NpmArtifactController
                                                           String packageName, String subLayout) {
         List<String> coordinateValues = NpmSubLayout.OHPM.getValue().equals(subLayout) ? Lists.newArrayList("har") : Lists.newArrayList("tgz");
         RepositorySearchRequest rootPredicate = new RepositorySearchRequest(
-                NpmArtifactCoordinates.calculatePackageId(packageScope, packageName), Lists.newArrayList(coordinateValues));
+                NpmCoordinates.calculatePackageId(packageScope, packageName), Lists.newArrayList(coordinateValues));
 
         return rootPredicate;
     }
@@ -312,7 +311,7 @@ public class NpmArtifactController
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     @RequestMapping(path = "{storageId}/{repositoryId}/{packageScope}/{packageName}/-/{packageNameWithVersion}.{packageExtension}",
             method = {RequestMethod.GET, RequestMethod.HEAD})
-    public ResponseEntity<Object> downloadPackageWithScope(@RepositoryMapping Repository repository,
+    public ResponseEntity<Object> downloadPackageWithScope(@RepoMapping Repository repository,
                                                            @PathVariable(name = "packageScope") String packageScope,
                                                            @PathVariable(name = "packageName") String packageName,
                                                            @PathVariable(name = "packageNameWithVersion") String packageNameWithVersion,
@@ -334,10 +333,10 @@ public class NpmArtifactController
                 return null;
             }
             packageVersion = getPackageVersion(packageNameWithVersion, packageName);
-            NpmArtifactCoordinates coordinates;
+            NpmCoordinates coordinates;
             try {
                 final String packageSuffix = NpmSubLayout.OHPM.getValue().equals(repository.getSubLayout()) ? NpmPacketSuffix.HAR.getValue() : NpmPacketSuffix.TGZ.getValue();
-                coordinates = NpmArtifactCoordinates.of(String.format("%s/%s", packageScope, packageName), packageVersion, packageSuffix);
+                coordinates = NpmCoordinates.of(String.format("%s/%s", packageScope, packageName), packageVersion, packageSuffix);
                 artifactPath = coordinates.buildPath();
             } catch (IllegalArgumentException e) {
                 response.setStatus(HttpStatus.BAD_REQUEST.value());
@@ -367,7 +366,7 @@ public class NpmArtifactController
     @RequestMapping(path = "{storageId}/{repositoryId}/{packageName}/-/{packageNameWithVersion}.{packageExtension}",
             method = {RequestMethod.GET,
                     RequestMethod.HEAD})
-    public ResponseEntity<Object> downloadPackage(@RepositoryMapping Repository repository,
+    public ResponseEntity<Object> downloadPackage(@RepoMapping Repository repository,
                                                   @PathVariable(name = "packageName") String packageName,
                                                   @PathVariable(name = "packageNameWithVersion") String packageNameWithVersion,
                                                   @PathVariable(name = "packageExtension") String packageExtension,
@@ -389,10 +388,10 @@ public class NpmArtifactController
             }
             packageVersion = getPackageVersion(packageNameWithVersion, packageName);
 
-            NpmArtifactCoordinates coordinates;
+            NpmCoordinates coordinates;
             try {
                 final String packageSuffix = NpmSubLayout.OHPM.getValue().equals(repository.getSubLayout()) ? NpmPacketSuffix.HAR.getValue() : NpmPacketSuffix.TGZ.getValue();
-                coordinates = NpmArtifactCoordinates.of(packageName, packageVersion, packageSuffix);
+                coordinates = NpmCoordinates.of(packageName, packageVersion, packageSuffix);
             } catch (IllegalArgumentException e) {
                 response.setStatus(HttpStatus.BAD_REQUEST.value());
                 response.getWriter().write(e.getMessage());
@@ -419,7 +418,7 @@ public class NpmArtifactController
 
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     @GetMapping(path = "{storageId}/{repositoryId}/{packageScope}/{packageName}/{packageVersion}/{fileName}.{fileExtension}")
-    public void downloadPackageWithScopeFile(@RepositoryMapping Repository repository,
+    public void downloadPackageWithScopeFile(@RepoMapping Repository repository,
                                              @PathVariable(name = "packageScope") String packageScope,
                                              @PathVariable(name = "packageName") String packageName,
                                              @PathVariable(name = "packageVersion") String packageVersion,
@@ -441,7 +440,7 @@ public class NpmArtifactController
 
     @PreAuthorize("hasAuthority('ARTIFACTS_DEPLOY')")
     @PutMapping(path = "{storageId}/{repositoryId}/{name:.+}", consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity publish(@RepositoryMapping Repository repository,
+    public ResponseEntity publish(@RepoMapping Repository repository,
                                   @PathVariable(name = "name") String name,
                                   HttpServletRequest request)
             throws Exception {
@@ -464,7 +463,7 @@ public class NpmArtifactController
         final String packageSuffix = NpmSubLayout.OHPM.getValue().equals(subLayout) ? NpmPacketSuffix.HAR.getValue() : NpmPacketSuffix.TGZ.getValue();
         PackageVersion packageJson = packageEntry.getValue0();
         Path packageTgz = packageEntry.getValue1();
-        NpmArtifactCoordinates coordinates = NpmArtifactCoordinates.of(name, packageJson.getVersion(), packageSuffix);
+        NpmCoordinates coordinates = NpmCoordinates.of(name, packageJson.getVersion(), packageSuffix);
         storeNpmPackage(repository, coordinates, packageJson, packageTgz, repository.getSubLayout());
         if (NpmSubLayout.OHPM.getValue().equals(repository.getSubLayout())) {
             OhpmPublishRes res = OhpmPublishRes.builder()
@@ -522,7 +521,7 @@ public class NpmArtifactController
 
     @DeleteMapping(path = "{storageId}/{repositoryId}/{packageScope}/{packageName}/-rev/{rev}")
     @PreAuthorize("hasAuthority('ARTIFACTS_DELETE')")
-    public ResponseEntity unpublishPackageWithScope(@RepositoryMapping Repository repository,
+    public ResponseEntity unpublishPackageWithScope(@RepoMapping Repository repository,
                                                     @PathVariable(name = "packageScope") String packageScope,
                                                     @PathVariable(name = "packageName") String packageName,
                                                     @PathVariable(name = "rev") String rev) {
@@ -551,7 +550,7 @@ public class NpmArtifactController
      */
     @DeleteMapping(path = "{storageId}/{repositoryId}/{r1}/{r2}/{r3}/{packageScope}/{packageName}/-/{tarball}/-rev/{rev}")
     @PreAuthorize("hasAuthority('ARTIFACTS_DELETE')")
-    public ResponseEntity unpublishVersionWithScope(@RepositoryMapping Repository repository,
+    public ResponseEntity unpublishVersionWithScope(@RepoMapping Repository repository,
                                                     @PathVariable(name = "packageScope") String packageScope,
                                                     @PathVariable(name = "packageName") String packageName,
                                                     @PathVariable(name = "tarball") String tarball,
@@ -587,7 +586,7 @@ public class NpmArtifactController
      */
     @DeleteMapping(path = "{storageId}/{repositoryId}/{packageScope}/{packageName}/-/{tarball}/-rev/{rev}")
     @PreAuthorize("hasAuthority('ARTIFACTS_DELETE')")
-    public ResponseEntity unpublishVersionWithScopeV5(@RepositoryMapping Repository repository,
+    public ResponseEntity unpublishVersionWithScopeV5(@RepoMapping Repository repository,
                                                       @PathVariable(name = "packageScope") String packageScope,
                                                       @PathVariable(name = "packageName") String packageName,
                                                       @PathVariable(name = "tarball") String tarball,
@@ -612,7 +611,7 @@ public class NpmArtifactController
 
     @DeleteMapping(path = "{storageId}/{repositoryId}/{packageName}/-rev/{rev}")
     @PreAuthorize("hasAuthority('ARTIFACTS_DELETE')")
-    public ResponseEntity unpublishPackage(@RepositoryMapping Repository repository,
+    public ResponseEntity unpublishPackage(@RepoMapping Repository repository,
                                            @PathVariable(name = "packageName") String packageName,
                                            @PathVariable(name = "rev") String rev) {
         return unpublishPackageWithScope(repository, null, packageName, rev);
@@ -620,7 +619,7 @@ public class NpmArtifactController
 
     @DeleteMapping(path = "{storageId}/{repositoryId}/{r1}/{r2}/{r3}/{packageName}/-/{tarball}/-rev/{rev}")
     @PreAuthorize("hasAuthority('ARTIFACTS_DELETE')")
-    public ResponseEntity unpublishVersion(@RepositoryMapping Repository repository,
+    public ResponseEntity unpublishVersion(@RepoMapping Repository repository,
                                            @PathVariable(name = "packageName") String packageName,
                                            @PathVariable(name = "tarball") String tarball,
                                            @PathVariable(name = "rev") String rev) {
@@ -629,7 +628,7 @@ public class NpmArtifactController
 
     @DeleteMapping(path = "{storageId}/{repositoryId}/{packageName}/-/{tarball}/-rev/{rev}")
     @PreAuthorize("hasAuthority('ARTIFACTS_DELETE')")
-    public ResponseEntity unpublishVersionV5(@RepositoryMapping Repository repository,
+    public ResponseEntity unpublishVersionV5(@RepoMapping Repository repository,
                                              @PathVariable(name = "packageName") String packageName,
                                              @PathVariable(name = "tarball") String tarball,
                                              @PathVariable(name = "rev") String rev) {
@@ -683,7 +682,7 @@ public class NpmArtifactController
     }
 
     private void storeNpmPackage(Repository repository,
-                                 NpmArtifactCoordinates coordinates,
+                                 NpmCoordinates coordinates,
                                  PackageVersion packageDef,
                                  Path packageTgzTmp, String npmSubLayout)
             throws IOException,

@@ -11,7 +11,7 @@ import java.net.URI;
  */
 @XmlRootElement(name = "artifactCoordinates")
 public interface  ArtifactCoordinates<C extends ArtifactCoordinates<C, V>, V extends Comparable<V>>
-        extends Comparable<C>, GenericArtifactCoordinates
+        extends Comparable<C>, GenericCoordinates
 {
 
     String getId();

@@ -16,7 +16,7 @@ import com.folib.enums.ArtifactSyncTypeEnum;
 import com.folib.enums.MigrateStatusEnum;
 import com.folib.providers.io.RepositoryPath;
 import com.folib.providers.io.RepositoryPathResolver;
-import com.folib.providers.layout.PypiLayoutProvider;
+import com.folib.providers.PypiLayoutProvider;
 import com.folib.services.ArtifactResolutionService;
 import com.folib.services.ArtifactWebService;
 import com.folib.services.JfrogMigrateService;

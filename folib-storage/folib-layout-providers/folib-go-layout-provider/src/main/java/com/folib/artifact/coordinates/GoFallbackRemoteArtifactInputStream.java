@@ -8,7 +8,7 @@ import com.folib.artifact.ArtifactNotFoundException;
 import com.folib.providers.io.AbsFallbackRemoteArtifactInputStream;
 import com.folib.providers.io.RepositoryFiles;
 import com.folib.providers.io.RepositoryPath;
-import com.folib.yaml.configuration.repository.GoRepositoryConfigurationData;
+import com.folib.configuration.GoRepositoryConfigurationData;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
@@ -284,7 +284,7 @@ public class GoFallbackRemoteArtifactInputStream extends AbsFallbackRemoteArtifa
 
 
         if (RepositoryFiles.isArtifact(repositoryPath)) {
-            GoArtifactCoordinates artifactCoordinates = (GoArtifactCoordinates) RepositoryFiles.readCoordinates(repositoryPath);
+            GoCoordinates artifactCoordinates = (GoCoordinates) RepositoryFiles.readCoordinates(repositoryPath);
             moduleName = artifactCoordinates.getName();
             moduleVersion = artifactCoordinates.getVersion();
             fileType = artifactCoordinates.getExtension();

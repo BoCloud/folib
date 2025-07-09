@@ -18,27 +18,27 @@ public enum ArtifactoryFolibRepositoryTypeEnum {
     /**
      * Maven
      */
-    MAVEN("Maven", MavenArtifactCoordinates.LAYOUT_NAME),
+    MAVEN("Maven", MavenCoordinates.LAYOUT_NAME),
     /**
      * Docker
      */
-    DOCKER("Docker", DockerArtifactCoordinates.LAYOUT_NAME),
+    DOCKER("Docker", DockerCoordinates.LAYOUT_NAME),
     /**
      * PyPi
      */
-    PYPI("PyPi", PypiArtifactCoordinates.LAYOUT_NAME),
+    PYPI("PyPi", PypiCoordinates.LAYOUT_NAME),
     /**
      * Npm
      */
-    NPM("Npm", NpmArtifactCoordinates.LAYOUT_NAME),
+    NPM("Npm", NpmCoordinates.LAYOUT_NAME),
     /**
      * Raw
      */
-    GENERIC("Generic", RawArtifactCoordinates.LAYOUT_NAME),
+    GENERIC("Generic", RawCoordinates.LAYOUT_NAME),
     /**
      * conan
      */
-    CONAN("Conan", ConanArtifactCoordinates.LAYOUT_NAME);
+    CONAN("Conan", ConanCoordinates.LAYOUT_NAME);
 
     /**
      * Artifactory名称

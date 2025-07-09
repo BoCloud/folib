@@ -2,7 +2,7 @@ package com.folib.indexer;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
-import com.folib.artifact.coordinates.DebianArtifactCoordinates;
+import com.folib.artifact.coordinates.DebianCoordinates;
 import com.folib.cache.DebianPackagesMetadataCache;
 import com.folib.constant.DebianConstant;
 import com.folib.domain.Artifact;
@@ -201,7 +201,7 @@ public class DebianIncrementalIndexer {
                     IncrementalIndexStreamer indexStream = new IncrementalIndexStreamer(currentPackagesFile, tempPackagesFile, indexFilter);
                     indexStream.write();
 
-                    DebianArtifactCoordinates co = DebianArtifactCoordinates.parse(getRelativePath(repositoryPath));
+                    DebianCoordinates co = DebianCoordinates.parse(getRelativePath(repositoryPath));
                     DebianPackagesContext context = new DebianPackagesContext(co.getDistribution(), co.getComponent(), co.getArchitecture());
                     if (DebianPackagesMetadataIncrementalIndexer.isMarkedForDeletion(tempPackagesFile)) {
                         indicesToDelete.addAll(DebianUtils.pathsToPackagesFiles(context));

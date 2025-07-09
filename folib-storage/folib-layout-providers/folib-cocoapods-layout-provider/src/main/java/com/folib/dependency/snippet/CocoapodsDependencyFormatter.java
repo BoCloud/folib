@@ -1,7 +1,7 @@
 package com.folib.dependency.snippet;
 
 import com.folib.artifact.coordinates.ArtifactCoordinates;
-import com.folib.artifact.coordinates.CocoapodsArtifactCoordinates;
+import com.folib.artifact.coordinates.CocoapodsCoordinates;
 import com.folib.providers.layout.AbstractLayoutProvider;
 import com.folib.providers.layout.CocoapodsLayoutProvider;
 import org.apache.commons.lang3.StringUtils;
@@ -52,7 +52,7 @@ public class CocoapodsDependencyFormatter
     @Override
     public String getDependencySnippet(ArtifactCoordinates artifactCoordinates)
     {
-        CocoapodsArtifactCoordinates coordinates = (CocoapodsArtifactCoordinates) artifactCoordinates;
+        CocoapodsCoordinates coordinates = (CocoapodsCoordinates) artifactCoordinates;
         if (StringUtils.isNotBlank(coordinates.getBaseName()) && StringUtils.isNotBlank(coordinates.getVersion()))
         {
             return "target 'MyApp' do\n" +

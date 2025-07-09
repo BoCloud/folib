@@ -1,6 +1,6 @@
 package com.folib.yaml.configuration.repository;
 
-import com.folib.providers.layout.NpmLayoutProvider;
+import com.folib.providers.NpmLayoutProvider;
 import com.folib.yaml.repository.CustomRepositoryConfiguration;
 import com.folib.yaml.repository.CustomRepositoryConfigurationDto;
 

@@ -12,7 +12,7 @@ import org.apache.tinkerpop.gremlin.process.traversal.Traverser;
 import org.apache.tinkerpop.gremlin.structure.Element;
 import org.apache.tinkerpop.gremlin.structure.Vertex;
 import com.folib.artifact.ArtifactTag;
-import com.veadan.folib.db.schema.Vertices;
+import com.folib.db.schema.Vertices;
 import com.folib.domain.ArtifactTagEntity;
 import org.springframework.stereotype.Component;
 

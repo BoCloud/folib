@@ -1,6 +1,6 @@
 package com.folib.yaml.configuration.repository.remote;
 
-import com.folib.providers.layout.NugetLayoutProvider;
+import com.folib.providers.NugetLayoutProvider;
 import com.folib.yaml.repository.remote.CustomRemoteRepositoryConfigurationData;
 import com.folib.yaml.repository.remote.RemoteRepositoryConfigurationDto;
 

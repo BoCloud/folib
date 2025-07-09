@@ -1,7 +1,7 @@
 package com.folib.configuration.repository;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
-import com.folib.providers.layout.PhpLayoutProvider;
+import com.folib.providers.PhpLayoutProvider;
 import com.folib.yaml.repository.CustomRepositoryConfiguration;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import jakarta.xml.bind.annotation.XmlAccessType;
