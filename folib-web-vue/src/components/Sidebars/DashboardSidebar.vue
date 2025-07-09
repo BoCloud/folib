@@ -41,7 +41,7 @@
            <hr class="mt-5" />
            {{ $t('Sidebars.OpenSourceGovernance') }}
          </a-menu-item>
-         <a-menu-item v-if="this.userInfo.roles.indexOf('ADMIN') > -1 || this.userInfo.roles.indexOf('OPEN_SOURCE_MANAGE') > -1">
+         <a-menu-item v-if="(this.userInfo.roles.indexOf('ADMIN') > -1 || this.userInfo.roles.indexOf('OPEN_SOURCE_MANAGE') > -1) && analyzeEnable">
            <router-link to="/artifacts">
              <span class="icon">
                <a-icon type="profile" theme="filled" class="m-0" />
@@ -49,7 +49,7 @@
              <span class="label">{{ $t('Sidebars.ProductAnalysis') }}</span>
            </router-link>
          </a-menu-item>
-         <a-menu-item v-if="this.userInfo.roles.indexOf('ADMIN') > -1 || this.userInfo.roles.indexOf('OPEN_SOURCE_MANAGE') > -1">
+         <a-menu-item v-if="(this.userInfo.roles.indexOf('ADMIN') > -1 || this.userInfo.roles.indexOf('OPEN_SOURCE_MANAGE') > -1) && analyzeEnable">
            <router-link to="/components">
              <span class="icon">
                <a-icon type="hdd" theme="filled" class="m-0" />
@@ -57,7 +57,7 @@
              <span class="label">{{ $t('Sidebars.OpenSourceComponents') }}</span>
            </router-link>
          </a-menu-item>
-         <a-menu-item v-if="this.userInfo.roles.indexOf('ADMIN') > -1 || this.userInfo.roles.indexOf('OPEN_SOURCE_MANAGE') > -1">
+         <a-menu-item v-if="(this.userInfo.roles.indexOf('ADMIN') > -1 || this.userInfo.roles.indexOf('OPEN_SOURCE_MANAGE') > -1) && analyzeEnable">
            <router-link to="/vulnerabilities">
              <span class="icon">
                <a-icon type="alert" theme="filled" class="m-0" />
@@ -65,7 +65,7 @@
              <span class="label">{{ $t('Sidebars.VulnerabilityDatabase') }}</span>
            </router-link>
          </a-menu-item>
-         <a-menu-item v-if="this.userInfo.roles.indexOf('ADMIN') > -1 || this.userInfo.roles.indexOf('OPEN_SOURCE_MANAGE') > -1">
+         <a-menu-item v-if="(this.userInfo.roles.indexOf('ADMIN') > -1 || this.userInfo.roles.indexOf('OPEN_SOURCE_MANAGE') > -1) &&  analyzeEnable">
            <router-link to="/licenses">
              <span class="icon">
                <a-icon type="file-text" theme="filled" class="m-0" />
