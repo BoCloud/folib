@@ -16,7 +16,7 @@
     <inceptionYear>2019</inceptionYear>
     <properties>
         <dir.folib.home>${project.build.directory}/folib</dir.folib.home>
-        <dir.folib.vault>${project.build.directory}/folib-vault</dir.folib.vault>
+        <dir.folib.vault>${project.build.directory}/folib-data</dir.folib.vault>
         <dir.jetty.etc>${dir.folib.home}/etc/jetty</dir.jetty.etc>
     </properties>
     <licenses>
@@ -55,7 +55,7 @@
                 <configuration>
                     <systemPropertyVariables>
                         <folib.home>${project.build.directory}/folib</folib.home>
-                        <folib.vault>${project.build.directory}/folib-vault</folib.vault>
+                        <folib.vault>${project.build.directory}/folib-data</folib.vault>
                     </systemPropertyVariables>
                 </configuration>
             </plugin>

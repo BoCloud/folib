@@ -29,6 +29,7 @@ public class SbomController {
     private SbomAnalyzeServer sbomAnalsisServer;
     @Inject
     private AnalyzeService analyzeService;
+
     @Value("${folib.enableAnalysis}")
     private boolean enable;
 

@@ -120,8 +120,8 @@ public class VerifyFileType {
 
     public static void main(String[] args) {
 
-//        System.out.printf(getFileType("/Users/veadan/IdeaProjects/folib2/folib-server/folib-vault/storages/folib-common/aliyun-maven/com/alibaba/fastjson/1.2.83/fastjson-1.2.83.jar"));
-//        System.out.printf(TikaFileType.getFileType(new File("/Users/veadan/IdeaProjects/folib2/folib-server/folib-vault/storages/folib-common/aliyun-maven/com/alibaba/fastjson/1.2.83/fastjson-1.2.83.jar")));
+//        System.out.printf(getFileType("/Users/veadan/IdeaProjects/folib2/folib-server/folib-data/storages/folib-common/aliyun-maven/com/alibaba/fastjson/1.2.83/fastjson-1.2.83.jar"));
+//        System.out.printf(TikaFileType.getFileType(new File("/Users/veadan/IdeaProjects/folib2/folib-server/folib-data/storages/folib-common/aliyun-maven/com/alibaba/fastjson/1.2.83/fastjson-1.2.83.jar")));
       //  scanByDir(null);
     }
 

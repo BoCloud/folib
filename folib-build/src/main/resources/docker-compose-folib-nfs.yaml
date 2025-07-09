@@ -87,7 +87,7 @@ services:
     volumes:
       - ~/folib/folib-conf:/opt/folib/folib-1.0-SNAPSHOT/etc/conf
       - ~/folib/lic:/opt/folib/folib-1.0-SNAPSHOT/etc/lic
-      - ~/folib/folib-vault:/opt/folib/folib-vault
+      - ~/folib/folib-data:/opt/folib/folib-data
     restart: always
     privileged: true
     ports:

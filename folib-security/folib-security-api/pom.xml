@@ -235,7 +235,7 @@
                         <configuration>
                             <systemPropertyVariables>
                                 <folib.home>${project.build.directory}/folib</folib.home>
-                                <folib.vault>${project.build.directory}/folib-vault</folib.vault>
+                                <folib.vault>${project.build.directory}/folib-data</folib.vault>
 
                                 <port.littleproxy>${port.littleproxy.listen}</port.littleproxy>
                                 <port.unboundid>${port.unboundid}</port.unboundid>

@@ -81,7 +81,7 @@ folib:
     ws-request-timout-of-artifact-upload: 600
   basedir: .
   home: ${folib.basedir}/folib
-  vault: ${folib.basedir}/folib-vault
+  vault: ${folib.basedir}/folib-data
   etc: ${folib.home}/etc
   temp: ${folib.vault}/tmp
   artifactDownloadImmediatelyUpdate: false
