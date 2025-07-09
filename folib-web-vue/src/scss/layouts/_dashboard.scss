@@ -77,7 +77,8 @@
 				margin-left: 7px;
 			}
 			img {
-				width: 32px;
+				margin-top: -20px;
+				width: 80px;
 			}
 		}
 		&.ant-layout-sider-dark .brand span {
@@ -474,6 +475,9 @@
 		display: block;
 	}
 	&.sidebar-minimized.has-sidebar .ant-layout-sider.sider-primary {
+		.brand {
+			padding: 0;
+		}
 		@media( min-width: $lg ){
 			transition: all 0.1s ease-in;
 

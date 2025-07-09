@@ -13,7 +13,9 @@
     theme="light"
     :style="{ backgroundColor: 'transparent' }"
   >
-    <div class="brand"><img src="images/folib/foliblogo.svg" alt="foliblogo" /> <span>{{ instanceName }}</span></div>
+    <div class="brand">
+      <img src="images/folib/foliblogo.svg" alt="foliblogo" />
+    </div>
     <hr class="gradient-line"/>
     <!-- Sidebar Navigation Menu -->
      <div class="left-menu_list">
