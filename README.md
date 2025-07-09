@@ -40,7 +40,7 @@ docker run -itd -p 38080:38080 -p 7010:7010 -p 7011:7011 -p 7199:7199 -p 49142:4
 -e FOLIB_JVM_XSS=512k \
 -e FOLIB_MYSQL_HOST=127.0.0.1 \
 -e FOLIB_MYSQL_PORT=3306 \
--e FOLIB_MYSQL_DB=folib_scanner \
+-e FOLIB_MYSQL_DB=folib \
 -e FOLIB_MYSQL_USER=root \
 -e FOLIB_MYSQL_PASSWORD=folib@v587 \
 -e FOLIB_ARTIFACT_UPLOAD_RESTRICTIONS=true \
@@ -80,14 +80,14 @@ export FOLIB_JVM_XMS=8192m
 export FOLIB_JVM_XSS=512k
 export FOLIB_MYSQL_HOST=127.0.0.1       # 数据库IP
 export FOLIB_MYSQL_PORT=3306            # 数据库端口
-export FOLIB_MYSQL_DB=folib_scanner     # 数据库名称
+export FOLIB_MYSQL_DB=folib             # 数据库名称
 export FOLIB_MYSQL_USER=root            # 数据库账号
 export FOLIB_MYSQL_PASSWORD=folib@v587  # 数据库密码
 export FOLIB_ARTIFACT_UPLOAD_RESTRICTIONS=true
 
 # 启动folib-server
 nohup /opt/folib/folib-3.0-SNAPSHOT/bin/folib console > folib-server.log 2>&1 &
-```
+
 
 4、将3步骤保存到folib-server-start.sh中
 
@@ -106,14 +106,13 @@ tail -f -n 100 folib-server.log
 sh folib-server-start.sh
 
 tail -f -n 100 folib-server.log
-
-# 用户名: admin
-# 密码: folib@v587
 ```
+> 用户名: admin  密码: folib@v587
+
 
 你也可以通过 [HelmChat](https://artifacthub.io/packages/helm/folib/folib) 快速部署 Folib。
 
-如果是内网环境，推荐使用 [离线安装包方式](https://public.folib.com) 进行安装部署。
+如果是内网环境，推荐使用 [离线安装包方式](https://folib.com/deployDoc) 进行安装部署。
 
 如你有更多问题，可以通过论坛和技术交流群与我们交流。
 

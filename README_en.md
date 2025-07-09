@@ -24,36 +24,105 @@ FOLib is a full-language software supply chain service platform built for AI R&D
 
 ## Quick Start
 
+### Image Deployment
+
+Tips: MYSQL needs to be prepared in advance
 ```
-docker run -itd  --restart always --name folib -p 38080:38080 \
--p 7010:7010 -p 7011:7011 -p 7199:7199 -p 49142:49142 -p 8182:8182 \
--e FOLIB_MYSQL_HOST=mysql \
+1. Create a directory, take /data/folib as an example
+mkdir -p /data/folib/folib-data/logs
+
+2. Start the container
+docker run -itd -p 38080:38080 -p 7010:7010 -p 7011:7011 -p 7199:7199 -p 49142:49142 -p 8182:8182 \
+--name folib-server \
+--restart=always --privileged=true \
+-e FOLIB_PORT=38080 \
+-e FOLIB_JVM_XMX=8192m \
+-e FOLIB_JVM_XMS=8192m \
+-e FOLIB_JVM_XSS=512k \
+-e FOLIB_MYSQL_HOST=127.0.0.1 \
 -e FOLIB_MYSQL_PORT=3306 \
--e FOLIB_MYSQL_DB=folib_scanner \
+-e FOLIB_MYSQL_DB=folib \
 -e FOLIB_MYSQL_USER=root \
 -e FOLIB_MYSQL_PASSWORD=folib@v587 \
--e FOLIB_PORT=38080 \
--v /home/folib/folib-conf:/opt/folib/folib-1.0-SNAPSHOT/etc/conf \
--v /home/folib/folib-data:/opt/folib/folib-data  \
-docker.folib.com/folib-common/folib-docker/folib-server:1.0
+-e FOLIB_ARTIFACT_UPLOAD_RESTRICTIONS=true \
+-v /data/folib/folib-conf:/opt/folib/folib-3.0-SNAPSHOT/etc/conf \
+-v /data/folib/folib-data:/opt/folib/folib-data \
+-v /data/folib/tmp:/opt/folib/folib-3.0-SNAPSHOT/tmp \
+public.folib.com/oss/docker/folib-server:latest
 
+3. View logs
+docker logs -f --tail 100 folib-server
+
+4. Restart
+docker restart folib-server
+
+docker logs -f --tail 100 folib-server
 
 # Username: admin
 # Password: folib@v587
 ```
 
-You can also quickly deploy Folib via [HelmChat](https://artifacthub.io/packages/helm/folib/folib).
+### Virtual Machine Startup
 
-For intranet environments, it is recommended to use the [offline installation package](https://public.folib.com) for installation and deployment.
+Tips: JAVA environment needs to be prepared in advance
+
+1. Extract /target/folib-build-3.0-SNAPSHOT.tar.gz or /target/folib-build-3.0-SNAPSHOT.zip under the folib-build module
+
+2. Copy folib-3.0-SNAPSHOT and folib-data under the extracted folib-build-3.0-SNAPSHOT directory to the /opt/folib directory of the deployment machine
+
+3. Prepare the startup script
+```
+#!/bin/bash
+
+# Configure environment variables
+export FOLIB_PORT=38080                 # Service external access port
+export FOLIB_JVM_XMX=8192m  
+export FOLIB_JVM_XMS=8192m
+export FOLIB_JVM_XSS=512k
+export FOLIB_MYSQL_HOST=127.0.0.1       # Database IP
+export FOLIB_MYSQL_PORT=3306            # Database port
+export FOLIB_MYSQL_DB=folib             # Database name
+export FOLIB_MYSQL_USER=root            # Database account
+export FOLIB_MYSQL_PASSWORD=folib@v587  # Database password
+export FOLIB_ARTIFACT_UPLOAD_RESTRICTIONS=true
+
+# Start folib-server
+nohup /opt/folib/folib-3.0-SNAPSHOT/bin/folib console > folib-server.log 2>&1 &
+
+
+4. Save step 3 to folib-server-start.sh
+
+5. Authorize
+chmod u+x folib-server-start.sh
+
+6. Start folib-server
+sh folib-server-start.sh
+
+7. View logs
+tail -f -n 100 folib-server.log
+
+8. After startup is complete, restart
+/opt/folib/folib-3.0-SNAPSHOT/bin/folib stop
+
+sh folib-server-start.sh
+
+tail -f -n 100 folib-server.log
+```
+> Username: admin  Password: folib@v587
+
+
+You can also quickly deploy Folib through [HelmChat](https://artifacthub.io/packages/helm/folib/folib).
+
+For intranet environments, it is recommended to use the [offline installation package method](https://folib.com/deployDoc) for installation and deployment.
 
 If you have more questions, you can communicate with us through the forum and technical exchange group.
 
-- [Product Introduction & Cases](https://folib.com/customers)
+-   [Product Introduction and Cases](https://folib.com/customers)
 
-- [Demo Environment](https://demo.folib.com)
+-   [Demo Environment](https://demo.folib.com)
 
 ### Technical Exchange Group
-Welcome to join our technical exchange group, where there are also irregular activities.
+Welcome to join our technical exchange group, where there are also various irregular activities.
 <p align="left"><a href="https://folib.com"><img src="build/wecom.jpg" alt="Folib for AI" width="300" /></a></p>
 
 
@@ -61,33 +130,33 @@ Welcome to join our technical exchange group, where there are also irregular act
 
 ## Version Description
 
-FOLib releases one version on average every quarter.
-- v3.00: Scheduled for release on August 1, 2025, with continuous updates;
-- v3.1: Will include some AI MCP-related functions in the upcoming release;
+FOLib releases a version approximately every quarter.
+- v3.00: Release date is August 1, 2025, and it is continuously updated;
+- v3.1: Some AI mcp-related functions will be released next;
 
 
-FOLib product versions are divided into Community Edition and Enterprise Edition. For details, please refer to: [FOLib Product Version Comparison](https://folib.com/pricing)
+FOLib product versions are divided into community edition and enterprise edition. For details, please refer to: [FOLib Product Version Comparison](https://folib.com/pricing)
 
-## Technology Stack & Architecture
+## Technology Stack and Architecture
 
-- Backend: [Spring Boot3.x](https://spring.io/projects/spring-boot)
-- Frontend: [Vue.js](https://vuejs.org/)
-- Relational Database: Most databases are supported
-- Infrastructure: [Docker](https://www.docker.com/)
-- File Storage: Supports both NFS and S3 protocols
-> The frontend is packaged into static resource files and then bundled with the backend for packaging.
+-   Backend: [Spring Boot3.x](https://spring.io/projects/spring-boot)
+-   Frontend: [Vue.js](https://vuejs.org/)
+-   Relational database: Most databases are supported
+-   Infrastructure: [Docker](https://www.docker.com/)
+-   File storage: Both NFS/S3 protocols are supported
+> After the frontend is packaged into static resource files, it is packaged together with the backend.
 <p align=""><a href="https://folib.com"><img src="build/folib-arch.png" alt="Folib for AI" width="800" /></a></p>
 
 
 
 
-## Development & Compilation Instructions
+## Development and Compilation Instructions
 ### Environment Preparation
-- Install [OPENJDK 17](https://www.oracle.com/java/technologies
-- Install maven 3.8.6
-- Install node 14.21.3
-### Compilation & Execution
-Find the folib-package.sh file in the root directory of the code and execute it
+-   Install [OPENJDK 17](https://www.oracle.com/java/technologies
+-   Install maven 3.8.6
+-   Install node 14.21.3
+### Compilation Execution
+Find the folib-package.sh file in the root path of the code and execute it
 ```shell
   sh folib-package.sh
 ```
@@ -104,10 +173,10 @@ it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-This program is free software: you can redistribute and modify it in accordance with the terms of the GNU General Public License (GPL-3.0+), but any form of commercial sales behavior is prohibited (including but not limited to: direct sales, bundled sales, and commercial use of cloud services).
+This program is free software: you can redistribute and/or modify it in accordance with the terms of the GNU General Public License (GPL-3.0+), but any form of commercial sales (including but not limited to: direct sales, bundled sales, commercial use of cloud services) is prohibited.
 
 This program is distributed WITHOUT ANY WARRANTY.
 Commercial sale of this software is expressly prohibited.
 
 For license details, see: https://www.gnu.org/licenses/gpl-3.0.html
-For commercial authorization inquiries, please contact: folib@beyondcent.com
+For commercial authorization consultation, please contact: folib@beyondcent.com
