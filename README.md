@@ -23,19 +23,89 @@ FOLib 是一个为Ai研发而生的、全语言软件供应链服务平台。
 
 ## 快速开始
 
+### 镜像部署
+
+Tips: MYSQL需要先准备好
 ```
-docker run -itd  --restart always --name folib -p 38080:38080 \
--p 7010:7010 -p 7011:7011 -p 7199:7199 -p 49142:49142 -p 8182:8182 \
--e FOLIB_MYSQL_HOST=mysql \
+1、创建目录，以/data/folib为例
+mkdir -p /data/folib/folib-data/logs
+
+2、启动容器
+docker run -itd -p 38080:38080 -p 7010:7010 -p 7011:7011 -p 7199:7199 -p 49142:49142 -p 8182:8182 \
+--name folib-server \
+--restart=always --privileged=true \
+-e FOLIB_PORT=38080 \
+-e FOLIB_JVM_XMX=8192m \
+-e FOLIB_JVM_XMS=8192m \
+-e FOLIB_JVM_XSS=512k \
+-e FOLIB_MYSQL_HOST=127.0.0.1 \
 -e FOLIB_MYSQL_PORT=3306 \
 -e FOLIB_MYSQL_DB=folib_scanner \
 -e FOLIB_MYSQL_USER=root \
 -e FOLIB_MYSQL_PASSWORD=folib@v587 \
--e FOLIB_PORT=38080 \
--v /home/folib/folib-conf:/opt/folib/folib-1.0-SNAPSHOT/etc/conf \
--v /home/folib/folib-data:/opt/folib/folib-data  \
-docker.folib.com/folib-common/folib-docker/folib-server:1.0
+-e FOLIB_ARTIFACT_UPLOAD_RESTRICTIONS=true \
+-v /data/folib/folib-conf:/opt/folib/folib-3.0-SNAPSHOT/etc/conf \
+-v /data/folib/folib-data:/opt/folib/folib-data \
+-v /data/folib/tmp:/opt/folib/folib-3.0-SNAPSHOT/tmp \
+public.folib.com/oss/docker/folib-server:latest
 
+3、查看日志
+docker logs -f --tail 100 folib-server
+
+4、重启
+docker restart folib-server
+
+docker logs -f --tail 100 folib-server
+
+# 用户名: admin
+# 密码: folib@v587
+```
+
+### 虚机启动
+
+Tips: JAVA环境需要先准备好
+
+1、将folib-build模块下的/target/folib-build-3.0-SNAPSHOT.tar.gz或者/target/folib-build-3.0-SNAPSHOT.zip解压
+
+2、将解压后的folib-build-3.0-SNAPSHOT目录下的folib-3.0-SNAPSHOT、folib-data拷贝至部署机器的/opt/folib目录下
+
+3、准备启动脚本
+```
+#!/bin/bash
+
+# 配置环境变量
+export FOLIB_PORT=38080                 # 服务对外访问端口
+export FOLIB_JVM_XMX=8192m  
+export FOLIB_JVM_XMS=8192m
+export FOLIB_JVM_XSS=512k
+export FOLIB_MYSQL_HOST=127.0.0.1       # 数据库IP
+export FOLIB_MYSQL_PORT=3306            # 数据库端口
+export FOLIB_MYSQL_DB=folib_scanner     # 数据库名称
+export FOLIB_MYSQL_USER=root            # 数据库账号
+export FOLIB_MYSQL_PASSWORD=folib@v587  # 数据库密码
+export FOLIB_ARTIFACT_UPLOAD_RESTRICTIONS=true
+
+# 启动folib-server
+nohup /opt/folib/folib-3.0-SNAPSHOT/bin/folib console > folib-server.log 2>&1 &
+```
+
+4、将3步骤保存到folib-server-start.sh中
+
+5、授权
+chmod u+x folib-server-start.sh
+
+6、启动folib-server
+sh folib-server-start.sh
+
+7、查看日志
+tail -f -n 100 folib-server.log
+
+8、启动完成后，重启
+/opt/folib/folib-3.0-SNAPSHOT/bin/folib stop
+
+sh folib-server-start.sh
+
+tail -f -n 100 folib-server.log
 
 # 用户名: admin
 # 密码: folib@v587
