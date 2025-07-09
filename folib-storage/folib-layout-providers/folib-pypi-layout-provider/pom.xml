@@ -32,7 +32,7 @@
     </licenses>
     <properties>
         <dir.folib.home>${project.build.directory}/folib</dir.folib.home>
-        <dir.folib.vault>${project.build.directory}/folib-vault</dir.folib.vault>
+        <dir.folib.vault>${project.build.directory}/folib-data</dir.folib.vault>
     </properties>
 
     <build>
@@ -56,8 +56,8 @@
                 <configuration>
                     <systemPropertyVariables>
                         <folib.home>${project.build.directory}/folib</folib.home>
-                        <folib.vault>${project.build.directory}/folib-vault</folib.vault>
-                        <folib.storage.booter.basedir>${project.build.directory}/folib-vault/storages</folib.storage.booter.basedir>
+                        <folib.vault>${project.build.directory}/folib-data</folib.vault>
+                        <folib.storage.booter.basedir>${project.build.directory}/folib-data/storages</folib.storage.booter.basedir>
                         <repository.config.xml>${project.build.directory}/folib/etc/conf/folib.yaml</repository.config.xml>
                         <java.io.tmpdir>${dir.folib.vault}/tmp</java.io.tmpdir>
                     </systemPropertyVariables>

@@ -150,7 +150,7 @@
           </span>
           <h6>{{ $t('Sidebars.DoNotKnowHowToUseIt') }}</h6>
           <p>{{ $t('Sidebars.CheckTheHelpDocumentation') }}</p>
-          <a-button block size="small" href="/help/index.html" target="_blank" rel="noopenner noreferrer"> {{ $t('Sidebars.userManual') }} </a-button>
+          <a-button block size="small" href="http://folib.com" target="_blank" rel="noopenner noreferrer"> {{ $t('Sidebars.userManual') }} </a-button>
         </div>
     </div>
   </div>

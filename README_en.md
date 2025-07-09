@@ -34,7 +34,7 @@ docker run -itd  --restart always --name folib -p 38080:38080 \
 -e FOLIB_MYSQL_PASSWORD=folib@v587 \
 -e FOLIB_PORT=38080 \
 -v /home/folib/folib-conf:/opt/folib/folib-1.0-SNAPSHOT/etc/conf \
--v /home/folib/folib-vault:/opt/folib/folib-vault  \
+-v /home/folib/folib-data:/opt/folib/folib-data  \
 docker.folib.com/folib-common/folib-docker/folib-server:1.0
 
 

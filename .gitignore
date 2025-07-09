@@ -47,7 +47,7 @@ lib/*
 *.sh
 .idea
 /folib/
-/folib-vault/
+/folib-data/
 /folib-web-vue/node_modules/
 /folib-web-vue/dist/
 /folib-web-core/src/main/resources/ui/

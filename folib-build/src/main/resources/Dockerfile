@@ -111,9 +111,9 @@ ENV FOLIB_SEARCH_INDEX="${FOLIB_SEARCH_INDEX:-}"
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 RUN mkdir ${RUN_WORKDIR} && chmod -R 777 ${RUN_WORKDIR}
 COPY folib-3.0-SNAPSHOT ${RUN_WORKDIR}/folib-3.0-SNAPSHOT
-COPY folib-vault  ${RUN_WORKDIR}/folib-vault
+COPY folib-data  ${RUN_WORKDIR}/folib-data
 WORKDIR  ${RUN_WORKDIR}
-VOLUME  ${RUN_WORKDIR}/folib-vault/
+VOLUME  ${RUN_WORKDIR}/folib-data/
 EXPOSE ${FOLIB_PORT}
 EXPOSE 7010
 EXPOSE 7011

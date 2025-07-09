@@ -29,8 +29,8 @@
             </includes>
         </fileSet>
         <fileSet>
-            <directory>target/assembly/folib-vault/logs</directory>
-            <outputDirectory>folib-vault/logs</outputDirectory>
+            <directory>target/assembly/folib-data/logs</directory>
+            <outputDirectory>folib-data/logs</outputDirectory>
             <fileMode>0744</fileMode>
         </fileSet>
         <fileSet>
@@ -57,8 +57,8 @@
             <fileMode>0744</fileMode>
         </fileSet>
         <fileSet>
-            <directory>target/assembly/folib-vault</directory>
-            <outputDirectory>folib-vault</outputDirectory>
+            <directory>target/assembly/folib-data</directory>
+            <outputDirectory>folib-data</outputDirectory>
             <fileMode>0755</fileMode>
             <includes>
                 <include>**/*</include>

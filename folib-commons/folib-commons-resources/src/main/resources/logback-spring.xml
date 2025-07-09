@@ -7,13 +7,13 @@
         <resetJUL>true</resetJUL>
     </contextListener>
 
-    <springProperty scope="context" name="loggingDir" source="logging.dir" defaultValue="folib-vault/logs"/>
+    <springProperty scope="context" name="loggingDir" source="logging.dir" defaultValue="folib-data/logs"/>
     <springProperty scope="context" name="debug" source="logging.debug" defaultValue="false"/>
 
     <springProperty scope="context" name="console" source="logging.console.enabled" defaultValue="true"/>
 
     <springProperty scope="context" name="file" source="logging.file.enabled" defaultValue="true"/>
-    <springProperty scope="context" name="loggingFile" source="logging.file.name" defaultValue="folib-vault/logs/folib.log"/>
+    <springProperty scope="context" name="loggingFile" source="logging.file.name" defaultValue="folib-data/logs/folib.log"/>
     <springProperty scope="context" name="fileSizeSingle" source="logging.file.size.single" defaultValue="128MB"/>
     <springProperty scope="context" name="fileSizeTotal" source="logging.file.size.total" defaultValue="1GB"/>
     <springProperty scope="context" name="fileHistory" source="logging.file.history" defaultValue="31"/>

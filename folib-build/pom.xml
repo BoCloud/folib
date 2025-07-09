@@ -30,7 +30,7 @@
         <dir.assembly>${project.build.directory}/assembly</dir.assembly>
         <dir.folib.standalone>${dir.assembly}/folib-${project.version}</dir.folib.standalone>
         <dir.jetty.etc>${dir.folib.standalone}/etc/jetty</dir.jetty.etc>
-        <dir.folib.vault>${dir.assembly}/folib-vault</dir.folib.vault>
+        <dir.folib.vault>${dir.assembly}/folib-data</dir.folib.vault>
 
         <!-- Spring Boot properties -->
         <java.version>17</java.version>
@@ -300,7 +300,7 @@
 <!--                                </data>-->
 
 <!--                                <data>-->
-<!--                                    <src>${basedir}/target/assembly/folib-vault/logs</src>-->
+<!--                                    <src>${basedir}/target/assembly/folib-data/logs</src>-->
 <!--                                    <type>directory</type>-->
 <!--                                    <mapper>-->
 <!--                                    <type>perm</type>-->
@@ -458,7 +458,7 @@
                                     <directory>/opt/folib/logs</directory>
                                     <sources>
                                         <source>
-                                            <location>${project.build.directory}/assembly/folib-vault/logs</location>
+                                            <location>${project.build.directory}/assembly/folib-data/logs</location>
                                         </source>
                                     </sources>
                                 </mapping>
