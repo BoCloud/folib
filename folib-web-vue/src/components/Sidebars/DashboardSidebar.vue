@@ -29,7 +29,7 @@
              <span class="label">{{ $t('Sidebars.ProductWarehouse') }}</span>
            </router-link>
          </a-menu-item>
-         <a-menu-item v-if="userInfo.token">
+         <a-menu-item v-if="userInfo.token && analyzeEnable">
            <router-link to="/storage/scanner">
              <span class="icon">
                <a-icon type="read" theme="filled" class="m-0" />
