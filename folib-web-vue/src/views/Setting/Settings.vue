@@ -323,69 +323,29 @@
               <template #title>
                 <h6 class="font-semibold m-0">FOLIB {{ $t('Setting.LicenseInfo') }}</h6>
               </template>
-              <p class="text-dark">
-                {{ $t('Setting.userChoose') }}
+              <p class="text-dark by-flex by-row-between">
+                <span>{{ $t('Setting.userChoose') }}</span>
+                <a href="http://folib.com" target="_blank">{{ $t('Setting.Enterprise') }}</a>
               </p>
-
               <hr class="my-25">
-
+              <p class="text-dark">{{ $t('Setting.Disclaimer1') }} <b>{{ $t('Setting.Disclaimer2') }}</b></p>
+              <h6 class="font-semibold m-0">{{ $t('Setting.DisclaimerTitle1') }}</h6>
+              <p class="text-dark">{{ $t('Setting.Disclaimer3') }}</p>
+              <p class="text-dark">{{ $t('Setting.Disclaimer4') }}</p>
+              <h6 class="font-semibold m-0">{{ $t('Setting.DisclaimerTitle2') }}</h6>
+              <p class="text-dark">{{ $t('Setting.Disclaimer5') }}</p>
+              <p class="text-dark">{{ $t('Setting.Disclaimer6') }}<b>{{ $t('Setting.Disclaimer7') }}</b>{{ $t('Setting.Disclaimer8') }}</p>
+              <p class="text-dark">{{ $t('Setting.Disclaimer9') }}</p>
+              <h6 class="font-semibold m-0">{{ $t('Setting.DisclaimerTitle3') }}</h6>
+              <p class="text-dark">{{ $t('Setting.Disclaimer10') }}</p>
+              <h6 class="font-semibold m-0">{{ $t('Setting.DisclaimerTitle4') }}</h6>
+              <p class="text-dark">{{ $t('Setting.Disclaimer11') }}<b>{{ $t('Setting.Disclaimer12') }}</b>{{ $t('Setting.Disclaimer13') }}:<a href="http://folib.com" target="_blank">folib.com</a></p>
+              <p class="text-dark">{{ $t('Setting.Disclaimer14') }}</p>
             </a-card>
-
           </a-col>
-<!--          <a-col :span="24" :md="12" class="mb-24">-->
-<!--            <a-card :bordered="false" class="header-solid h-full card-profile-information"-->
-<!--              :bodyStyle="{ paddingTop: 0, paddingBottom: '16px' }" :headStyle="{ paddingRight: 0, }">-->
-<!--              <template #title>-->
-<!--                <h6 class="font-semibold m-0">{{ $t('Setting.ActivateSequenceNum') }}</h6>-->
-<!--              </template>-->
-<!--              <a-upload :fileList="fileList" :multiple="false" :customRequest="uploadLicense" slot="extra">-->
-<!--                <a-button type="link" class="by-p-r-0">-->
-<!--                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">-->
-<!--                    <path class="fill-muted"-->
-<!--                      d="M13.5858 3.58579C14.3668 2.80474 15.6332 2.80474 16.4142 3.58579C17.1953 4.36683 17.1953 5.63316 16.4142 6.41421L15.6213 7.20711L12.7929 4.37868L13.5858 3.58579Z"-->
-<!--                      fill="#111827" />-->
-<!--                    <path class="fill-muted" d="M11.3787 5.79289L3 14.1716V17H5.82842L14.2071 8.62132L11.3787 5.79289Z"-->
-<!--                      fill="#111827" />-->
-<!--                  </svg>-->
-<!--                  {{ $t('Setting.OfflineActivated') }}-->
-<!--                </a-button>-->
-<!--              </a-upload>-->
-<!--              <a-button type="link" slot="extra" @click="postActivate(false)" class="by-p-r-0">-->
-<!--                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">-->
-<!--                  <path class="fill-muted"-->
-<!--                    d="M13.5858 3.58579C14.3668 2.80474 15.6332 2.80474 16.4142 3.58579C17.1953 4.36683 17.1953 5.63316 16.4142 6.41421L15.6213 7.20711L12.7929 4.37868L13.5858 3.58579Z"-->
-<!--                    fill="#111827" />-->
-<!--                  <path class="fill-muted" d="M11.3787 5.79289L3 14.1716V17H5.82842L14.2071 8.62132L11.3787 5.79289Z"-->
-<!--                    fill="#111827" />-->
-<!--                </svg>-->
-<!--                {{ $t('Setting.OfficiallyActivated') }}-->
-<!--              </a-button>-->
-<!--              <a-button type="link" slot="extra" @click="postActivate(true)">-->
-<!--                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">-->
-<!--                  <path class="fill-muted"-->
-<!--                    d="M13.5858 3.58579C14.3668 2.80474 15.6332 2.80474 16.4142 3.58579C17.1953 4.36683 17.1953 5.63316 16.4142 6.41421L15.6213 7.20711L12.7929 4.37868L13.5858 3.58579Z"-->
-<!--                    fill="#111827" />-->
-<!--                  <path class="fill-muted" d="M11.3787 5.79289L3 14.1716V17H5.82842L14.2071 8.62132L11.3787 5.79289Z"-->
-<!--                    fill="#111827" />-->
-<!--                </svg>-->
-<!--                {{ $t('Setting.TryItOut') }}-->
-<!--              </a-button>-->
-<!--              <p class="$color-muted">-->
-<!--                {{ $t('Setting.FOLIBSerialNumber') }}-->
-<!--              </p>-->
-<!--              <hr class="my-25">-->
-<!--              <a-form-item class="mb-10" :label="$t('Setting.SerialNumber')" :colon="false">-->
-<!--                <a-textarea :rows="8" :placeholder="$t('Setting.machineCode')" v-model="activateCode" />-->
-<!--              </a-form-item>-->
-<!--            </a-card>-->
-<!--            &lt;!&ndash; / Conversations Card &ndash;&gt;-->
-
-<!--          </a-col>-->
-
         </a-row>
       </a-tab-pane>
 
-      <!--单点登录配置-->
       <a-tab-pane key="5" :tab="$t('Setting.MetadataConfig')">
         <a-card class="header-solid block">
           <div class="mx-25 mb-50">
