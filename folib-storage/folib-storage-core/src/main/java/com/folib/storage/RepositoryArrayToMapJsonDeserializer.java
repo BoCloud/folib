@@ -1,0 +1,60 @@
+/*
+ * Folib - [新一代AI制品仓库]
+ * Copyright (C) 2025 bocloud.com.cn <folib@beyondcent.com>
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * 本程序是自由软件：您可依据GNU通用公共许可证（GPL-3.0+）条款重新发布和修改，
+ * 但禁止任何形式的商业售卖行为（包括但不限于：直接销售、捆绑销售、云服务商用）。
+ *
+ * This program is distributed WITHOUT ANY WARRANTY.
+ * Commercial sale of this software is expressly prohibited.
+ *
+ * For license details, see: https://www.gnu.org/licenses/gpl-3.0.html
+ * 商业授权咨询请联系：folib@beyondcent.com
+ */
+package com.folib.storage;
+
+import com.folib.storage.repository.Repository;
+import com.folib.storage.repository.RepositoryData;
+
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.LinkedHashMap;
+import java.util.Map;
+
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.ObjectCodec;
+import com.fasterxml.jackson.core.TreeNode;
+import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.JsonDeserializer;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+/**
+ * @author veadan
+ */
+public class RepositoryArrayToMapJsonDeserializer
+        extends JsonDeserializer<Map<String, Repository>>
+{
+
+    @Override
+    public Map<String, Repository> deserialize(final JsonParser parser,
+                                               final DeserializationContext ctxt)
+            throws IOException
+    {
+        Map<String, Repository> result = new LinkedHashMap<>();
+
+        ObjectCodec codec = parser.getCodec();
+        TreeNode node = codec.readTree(parser);
+        if (node.isArray() && node.size() > 0)
+        {
+            Repository[] repositories = ((ObjectMapper) codec).readValue(node.toString(), RepositoryData[].class);
+            Arrays.stream(repositories).forEach(r -> result.put(r.getId(), r));
+        }
+
+        return result;
+    }
+}

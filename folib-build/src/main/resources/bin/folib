@@ -1,0 +1,525 @@
+#!/usr/bin/env bash
+
+SCRIPT_PATH=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd -P)
+BASE_DIR=$(realpath $SCRIPT_PATH/../)
+
+FOLIB_DEFAULT_HOME=$BASE_DIR
+FOLIB_DEFAULT_DATA=$(realpath $FOLIB_DEFAULT_HOME/../folib-data)
+# 配置用户环境变量
+FOLIB_CLUSTER_OPENFLAG="${FOLIB_CLUSTER_OPENFLAG:-false}"
+FOLIB_DISTRIBUTED_LOCKIP="${FOLIB_DISTRIBUTED_LOCKIP:-127.0.0.1}"     #当前机器内网IP(并非VIP)用来做多实例集群标识当前机器的内网IP的
+FOLIB_STORAGE_BASE_DIR="${FOLIB_STORAGE_BASE_DIR:-$FOLIB_DEFAULT_DATA}"   #如果NAS存储地址不在VAULT下请配置其他地址
+
+
+FOLIB_HOME="${FOLIB_HOME:-$FOLIB_DEFAULT_HOME}"
+FOLIB_DATA="${FOLIB_DATA:-$FOLIB_DEFAULT_DATA}"
+FOLIB_PID_FILE="$FOLIB_DATA/folib.pid"
+FOLIB_JVM_XMX="${FOLIB_JVM_XMX:-4096m}"
+FOLIB_JVM_XMS="${FOLIB_JVM_XMS:-4096m}"
+FOLIB_JVM_XSS="${FOLIB_JVM_XSS:-256k}"
+FOLIB_JVM_PARALLEL_GC_THREADS="${FOLIB_JVM_PARALLEL_GC_THREADS:-8}"
+FOLIB_JVM_MAX_DIRECT_MEMORY_SIZE="${FOLIB_JVM_MAX_DIRECT_MEMORY_SIZE:-8192m}"
+FOLIB_PORT="${FOLIB_PORT:-38080}"
+FOLIB_DB_PROFILE="${FOLIB_DB_PROFILE:-db_EMBEDDED}"
+FOLIB_GREMLIN_SERVER_ENABLED="${FOLIB_GREMLIN_SERVER_ENABLED:-false}"
+FOLIB_LOG_CONSOLE_ENABLED="${FOLIB_LOG_CONSOLE_ENABLED:-false}"
+FOLIB_LOG_FILE_ENABLED="${FOLIB_LOG_FILE_ENABLED:-true}"
+FOLIB_LOG_FILE_SIZE_SINGLE="${FOLIB_LOG_FILE_SIZE_SINGLE:-128MB}"
+FOLIB_LOG_FILE_SIZE_TOTAL="${FOLIB_LOG_FILE_SIZE_TOTAL:-1GB}"
+FOLIB_LOG_FILE_HISTORY="${FOLIB_LOG_FILE_HISTORY:-31}"
+FOLIB_DEBUG="${FOLIB_DEBUG:-false}"
+FOLIB_JETTY_LEVEL="${FOLIB_JETTY_LEVEL:-INFO}"
+FOLIB_NPM_REMOTE_CHANGES_ENABLED="${FOLIB_NPM_REMOTE_CHANGES_ENABLED:-false}"
+FOLIB_NUGET_DOWNLOAD_FEED="${FOLIB_NUGET_DOWNLOAD_FEED:-false}"
+FOLIB_DOWNLOAD_INDEXES="${FOLIB_DOWNLOAD_INDEXES:-false}"
+
+#REMOT cassandra相关只有db_REMOTE时才生效
+FOLIB_REMOTE_DB_HOST="${FOLIB_REMOTE_DB_HOST:-127.0.0.1}"
+FOLIB_REMOTE_DB_PORT="${FOLIB_REMOTE_DB_PORT:-49142}"
+FOLIB_REMOTE_DB_USER="${FOLIB_REMOTE_DB_USER:-root}"
+FOLIB_REMOTE_DB_PASS="${FOLIB_REMOTE_DB_PASS:-folib-cassandra}"
+
+#EMBEDDED
+FOLIB_EMBEDDED_DB_HOST="${FOLIB_EMBEDDED_DB_HOST:-127.0.0.1}"
+FOLIB_CASSANDRA_LISTEN_ADDRESS="${FOLIB_CASSANDRA_LISTEN_ADDRESS:-127.0.0.1}"
+FOLIB_CASSANDRA_SEEDS="${FOLIB_CASSANDRA_SEEDS:-127.0.0.1}"
+FOLIB_CLUSTER_NODE_TOTAL="${FOLIB_CLUSTER_NODE_TOTAL:-1}"
+FOLIB_CASSANDRA_GC_GRACE_SECONDS="${FOLIB_CASSANDRA_GC_GRACE_SECONDS:-864000}"
+
+#jmx相关
+FOLIB_JMX_PORT="${FOLIB_JMX_PORT:-7199}"
+
+#如果采用S3协议的存储，可以配置S3，默认是采用本地NFS
+FOLIB_S3_REGION="${FOLIB_S3_REGION:-folib}"
+FOLIB_S3_URI="${FOLIB_S3_URI:-s3://localhost:9000/}"
+FOLIB_S3_ACCESS_KEY="${FOLIB_S3_ACCESS_KEY:-folib}"
+FOLIB_S3_SECRET_KEY="${FOLIB_S3_SECRET_KEY:-folib}"
+
+##图数据库索引ES节点配置
+FOLIB_ES_HOST="${FOLIB_ES_HOST:-127.0.0.1}"
+FOLIB_ES_USERNAME="${FOLIB_USERNAME:-elastic}"
+FOLIB_ES_PASSWORD="${FOLIB_ES_PASSWORD:-}"
+
+
+
+#自动晋级阻断
+FOLIB_PROMOTION_BLOCK="${FOLIB_PROMOTION_BLOCK:-false}"
+
+##scanner相关配置
+FOLIB_MYSQL_HOST="${FOLIB_MYSQL_HOST:-127.0.0.1}"
+FOLIB_MYSQL_PORT="${FOLIB_MYSQL_PORT:-3306}"
+FOLIB_MYSQL_DB="${FOLIB_MYSQL_DB:-folib}"
+FOLIB_MYSQL_USER="${FOLIB_MYSQL_USER:-root}"
+FOLIB_MYSQL_PASSWORD="${FOLIB_MYSQL_PASSWORD:-folib@v587}"
+FOLIB_NVD="${FOLIB_NVD:-nvd.folib.com/feeds/json/cve/1.1}"
+
+
+##redis相关配置
+FOLIB_REDIS_ENABLED="${FOLIB_REDIS_ENABLED:-false}"
+FOLIB_REDIS_HOST="${FOLIB_REDIS_HOST:-127.0.0.1}"
+FOLIB_REDIS_PASSWORD="${FOLIB_REDIS_PASSWORD:-123456}"
+
+#UI 访问前缀key
+FOLIB_WEB_URL_PREFIX="${FOLIB_WEB_URL_PREFIX:-/ui/}"
+
+#Hazelcast分布式缓存设置
+FOLIB_CACHE_PORT="${FOLIB_CACHE_PORT:-5701}"
+FOLIB_CACHE_CLUSTER="${FOLIB_CACHE_CLUSTER:-127.0.0.1:5701}"
+
+FOLIB_SWAGGER_ENABLE="${FOLIB_SWAGGER_ENABLE:-false}"
+
+##线程池相关配置
+FOLIB_THREAD_POOL_COMMON_CORE="${FOLIB_THREAD_POOL_COMMON_CORE:-12}"
+FOLIB_THREAD_POOL_COMMON_MAX="${FOLIB_THREAD_POOL_COMMON_MAX:-12}"
+FOLIB_THREAD_POOL_COMMON_QUEUE="${FOLIB_THREAD_POOL_COMMON_QUEUE:-100000000}"
+FOLIB_THREAD_POOL_SCAN_CORE="${FOLIB_THREAD_POOL_SCAN_CORE:-2}"
+FOLIB_THREAD_POOL_SCAN_MAX="${FOLIB_THREAD_POOL_SCAN_MAX:-2}"
+FOLIB_THREAD_POOL_SCAN_QUEUE="${FOLIB_THREAD_POOL_SCAN_QUEUE:-12}"
+FOLIB_THREAD_POOL_EVENT_LOG_CORE="${FOLIB_THREAD_POOL_EVENT_LOG_CORE:-2}"
+FOLIB_THREAD_POOL_EVENT_LOG_MAX="${FOLIB_THREAD_POOL_EVENT_LOG_MAX:-2}"
+FOLIB_THREAD_POOL_EVENT_LOG_QUEUE="${FOLIB_THREAD_POOL_EVENT_LOG_QUEUE:-100}"
+
+##FoEyes配置
+FOLIB_THIRDPARTY_FOEYES_ENABLE="${FOLIB_THIRDPARTY_FOEYES_ENABLE:-false}"
+FOLIB_THIRDPARTY_FOEYES_BASEURL="${FOLIB_THIRDPARTY_FOEYES_BASEURL:-http://127.0.0.1:9527}"
+FOLIB_THIRDPARTY_FOEYES_ACCESS_KEY="${FOLIB_THIRDPARTY_FOEYES_ACCESS_KEY:-racdvMVzV9Wnqu8NAfQkyrsD0a2N0fNE}"
+
+#gremlin相关配置
+FOLIB_THREAD_POOL_WORKER="${FOLIB_THREAD_POOL_WORKER:-6}"
+FOLIB_GREMLIN_POOL="${FOLIB_GREMLIN_POOL:-6}"
+FOLIB_MAX_WORK_QUEUE_SIZE="${FOLIB_MAX_WORK_QUEUE_SIZE:-16384}"
+FOLIB_MAX_SESSION_TASK_QUEUE_SIZE="${FOLIB_MAX_SESSION_TASK_QUEUE_SIZE:-8192}"
+FOLIB_MAX_CONTENT_LENGTH="${FOLIB_MAX_CONTENT_LENGTH:-1048576}"
+FOLIB_MAX_CHUNK_SIZE="${FOLIB_MAX_CHUNK_SIZE:-65536}"
+FOLIB_MAX_ACCUMULATION_BUFFER_COMPONENTS="${FOLIB_MAX_ACCUMULATION_BUFFER_COMPONENTS:-2048}"
+FOLIB_RESULT_ITERATION_BATCH_SIZE="${FOLIB_RESULT_ITERATION_BATCH_SIZE:-256}"
+FOLIB_USE_EPOLL_EVENT_LOOP="${FOLIB_USE_EPOLL_EVENT_LOOP:-true}"
+FOLIB_IDLE_CONNECTION_TIMEOUT="${FOLIB_IDLE_CONNECTION_TIMEOUT:-30000}"
+FOLIB_EVALUATION_TIMEOUT="${FOLIB_EVALUATION_TIMEOUT:-30000}"
+FOLIB_WRITE_BUFFER_HIGH_WATER_MARK="${FOLIB_WRITE_BUFFER_HIGH_WATER_MARK:-65536}"
+FOLIB_WRITE_BUFFER_LOW_WATER_MARK="${FOLIB_WRITE_BUFFER_LOW_WATER_MARK:-32768}"
+#artifact上传限制开关
+FOLIB_ARTIFACT_UPLOAD_RESTRICTIONS="${FOLIB_ARTIFACT_UPLOAD_RESTRICTIONS:-false}"
+
+FOLIB_ENABLE_ANALYSIS="${FOLIB_ENABLE_ANALYSIS:-false}"
+
+#SSL相关配置
+FOLIB_HTTP_PORT="${FOLIB_HTTP_PORT:-}"
+FOLIB_SSL_ENABLED="${FOLIB_SSL_ENABLED:-false}"
+FOLIB_SSL_KEY_STORE="${FOLIB_SSL_KEY_STORE:-}"
+FOLIB_SSL_KEY_STORE_TYPE="${FOLIB_SSL_KEY_STORE_TYPE:-}"
+FOLIB_SSL_KEY_STORE_PASSWORD="${FOLIB_SSL_KEY_STORE_PASSWORD:-}"
+FOLIB_SSL_KEY_ALIAS="${FOLIB_SSL_KEY_ALIAS:-}"
+FOLIB_SSL_KEY_PASSWORD="${FOLIB_SSL_KEY_PASSWORD:-}"
+FOLIB_SSL_TRUST_STORE="${FOLIB_SSL_TRUST_STORE:-}"
+FOLIB_SSL_TRUST_STORE_PASSWORD="${FOLIB_SSL_TRUST_STORE_PASSWORD:-}"
+FOLIB_SSL_TRUST_STORE_TYPE="${FOLIB_SSL_TRUST_STORE_TYPE:-}"
+
+FOLIB_ARTIFACT_DOWNLOAD_IMMEDIATELY_UPDATE="${FOLIB_ARTIFACT_DOWNLOAD_IMMEDIATELY_UPDATE:-false}"
+FOLIB_DOCKER_BROWSE_COMPATIBILITY="${FOLIB_DOCKER_BROWSE_COMPATIBILITY:-false}"
+
+#晋级相关
+FOLIB_PROMOTION_WS_REQUEST_TIMOUT_OF_ARTIFACT_UPLOAD="${FOLIB_PROMOTION_WS_REQUEST_TIMOUT_OF_ARTIFACT_UPLOAD:-600}"
+FOLIB_PROMOTION_QUEUE_SIZE="${FOLIB_PROMOTION_QUEUE_SIZE:-1000}"
+FOLIB_PROMOTION_THREAD="${FOLIB_PROMOTION_THREAD:-3}"
+FOLIB_PROMOTION_RETRY_COUNT="${FOLIB_PROMOTION_RETRY_COUNT:-10}"
+FOLIB_PROMOTION_WS_REQUEST_TIMOUT="${FOLIB_PROMOTION_WS_REQUEST_TIMOUT:-2}"
+
+FOLIB_CUSTOM_MAX_IN_MEMORY_SIZE="${FOLIB_CUSTOM_MAX_IN_MEMORY_SIZE:-10240}"
+#lucene索引存放位置
+FOLIB_SEARCH_INDEX="${FOLIB_SEARCH_INDEX:-$FOLIB_DATA/search_index}"
+
+print_banner()
+{
+    echo "  _____ ___  _     ___ ____  ";
+    echo " |  ___/ _ \| |   |_ _| __ ) ";
+    echo " | |_ | | | | |    | ||  _ \ ";
+    echo " |  _|| |_| | |___ | || |_) |";
+    echo " |_|   \___/|_____|___|____/ ";
+
+}
+
+print_env_vars()
+{
+    printf "  === Environment vars\n"
+
+    OPTS=`declare -p | grep -iP "FOLIB_.+" | grep -vi "_default_" | grep -vi "password" | grep -vi "pwd" | grep -vi "token" | cut -d " " -f 3-`
+
+    for LINE in $OPTS; do
+        KEY=`echo $LINE | cut -f 1 -d "="`
+        VALUE=`echo "$LINE" | awk '{gsub(/^.+=/,"");}1'`
+        printf "  %-40s %-30s \n" "$KEY" $VALUE
+    done
+
+    printf "  %-40s %-30s \n" "JAVA_OPTS" "\"${JAVA_OPTS:-}\""
+    printf "\n"
+
+}
+
+print_help()
+{
+    print_banner
+    printf " Usage:\n"
+    printf "  %-20s %-30s \n" "start"   "Start Folib in the background"
+    printf "  %-20s %-30s \n" "repair_start" "Repair Start Folib in the background dangerous operation"
+    printf "  %-20s %-30s \n" "console" "Start Folib in the console"
+    printf "  %-20s %-30s \n" "debug"   "Start Folib in the remote debug and console mode"
+    printf "  %-20s %-30s \n" "stop"    "Stop Folib"
+    printf "  %-20s %-30s \n" "restart" "Restart Folib"
+    printf "  %-20s %-30s \n" "status"  "Print if Folib is running or not"
+}
+
+get_pid()
+{
+    echo `cat $FOLIB_PID_FILE 2>/dev/null | xargs`
+}
+
+pre_check()
+{
+    if [[ -f $FOLIB_PID_FILE ]]; then
+        PID=`get_pid`
+        IS_RUNNING=`ps aux | grep -i $PID | wc -l`
+        if [[ $IS_RUNNING -gt 1 ]]; then
+            printf "  Folib is already running: PID %s\n\n" "$PID"
+            exit 1
+        fi
+    fi
+
+    if [[ ! -d $FOLIB_DATA ]]; then
+        mkdir -p $FOLIB_DATA
+    fi
+}
+
+run()
+{
+    JAVA_OPTS="${JAVA_OPTS} -XX:+ExitOnOutOfMemoryError -XX:+CrashOnOutOfMemoryError -XX:ParallelGCThreads=${FOLIB_JVM_PARALLEL_GC_THREADS} -XX:MaxDirectMemorySize=${FOLIB_JVM_MAX_DIRECT_MEMORY_SIZE} -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=${FOLIB_DATA}/logs  -Xlog:gc*:file=${FOLIB_DATA}/logs/gc-%t.log:time:filecount=0 -XX:ErrorFile=${FOLIB_DATA}/logs/hs_err_pid%p.log"
+    JAVA_OPTS+=" -Xmx${FOLIB_JVM_XMX} -Xms${FOLIB_JVM_XMS} -Xss${FOLIB_JVM_XSS}"
+    JAVA_OPTS+=" -Dappserver.home=. -Dappserver.base=${FOLIB_HOME} -Djetty.logs=${FOLIB_HOME}/logs"
+    JAVA_OPTS+=" -Djava.io.tmpdir=${FOLIB_HOME}/tmp"
+    JAVA_OPTS+=" -Dserver.port=${FOLIB_PORT}"
+    JAVA_OPTS+=" -Dehcache.disk.store.dir=${FOLIB_DATA}/cache"
+    JAVA_OPTS+=" -Dlogging.config=${FOLIB_HOME}/etc/logback-spring.xml"
+    JAVA_OPTS+=" -Dlogging.debug=${FOLIB_DEBUG}"
+    JAVA_OPTS+=" -Dlogging.file.enabled=${FOLIB_LOG_FILE_ENABLED}"
+    JAVA_OPTS+=" -Dlogging.file.size.single=${FOLIB_LOG_FILE_SIZE_SINGLE}"
+    JAVA_OPTS+=" -Dlogging.file.size.total=${FOLIB_LOG_FILE_SIZE_TOTAL}"
+    JAVA_OPTS+=" -Dlogging.file.history=${FOLIB_LOG_FILE_HISTORY}"
+    JAVA_OPTS+=" -Dlogging.console.enabled=${FOLIB_LOG_CONSOLE_ENABLED}"
+    JAVA_OPTS+=" -Dlogging.dir=${FOLIB_DATA}/logs"
+    JAVA_OPTS+=" -Dlogging.file.name=${FOLIB_DATA}/logs/folib.log"
+    JAVA_OPTS+=" -Dlogging.level.org.eclipse.jetty=${FOLIB_JETTY_LEVEL}"
+    JAVA_OPTS+=" -Dfolib.home=${FOLIB_HOME}"
+    JAVA_OPTS+=" -Dfolib.vault=${FOLIB_DATA}"
+    JAVA_OPTS+=" -Dfolib.storage.booter.basedir=${FOLIB_STORAGE_BASE_DIR}/storages"
+    JAVA_OPTS+=" -Dfolib.port=${FOLIB_PORT}"
+    JAVA_OPTS+=" -Dfolib.distributed.lockip=${FOLIB_DISTRIBUTED_LOCKIP}"
+    JAVA_OPTS+=" -Dfolib.db.profile=${FOLIB_DB_PROFILE}"
+    JAVA_OPTS+=" -Dfolib.graph.gremlin.server=${FOLIB_GREMLIN_SERVER_ENABLED}"
+    JAVA_OPTS+=" -Dfolib.npm.remote.changes.enabled=${FOLIB_NPM_REMOTE_CHANGES_ENABLED}"
+    JAVA_OPTS+=" -Dfolib.nuget.download.feed=${FOLIB_NUGET_DOWNLOAD_FEED}"
+    JAVA_OPTS+=" -Dfolib.download.indexes=${FOLIB_DOWNLOAD_INDEXES}"
+    JAVA_OPTS+=" -Dfolib.authentication.providers.yaml=${FOLIB_HOME}/etc/conf/folib-authentication-providers.yaml"
+    JAVA_OPTS+=" -Dfolib.mysql.host=${FOLIB_MYSQL_HOST}"
+    JAVA_OPTS+=" -Dfolib.mysql.port=${FOLIB_MYSQL_PORT}"
+    JAVA_OPTS+=" -Dfolib.mysql.db=${FOLIB_MYSQL_DB}"
+    JAVA_OPTS+=" -Dfolib.mysql.user=${FOLIB_MYSQL_USER}"
+    JAVA_OPTS+=" -Dfolib.mysql.password=${FOLIB_MYSQL_PASSWORD}"
+    JAVA_OPTS+=" -Dfolib.nvd=${FOLIB_NVD}"
+    JAVA_OPTS+=" -Dfolib.cluster.openflag=${FOLIB_CLUSTER_OPENFLAG}"
+    JAVA_OPTS+=" -Dscan.storage-base=${FOLIB_STORAGE_BASE_DIR}/"
+    JAVA_OPTS+=" -DES_HOST=${FOLIB_ES_HOST}"
+    JAVA_OPTS+=" -DES_USERNAME=${FOLIB_ES_USERNAME}"
+    JAVA_OPTS+=" -DES_PASSWORD=${FOLIB_ES_PASSWORD}"
+    JAVA_OPTS+=" -DGLOBAL_REINDEX=false"
+    JAVA_OPTS+=" -Dfolib.swagger.enable=${FOLIB_SWAGGER_ENABLE}"
+#    JAVA_OPTS+=" -Dfolib.dependentPushUrl=${FOLIB_DEPENDENT_PUSHURL}"
+
+    JAVA_OPTS+=" -Ds3fs.uri=${FOLIB_S3_URI}"
+    JAVA_OPTS+=" -Ds3fs.region=${FOLIB_S3_REGION}"
+    JAVA_OPTS+=" -Ds3fs.access.key=${FOLIB_S3_ACCESS_KEY}"
+    JAVA_OPTS+=" -Ds3fs.secret.key=${FOLIB_S3_SECRET_KEY}"
+    #todo,未来修改为通过界面化进行配置
+    JAVA_OPTS+=" -DPROMOTION_BLOCK=${FOLIB_PROMOTION_BLOCK}"
+    JAVA_OPTS+=" -DWEB_URL_PREFIX=${FOLIB_WEB_URL_PREFIX}"
+
+    ##JVM加入缓存配置
+    JAVA_OPTS+=" -Dfolib.cache.cluster=${FOLIB_CACHE_CLUSTER}"
+    JAVA_OPTS+=" -Dfolib.cache.port=${FOLIB_CACHE_PORT}"
+
+    ##线程池相关配置
+    JAVA_OPTS+=" -DthreadPool.common.core=${FOLIB_THREAD_POOL_COMMON_CORE}"
+    JAVA_OPTS+=" -DthreadPool.common.max=${FOLIB_THREAD_POOL_COMMON_MAX}"
+    JAVA_OPTS+=" -DthreadPool.common.queue=${FOLIB_THREAD_POOL_COMMON_QUEUE}"
+    JAVA_OPTS+=" -DthreadPool.scan.core=${FOLIB_THREAD_POOL_SCAN_CORE}"
+    JAVA_OPTS+=" -DthreadPool.scan.max=${FOLIB_THREAD_POOL_SCAN_MAX}"
+    JAVA_OPTS+=" -DthreadPool.scan.queue=${FOLIB_THREAD_POOL_SCAN_QUEUE}"
+    JAVA_OPTS+=" -DthreadPool.eventLog.core=${FOLIB_THREAD_POOL_EVENT_LOG_CORE}"
+    JAVA_OPTS+=" -DthreadPool.eventLog.max=${FOLIB_THREAD_POOL_EVENT_LOG_MAX}"
+    JAVA_OPTS+=" -DthreadPool.eventLog.queue=${FOLIB_THREAD_POOL_EVENT_LOG_QUEUE}"
+
+    ##制品晋级配置
+    JAVA_OPTS+=" -Dfolib.promotion.ws-request-timout-of-artifact-upload=${FOLIB_PROMOTION_WS_REQUEST_TIMOUT_OF_ARTIFACT_UPLOAD}"
+    JAVA_OPTS+=" -Dfolib.promotion.queue-size=${FOLIB_PROMOTION_QUEUE_SIZE}"
+    JAVA_OPTS+=" -Dfolib.promotion.thread=${FOLIB_PROMOTION_THREAD}"
+    JAVA_OPTS+=" -Dfolib.promotion.retry-count=${FOLIB_PROMOTION_RETRY_COUNT}"
+    JAVA_OPTS+=" -Dfolib.promotion.ws-request-timout=${FOLIB_PROMOTION_WS_REQUEST_TIMOUT}"
+
+    ##FoEyes配置
+    JAVA_OPTS+=" -Dfolib.thirdParty.foeyes.enable=${FOLIB_THIRDPARTY_FOEYES_ENABLE}"
+    JAVA_OPTS+=" -Dfolib.thirdParty.foeyes.baseUrl=${FOLIB_THIRDPARTY_FOEYES_BASEURL}"
+    JAVA_OPTS+=" -Dfolib.thirdParty.foeyes.accessKey=${FOLIB_THIRDPARTY_FOEYES_ACCESS_KEY}"
+
+    #gremlin相关配置
+    JAVA_OPTS+=" -Dfolib.thread.pool.worker=${FOLIB_THREAD_POOL_WORKER}"
+    JAVA_OPTS+=" -Dfolib.gremlin.pool=${FOLIB_GREMLIN_POOL}"
+    JAVA_OPTS+=" -Dfolib.max.work.queue.size=${FOLIB_MAX_WORK_QUEUE_SIZE}"
+    JAVA_OPTS+=" -Dfolib.max.session.task.queue.size=${FOLIB_MAX_SESSION_TASK_QUEUE_SIZE}"
+    JAVA_OPTS+=" -Dfolib.max.content.length=${FOLIB_MAX_CONTENT_LENGTH}"
+    JAVA_OPTS+=" -Dfolib.max.chunk.size=${FOLIB_MAX_CHUNK_SIZE}"
+    JAVA_OPTS+=" -Dfolib.max.accumulation.buffer.components=${FOLIB_MAX_ACCUMULATION_BUFFER_COMPONENTS}"
+    JAVA_OPTS+=" -Dfolib.result.iteration.batch.size=${FOLIB_RESULT_ITERATION_BATCH_SIZE}"
+    JAVA_OPTS+=" -Dfolib.use.epoll.event.loop=${FOLIB_USE_EPOLL_EVENT_LOOP}"
+    JAVA_OPTS+=" -Dfolib.idle.connection.timeout=${FOLIB_IDLE_CONNECTION_TIMEOUT}"
+    JAVA_OPTS+=" -Dfolib.evaluation.timeout=${FOLIB_EVALUATION_TIMEOUT}"
+    JAVA_OPTS+=" -Dfolib.write.buffer.high.water.mark=${FOLIB_WRITE_BUFFER_HIGH_WATER_MARK}"
+    JAVA_OPTS+=" -Dfolib.write.buffer.low.water.mark=${FOLIB_WRITE_BUFFER_LOW_WATER_MARK}"
+    #artifact上传限制开关
+    JAVA_OPTS+=" -Dfolib.uploadRestrictions=${FOLIB_ARTIFACT_UPLOAD_RESTRICTIONS}"
+    #制品分析开关
+    JAVA_OPTS+=" -Dfolib.enableAnalysis=${FOLIB_ENABLE_ANALYSIS}"
+    #上传临时文件占用内存的最大值
+    JAVA_OPTS+=" -Dfolib.custom.maxInMemorySize=${FOLIB_CUSTOM_MAX_IN_MEMORY_SIZE}"
+    #lucene索引存放位置
+    JAVA_OPTS+=" -DFOLIB_SEARCH_INDEX=${FOLIB_SEARCH_INDEX}"
+    #SSL相关配置
+    JAVA_OPTS+=" -Dhttp.port=${FOLIB_HTTP_PORT}"
+    JAVA_OPTS+=" -Dserver.ssl.enabled=${FOLIB_SSL_ENABLED}"
+    if [[ ${FOLIB_SSL_KEY_STORE} ]];then
+    JAVA_OPTS+=" -Dserver.ssl.key-store=/opt/folib/folib-3.0-SNAPSHOT/etc/ssl/${FOLIB_SSL_KEY_STORE}"
+    fi
+    if [[ ${FOLIB_SSL_KEY_STORE_TYPE} ]];then
+    JAVA_OPTS+=" -Dserver.ssl.key-store-type=${FOLIB_SSL_KEY_STORE_TYPE}"
+    fi
+    if [[ ${FOLIB_SSL_KEY_STORE_PASSWORD} ]];then
+    JAVA_OPTS+=" -Dserver.ssl.key-store-password=${FOLIB_SSL_KEY_STORE_PASSWORD}"
+    fi
+    if [[ ${FOLIB_SSL_KEY_ALIAS} ]];then
+    JAVA_OPTS+=" -Dserver.ssl.key-alias=${FOLIB_SSL_KEY_ALIAS}"
+    fi
+    if [[ ${FOLIB_SSL_KEY_PASSWORD} ]];then
+    JAVA_OPTS+=" -Dserver.ssl.key-password=${FOLIB_SSL_KEY_PASSWORD}"
+    fi
+    if [[ ${FOLIB_SSL_TRUST_STORE} ]];then
+    JAVA_OPTS+=" -Dserver.ssl.trust-store=/opt/folib/folib-3.0-SNAPSHOT/etc/ssl/${FOLIB_SSL_TRUST_STORE}"
+    fi
+    if [[ ${FOLIB_SSL_TRUST_STORE_PASSWORD} ]];then
+    JAVA_OPTS+=" -Dserver.ssl.trust-store-password=${FOLIB_SSL_TRUST_STORE_PASSWORD}"
+    fi
+    if [[ ${FOLIB_SSL_TRUST_STORE_TYPE} ]];then
+    JAVA_OPTS+=" -Dserver.ssl.trust-store-type=${FOLIB_SSL_TRUST_STORE_TYPE}"
+    fi
+
+    JAVA_OPTS+=" -Dfolib.artifactDownloadImmediatelyUpdate=${FOLIB_ARTIFACT_DOWNLOAD_IMMEDIATELY_UPDATE}"
+    JAVA_OPTS+=" -Dfolib.dockerBrowseCompatibility=${FOLIB_DOCKER_BROWSE_COMPATIBILITY}"
+
+    #s3fs:
+    #  protocol: http
+    #  region: bo-nj-cn
+    #  uri: s3://localhost:9000/
+    #  access:
+    #    key: SjggJIJqnHzm2mb1
+    #  secret:
+    #    key: M9kbw3DImRzS9Y5Hmol6EriatsmVj3bn
+
+    if [[ "$FOLIB_DB_PROFILE" == db_REMOTE ]]; then
+    JAVA_OPTS+=" -DREMOTE_DB_HOST=${FOLIB_REMOTE_DB_HOST}"
+    JAVA_OPTS+=" -DREMOTE_DB_PORT=${FOLIB_REMOTE_DB_PORT}"
+    JAVA_OPTS+=" -DREMOTE_DB_USER=${FOLIB_REMOTE_DB_USER}"
+    JAVA_OPTS+=" -DREMOTE_DB_PASS=${FOLIB_REMOTE_DB_PASS}"
+    fi
+
+    if [[ "$FOLIB_DB_PROFILE" == db_EMBEDDED ]]; then
+        JAVA_OPTS+=" -DEMBEDDED_DB_HOST=${FOLIB_EMBEDDED_DB_HOST}"
+        JAVA_OPTS+=" -DCASSANDRA_LISTEN_ADDRESS=${FOLIB_CASSANDRA_LISTEN_ADDRESS}"
+        JAVA_OPTS+=" -DCASSANDRA_SEEDS=${FOLIB_CASSANDRA_SEEDS}"
+        JAVA_OPTS+=" -DCLUSTER_NODE_TOTAL=${FOLIB_CLUSTER_NODE_TOTAL}"
+        JAVA_OPTS+=" -DGC_GRACE_SECONDS=${FOLIB_CASSANDRA_GC_GRACE_SECONDS}"
+    fi
+
+    JAVA_OPTS+=" -Dfolib.redis.enabled=${FOLIB_REDIS_ENABLED}"
+    JAVA_OPTS+=" -Dfolib.redis.host=${FOLIB_REDIS_HOST}"
+    JAVA_OPTS+=" -Dfolib.redis.password=${FOLIB_REDIS_PASSWORD}"
+
+    JAVA_OPTS+=" -Dcom.sun.jndi.rmiURLParsing=legacy
+                 -Djava.rmi.server.hostname=${FOLIB_DISTRIBUTED_LOCKIP}
+                 -Dcassandra.jmx.remote.port=${FOLIB_JMX_PORT}
+                 -Dcom.sun.management.jmxremote.rmi.port=${FOLIB_JMX_PORT}
+                 -Dcom.sun.management.jmxremote.authenticate=false"
+
+    JDK_VERSION=$(java -version 2>&1 | awk -F '"' '/version/ {print $2}')
+
+    if [[ "$JDK_VERSION" == 17* ]]; then
+       JAVA_OPTS+=" -Dsun.misc.URLClassPath.disableJarChecking=true
+                    -Djdk.attach.allowAttachSelf=true
+                    --add-exports java.base/jdk.internal.misc=ALL-UNNAMED
+                    --add-exports java.base/jdk.internal.ref=ALL-UNNAMED
+                    --add-exports java.base/sun.nio.ch=ALL-UNNAMED
+                    --add-exports java.management.rmi/com.sun.jmx.remote.internal.rmi=ALL-UNNAMED
+                    --add-exports java.rmi/sun.rmi.registry=ALL-UNNAMED
+                    --add-exports java.rmi/sun.rmi.server=ALL-UNNAMED
+                    --add-exports java.sql/java.sql=ALL-UNNAMED
+                    --add-opens java.base/java.lang.module=ALL-UNNAMED
+                    --add-opens java.base/jdk.internal.loader=ALL-UNNAMED
+                    --add-opens java.base/jdk.internal.ref=ALL-UNNAMED
+                    --add-opens java.base/jdk.internal.reflect=ALL-UNNAMED
+                    --add-opens java.base/jdk.internal.math=ALL-UNNAMED
+                    --add-opens java.base/jdk.internal.module=ALL-UNNAMED
+                    --add-opens java.base/jdk.internal.util.jar=ALL-UNNAMED
+                    --add-opens jdk.management/com.sun.management.internal=ALL-UNNAMED
+                    --add-opens java.base/java.lang=ALL-UNNAMED
+                    --add-opens java.base/java.nio=ALL-UNNAMED
+                    --add-opens java.base/java.io=ALL-UNNAMED
+                    --add-opens java.base/sun.nio.ch=ALL-UNNAMED"
+    fi
+
+    JAR_ARGS="-showversion -jar ${JAVA_OPTS} ./lib/folib-web-core-*-spring-boot.jar"
+
+    CMD="java $JAR_ARGS"
+    if [[ $1 == "console" ]]; then
+        CMD="java $JAR_ARGS"
+    fi
+    printf "  === FOLIB第一次初始化admin的密码为:\n"
+
+    printf "  ***** folib@v587 **** 请及时修改\n"
+
+    printf "  === Starting instance\n"
+
+    cd $FOLIB_HOME;
+    set -eo pipefail;
+
+    if [[ $1 != "console" ]]; then
+        nohup $CMD >/dev/null 2>&1 & echo $! > $FOLIB_PID_FILE
+        sleep 1
+        printf "  PID: $(get_pid) \n"
+        printf "  CMD: %s\n\n" "$CMD"
+        tail -fn 1000 ${FOLIB_DATA}/logs/folib.log
+    else
+        trap "kill -SIGTERM $(get_pid) && sleep 3" SIGTERM
+        trap "echo 'Exiting!'; (set -ex; rm -rf $FOLIB_PID_FILE)" EXIT
+        echo $$ > $FOLIB_PID_FILE; exec $CMD
+    fi
+}
+
+common()
+{
+    print_banner
+    pre_check
+    print_env_vars
+}
+
+start()
+{
+    common
+    run "background"
+}
+
+repair_start()
+{
+    if [[ ${FOLIB_DATA}/db ]];then
+    echo "ready to delete ${FOLIB_DATA}/db"
+    rm -rf ${FOLIB_DATA}/db
+    echo "${FOLIB_DATA}/db delete complete"
+    fi;
+    start
+}
+
+stop()
+{
+    if [[ -f $FOLIB_PID_FILE ]]; then
+        set -eo pipefail;
+        PID=`get_pid`
+        IS_RUNNING=`ps aux | grep -i $PID | wc -l`
+
+        if [[ $IS_RUNNING -gt 1 ]]; then
+            printf "  Stopping Folib [PID: %s]\n\n" "$PID"
+            kill -SIGTERM $PID
+            sleep 2
+        else
+            printf "  Folib is not running.. removing staled pid.\n"
+        fi
+
+        rm -rf $FOLIB_PID_FILE
+    else
+        echo "  Folib is not running."
+    fi
+
+}
+
+restart()
+{
+    stop
+    sleep 9
+    start
+}
+
+console()
+{
+    FOLIB_LOG_CONSOLE_ENABLED=true
+    common
+    run "console"
+}
+
+debug()
+{
+    JAVA_OPTS="$JAVA_OPTS -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:$1 "
+    console
+}
+
+status()
+{
+    if [[ -f $FOLIB_PID_FILE ]]; then
+        PID=`get_pid`
+        IS_RUNNING=`ps aux | grep -i $PID | wc -l`
+        if [[ $IS_RUNNING -gt 1 ]]; then
+            printf "  Folib is running [PID: %s]\n" "$PID"
+        else
+            printf "  Folib has died or PID file contains stale data (PID: %s)\n" "$PID"
+        fi
+    else
+        printf "  Folib is not running\n"
+    fi
+}
+
+case "$1" in
+    start)   start;;
+    repair_start) repair_start;;
+    stop)    stop;;
+    restart) restart;;
+    console) console;;
+    debug)   debug ${2:-5005};;
+    status)  status;;
+    *)
+        print_help
+        exit 1
+    ;;
+esac

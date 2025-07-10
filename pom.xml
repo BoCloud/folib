@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+    <modelVersion>4.0.0</modelVersion>
+<!---Dfolib.db.profile=db_REMOTE-->
+    <parent>
+        <groupId>com.folib</groupId>
+        <artifactId>folib-parent</artifactId>
+        <version>3.0-SNAPSHOT</version>
+        <relativePath/>
+    </parent>
+    <artifactId>folib-server</artifactId>
+    <packaging>pom</packaging>
+    <name>Folib: Server</name>
+    <inceptionYear>2019</inceptionYear>
+
+     <scm>
+        <url>http://git.folib.com/folib/folib-server</url>
+        <connection>scm:git:git://git.folib.com/folib/folib-server.git</connection>
+        <developerConnection>scm:git:git://git.folib.com/folib/folib-server.git</developerConnection>
+    </scm>
+
+    <licenses>
+        <license>
+             <name>GNU General Public License, Version 3</name>
+             <url>https://www.gnu.org/licenses/gpl-3.0.html</url>
+            <distribution>repo</distribution>
+            <comments>GPL v3 is a strong copyleft license that requires derived works to also be open source under the GPL.</comments>
+        </license>
+    </licenses>
+
+
+    <modules>
+        <module>folib-commons</module>
+        <module>folib-configuration</module>
+        <module>folib-event-api</module>
+        <module>folib-security</module>
+        <module>folib-api</module>
+        <module>folib-job</module>
+        <module>folib-storage</module>
+        <module>folib-gremlin-service</module>
+        <module>folib-web-core</module>
+        <module>folib-build</module>
+        <module>folib-core</module>
+    </modules>
+
+    <profiles>
+        <profile>
+            <id>dependency-check</id>
+
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.owasp</groupId>
+                        <artifactId>dependency-check-maven</artifactId>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>com.mycila</groupId>
+                <artifactId>license-maven-plugin</artifactId>
+                <version>5.0.0</version>
+                <configuration>
+                    <header>file://${project.basedir}/license-header.txt</header>
+                    <includes>
+                        <include>**/*.java</include>
+                    </includes>
+                    <mapping>
+                        <java>SLASHSTAR_STYLE</java>
+                    </mapping>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>format</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>

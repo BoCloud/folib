@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.folib.mapper.GitLfsLockMapper">
+    <resultMap type="com.folib.entity.GitLfsLockEntity" id="GitLfsLocksMap">
+        <result property="id" column="id"/>
+        <result property="storageId" column="storage_id"/>
+        <result property="repositoryId" column="repository_id"/>
+        <result property="path" column="path"/>
+        <result property="lockedAt" column="locked_at"/>
+        <result property="owner" column="owner"/>
+        <result property="ref" column="ref"/>
+    </resultMap>
+
+    <!--分页查询指定行数据-->
+    <select id="queryAllByLimit" resultMap="GitLfsLocksMap" >
+        select
+        id,storage_id,repository_id,path,locked_at,owner,ref
+        from git_lfs_locks
+        <where>
+            <if test="id != null and id != ''">
+                and id = #{id}
+            </if>
+            <if test="storageId != null and storageId != ''">
+                and storage_id = #{storageId}
+            </if>
+            <if test="repositoryId != null and repositoryId != ''">
+                and repository_id = #{repositoryId}
+            </if>
+            <if test="path != null and path != ''">
+                and `path` = #{path}
+            </if>
+            <if test="ref != null and ref != ''">
+                and `ref` = #{ref}
+            </if>
+        </where>
+        limit #{offset}, #{pageSize}
+    </select>
+
+</mapper>

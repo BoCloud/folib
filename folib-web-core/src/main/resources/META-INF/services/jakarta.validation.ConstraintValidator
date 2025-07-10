@@ -1,0 +1,14 @@
+com.folib.validation.configuration.StorageProviderValidator
+com.folib.validation.configuration.DescribableEnumValueValidator
+com.folib.validation.configuration.LayoutProviderValueValidator
+com.folib.validation.configuration.UniqueStorageValidator
+com.folib.validation.configuration.ShouldNotContainValidator
+com.folib.validation.configuration.routing.RoutingRuleRepositoryFormValidator
+
+com.folib.validation.users.PasswordValidator
+com.folib.validation.users.UniqueUsernameValidator
+
+com.folib.validation.UniqueRoleNameValidator
+
+com.folib.validation.cron.CronTaskConfigurationFormValidator
+com.folib.validation.externalnode.ArtifactoryRepositoryEnumValueValidator

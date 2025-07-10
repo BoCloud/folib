@@ -1,0 +1,5 @@
+mkdir /opt/folib-data
+groupadd folib
+useradd -d /opt/folib -g folib --system folib
+chown -R folib:folib /opt/folib
+chown -R folib:folib /opt/folib-data

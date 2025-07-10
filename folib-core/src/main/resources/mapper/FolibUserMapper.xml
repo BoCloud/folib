@@ -1,0 +1,581 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.folib.mapper.FolibUserMapper">
+    <resultMap type="com.folib.entity.FolibUser" id="FolibUserMap">
+        <result property="id" column="id"/>
+        <result property="username" column="username"/>
+        <result property="password" column="password"/>
+        <result property="originalPassword" column="original_password"/>
+        <result property="avatar" column="avatar"/>
+        <result property="email" column="email"/>
+        <result property="userType" column="user_type"/>
+        <result property="enabled" column="enabled"/>
+        <result property="sourceId" column="source_id"/>
+        <result property="deleted" column="deleted" />
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="nickname" column="nickname"/>
+    </resultMap>
+
+    <!-- 通过ID查询单条数据 -->
+    <select id="queryById" resultMap="FolibUserMap">
+        select
+        id,username,password,original_password,avatar,email,user_type,enabled,source_id,deleted,nickname,CREATE_BY,CREATE_TIME,UPDATE_BY,UPDATE_TIME
+        from folib_user
+        where id = #{id}
+    </select>
+
+    <sql id="userCountSql">
+        SELECT fu.id
+        FROM folib_user fu
+        LEFT JOIN user_group_ref ugr ON fu.id = ugr.user_id
+        LEFT JOIN role_resource_ref rrr ON rrr.ref_type = 1 AND rrr.entity_id = fu.id
+        WHERE fu.user_type = 'general'
+        <if test="user.id != null and user.id != ''">
+            and fu.id = #{user.id}
+        </if>
+        <if test="user.username != null and user.username != ''">
+            and username like concat('%',#{user.username},'%')
+        </if>
+        <if test="user.password != null and user.password != ''">
+            and password = #{user.password}
+        </if>
+        <if test="user.originalPassword != null and user.originalPassword != ''">
+            and original_password = #{user.originalPassword}
+        </if>
+        <if test="user.avatar != null and user.avatar != ''">
+            and avatar = #{user.avatar}
+        </if>
+        <if test="user.email != null and user.email != ''">
+            and email like concat('%',#{user.email},'%')
+        </if>
+        <if test="user.userType != null and user.userType != ''">
+            and user_type = #{user.userType}
+        </if>
+        <if test="user.enabled != null and user.enabled != ''">
+            and enabled = #{user.enabled}
+        </if>
+        <if test="user.sourceId != null and user.sourceId != ''">
+            and source_id = #{user.sourceId}
+        </if>
+        <if test="user.nickname != null and user.nickname != ''">
+            and nickname = #{user.nickname}
+        </if>
+        <if test="user.roles != null and user.roles.size() > 0">
+            and rrr.role_id in
+            <foreach collection="user.roles" item="role" separator="," open="(" close=")">
+                #{role}
+            </foreach>
+        </if>
+    </sql>
+
+    <sql id="userGroupCountSql">
+        SELECT fu.id
+        FROM folib_user fu
+        LEFT JOIN user_group_ref ugr ON fu.id = ugr.user_id
+        LEFT JOIN role_resource_ref rrr ON rrr.ref_type = 2 and rrr.entity_id = user_group_id
+        WHERE fu.user_type = 'general'
+        <if test="user.id != null and user.id != ''">
+            and fu.id = #{user.id}
+        </if>
+        <if test="user.username != null and user.username != ''">
+            and username like concat('%',#{user.username},'%')
+        </if>
+        <if test="user.password != null and user.password != ''">
+            and password = #{user.password}
+        </if>
+        <if test="user.originalPassword != null and user.originalPassword != ''">
+            and original_password = #{user.originalPassword}
+        </if>
+        <if test="user.avatar != null and user.avatar != ''">
+            and avatar = #{user.avatar}
+        </if>
+        <if test="user.email != null and user.email != ''">
+            and email like concat('%',#{user.email},'%')
+        </if>
+        <if test="user.userType != null and user.userType != ''">
+            and user_type = #{user.userType}
+        </if>
+        <if test="user.enabled != null and user.enabled != ''">
+            and enabled = #{user.enabled}
+        </if>
+        <if test="user.sourceId != null and user.sourceId != ''">
+            and source_id = #{user.sourceId}
+        </if>
+        <if test="user.nickname != null and user.nickname != ''">
+            and nickname = #{user.nickname}
+        </if>
+        <if test="user.roles != null and user.roles.size() > 0">
+            and rrr.role_id in
+            <foreach collection="user.roles" item="role" separator="," open="(" close=")">
+                #{role}
+            </foreach>
+        </if>
+    </sql>
+
+    <select id="countUserRole" resultType="java.lang.Long">
+        SELECT COUNT(*) FROM (
+        <include refid="userCountSql"/>
+        UNION
+        <include refid="userGroupCountSql"/>
+        ) tmp;
+    </select>
+
+
+    <sql id="queryUserSql">
+        SELECT
+        fu.*,
+        GROUP_CONCAT(distinct ugr.user_group_name) AS userGroups,
+        GROUP_CONCAT(distinct ugr.user_group_id) AS userGroupIds,
+        GROUP_CONCAT(distinct NULLIF(rrr.role_id, '')) AS roles
+        FROM folib_user fu
+        LEFT JOIN user_group_ref ugr ON fu.user_type= 'general' and fu.id = ugr.user_id
+        INNER JOIN role_resource_ref rrr ON
+        rrr.ref_type = 1
+        AND rrr.entity_id = fu.id
+        WHERE fu.user_type= 'general'
+        <if test="user.id != null and user.id != ''">
+            and fu.id = #{user.id}
+        </if>
+        <if test="user.username != null and user.username != ''">
+            and username = #{user.username}
+        </if>
+        <if test="user.matchUsername != null and user.matchUsername != ''">
+            and username like concat('%',#{user.matchUsername},'%')
+        </if>
+        <if test="user.password != null and user.password != ''">
+            and password = #{user.password}
+        </if>
+        <if test="user.originalPassword != null and user.originalPassword != ''">
+            and original_password = #{user.originalPassword}
+        </if>
+        <if test="user.avatar != null and user.avatar != ''">
+            and avatar = #{user.avatar}
+        </if>
+        <if test="user.email != null and user.email != ''">
+            and email = #{user.email}
+        </if>
+        <if test="user.matchEmail != null and user.matchEmail != ''">
+            and email like concat('%',#{user.matchEmail},'%')
+        </if>
+        <if test="user.userType != null and user.userType != ''">
+            and user_type = #{user.userType}
+        </if>
+        <if test="user.enabled != null and user.enabled != ''">
+            and enabled = #{user.enabled}
+        </if>
+        <if test="user.sourceId != null and user.sourceId != ''">
+            and source_id = #{user.sourceId}
+        </if>
+        <if test="user.nickname != null and user.nickname != ''">
+            and nickname = #{user.nickname}
+        </if>
+        group by fu.id
+        <if test="user.roles != null and user.roles.size() > 0">
+            having
+            <foreach collection="user.roles" item="role" separator="or" >
+                find_in_set(#{role}, roles)
+            </foreach>
+        </if>
+    </sql>
+
+    <sql id="queryUserGroupSql">
+        SELECT
+        fu.*,
+        GROUP_CONCAT(distinct ugr.user_group_name) AS userGroups,
+        GROUP_CONCAT(distinct ugr.user_group_id) AS userGroupIds,
+        GROUP_CONCAT(distinct NULLIF(rrr.role_id, '')) AS roles
+        FROM folib_user fu
+        INNER JOIN user_group_ref ugr  ON fu.id = ugr.user_id
+        INNER JOIN role_resource_ref rrr ON
+        rrr.ref_type = 2
+        AND rrr.entity_id = ugr.user_group_id
+        WHERE fu.user_type= 'general'
+        <if test="user.id != null and user.id != ''">
+            and fu.id = #{user.id}
+        </if>
+        <if test="user.username != null and user.username != ''">
+            and username = #{user.username}
+        </if>
+        <if test="user.matchUsername != null and user.matchUsername != ''">
+            and username like concat('%',#{user.matchUsername},'%')
+        </if>
+        <if test="user.password != null and user.password != ''">
+            and password = #{user.password}
+        </if>
+        <if test="user.originalPassword != null and user.originalPassword != ''">
+            and original_password = #{user.originalPassword}
+        </if>
+        <if test="user.avatar != null and user.avatar != ''">
+            and avatar = #{user.avatar}
+        </if>
+        <if test="user.email != null and user.email != ''">
+            and email = #{user.email}
+        </if>
+        <if test="user.matchEmail != null and user.matchEmail != ''">
+            and email like concat('%',#{user.matchEmail},'%')
+        </if>
+        <if test="user.userType != null and user.userType != ''">
+            and user_type = #{user.userType}
+        </if>
+        <if test="user.enabled != null and user.enabled != ''">
+            and enabled = #{user.enabled}
+        </if>
+        <if test="user.sourceId != null and user.sourceId != ''">
+            and source_id = #{user.sourceId}
+        </if>
+        <if test="user.nickname != null and user.nickname != ''">
+            and nickname = #{user.nickname}
+        </if>
+        group by fu.id
+        <if test="user.roles != null and user.roles.size() > 0">
+            having
+            <foreach collection="user.roles" item="role" separator="or" >
+                find_in_set(#{role}, roles)
+            </foreach>
+        </if>
+    </sql>
+    <!--分页查询指定行数据-->
+    <select id="queryAllUserRoleByLimit" resultType="com.folib.dto.UserDTO">
+        SELECT id, username, `password`, original_password, avatar, email, user_type, enabled, source_id, deleted, create_by, create_time, update_by, update_time,nickname,
+        GROUP_CONCAT(distinct NULLIF(userGroups, ''))  AS userGroups,
+        GROUP_CONCAT(distinct NULLIF(userGroupIds, '')) AS userGroupIds,
+        GROUP_CONCAT(distinct NULLIF(roles, '')) AS roles
+        FROM (
+        <include refid="queryUserSql"/>
+        UNION
+        <include refid="queryUserGroupSql"/>
+        ) tmp
+        GROUP BY tmp.id,
+        tmp.username,
+        tmp.`password`,
+        tmp.original_password,
+        tmp.avatar,
+        tmp.email,
+        tmp.user_type,
+        tmp.enabled,
+        tmp.source_id,
+        tmp.deleted,
+        tmp.create_by,
+        tmp.create_time,
+        tmp.update_by,
+        tmp.update_time,
+        tmp.nickname
+    </select>
+
+    <!--分页查询指定行数据-->
+    <select id="queryAllByLimit" resultMap="FolibUserMap">
+        select
+        *
+        from folib_user
+        <where>
+            <if test="user.id != null and user.id != ''">
+                and user.id = #{user.id}
+            </if>
+            <if test="user.username != null and user.username != ''">
+                and user.username = #{user.username}
+            </if>
+            <if test="user.matchUsername != null and user.matchUsername != ''">
+                and user.username like concat('%',#{user.matchUsername},'%')
+            </if>
+            <if test="user.password != null and user.password != ''">
+                and user.password = #{user.password}
+            </if>
+            <if test="user.originalPassword != null and user.originalPassword != ''">
+                and user.original_password = #{user.originalPassword}
+            </if>
+            <if test="user.avatar != null and user.avatar != ''">
+                and user.avatar = #{user.avatar}
+            </if>
+            <if test="user.email != null and user.email != ''">
+                and user.email = #{user.email}
+            </if>
+            <if test="user.matchEmail != null and user.matchEmail != ''">
+                and user.email like concat('%',#{user.matchEmail},'%')
+            </if>
+            <if test="user.userType != null and user.userType != ''">
+                and user.user_type = #{user.userType}
+            </if>
+            <if test="user.enabled != null and user.enabled != ''">
+                and user.enabled = #{user.enabled}
+            </if>
+            <if test="user.sourceId != null and user.sourceId != ''">
+                and user.source_id = #{user.sourceId}
+            </if>
+            <if test="user.deleted != null and user.deleted != ''">
+                and user.deleted = #{user.deleted}
+            </if>
+            <if test="user.createBy != null and user.createBy != ''">
+                and user.create_by = #{user.createBy}
+            </if>
+            <if test="user.updateBy != null and user.updateBy != ''">
+                and user.update_by = #{user.updateBy}
+            </if>
+            <if test="user.nickname != null and user.nickname != ''">
+                and user.nickname = #{user.nickname}
+            </if>
+        </where>
+    </select>
+
+    <!--统计总行数-->
+    <select id="count" resultType="java.lang.Long">
+        select count(1)
+        from folib_user
+        where 1=1
+        <if test="id != null and id != ''">
+            and id = #{id}
+        </if>
+        <if test="username != null and username != ''">
+            and username = #{username}
+        </if>
+        <if test="password != null and password != ''">
+            and password = #{password}
+        </if>
+        <if test="originalPassword != null and originalPassword != ''">
+            and original_password = #{originalPassword}
+        </if>
+        <if test="avatar != null and avatar != ''">
+            and avatar = #{avatar}
+        </if>
+        <if test="email != null and email != ''">
+            and email = #{email}
+        </if>
+        <if test="userType != null and userType != ''">
+            and user_type = #{userType}
+        </if>
+        <if test="enabled != null and enabled != ''">
+            and enabled = #{enabled}
+        </if>
+        <if test="sourceId != null and sourceId != ''">
+            and source_id = #{sourceId}
+        </if>
+        <if test="deleted != null and deleted != ''">
+            and deleted = #{deleted}
+        </if>
+        <if test="createBy != null and createBy != ''">
+            and CREATE_BY = #{createBy}
+        </if>
+        <if test="createTime != null and createTime != ''">
+            and CREATE_TIME = #{createTime}
+        </if>
+        <if test="updateBy != null and updateBy != ''">
+            and UPDATE_BY = #{updateBy}
+        </if>
+        <if test="updateTime != null and updateTime != ''">
+            and UPDATE_TIME = #{updateTime}
+        </if>
+        <if test="nickname != null and nickname != ''">
+            and nickname = #{nickname}
+        </if>
+    </select>
+    <select id="queryUserRoleByRepositoryAndPrivilege" resultType="com.folib.dto.UserDTO">
+        select
+        user.*,
+        GROUP_CONCAT(distinct user.roles) as roles,
+        GROUP_CONCAT(distinct user.authorities) as authorities
+        from (
+        select
+        fu.*,
+        GROUP_CONCAT(distinct rrr.role_id) as roles,
+        GROUP_CONCAT(distinct CONCAT_WS('', rrr.storage_privilege, rrr.repository_privilege, rrr.path_privilege)) as authorities
+        from
+        folib_user fu
+        left join role_resource_ref rrr on
+        fu.id = rrr.entity_id
+        and rrr.ref_type = 1
+        left join resource r on
+        r.id = rrr.resource_id
+        where
+        <foreach collection="repositoryPrivilegeDTOS" item="repositoryPrivilegeDTO" open="(" separator="or" close=")">
+            ( r.storage_id = #{repositoryPrivilegeDTO.storage}
+            and r.repository_id = #{repositoryPrivilegeDTO.repository}
+            and rrr.repository_privilege = #{repositoryPrivilegeDTO.privilege} )
+        </foreach>
+        group by
+        fu.id
+        union
+        select
+        fu.*,
+        GROUP_CONCAT(distinct rrr.role_id) as roles,
+        GROUP_CONCAT(distinct CONCAT_WS('', rrr.storage_privilege, rrr.repository_privilege, rrr.path_privilege)) as authorities
+        from
+        folib_user fu
+        right join user_group_ref ugr on
+        ugr.user_id = fu.id
+        left join role_resource_ref rrr on
+        ugr.user_group_id = rrr.entity_id
+        and rrr.ref_type = 2
+        left join resource r on
+        r.id = rrr.resource_id
+        where
+        <foreach collection="repositoryPrivilegeDTOS" item="repositoryPrivilegeDTO" open="(" separator="or" close=")">
+            ( r.storage_id = #{repositoryPrivilegeDTO.storage}
+            and r.repository_id = #{repositoryPrivilegeDTO.repository}
+            and rrr.repository_privilege = #{repositoryPrivilegeDTO.privilege} )
+        </foreach>
+        group by
+        fu.id) user group by user.id
+    </select>
+    <select id="queryUsersNameResource" resultType="com.folib.dto.UserDTO">
+        SELECT
+        fu.*,
+        rrr.id ,
+        rrr.storage_id,
+        rrr.repository_id,
+        rrr.`path`,
+        GROUP_CONCAT(distinct ug.id) AS userGroupIds,
+        GROUP_CONCAT(distinct ug.group_name) AS userGroups,
+        GROUP_CONCAT(distinct rrr.role_id) AS roles,
+        GROUP_CONCAT(DISTINCT CONCAT_WS('', rrr.storage_privilege)) AS storagePrivilege,
+        GROUP_CONCAT(DISTINCT CONCAT_WS('', rrr.repository_privilege)) AS repositoryPrivilege,
+        GROUP_CONCAT(DISTINCT CONCAT_WS('', rrr.path_privilege)) AS pathPrivilege,
+        GROUP_CONCAT(DISTINCT CONCAT_WS('', rrr.storage_privilege, rrr.repository_privilege, rrr.path_privilege)) AS authorities
+        FROM folib_user fu
+        LEFT JOIN
+        (
+        SELECT rrr1.role_id,
+        rrr1.storage_privilege,
+        rrr1.repository_privilege,
+        rrr1.path_privilege,
+        rrr1.entity_id AS user_id,
+        r.id ,
+        r.storage_id,
+        r.repository_id,
+        r.`path`
+        FROM role_resource_ref rrr1 left join resource r on r.id = rrr1.resource_id WHERE rrr1.ref_type = 1
+        UNION
+        all SELECT rrr2.role_id,
+        rrr2.storage_privilege,
+        rrr2.repository_privilege,
+        rrr2.path_privilege,
+        ugr.user_id AS user_id,
+        r.id ,
+        r.storage_id,
+        r.repository_id,
+        r.`path`
+        FROM user_group_ref ugr
+        JOIN role_resource_ref rrr2
+        ON ugr.user_group_id = rrr2.entity_id left join resource r on r.id = rrr2.resource_id
+        WHERE rrr2.ref_type = 2
+        ) rrr
+        ON fu.id = rrr.user_id
+        left join user_group_ref ugr on fu.id = ugr.user_id
+        left join user_group ug on ug.id = ugr.user_group_id
+        <where>
+            <if test="storageId != null and storageId != ''">
+                and rrr.storage_id = #{storageId}
+            </if>
+            <if test="repositoryId != null and repositoryId != ''">
+                and rrr.repository_id = #{repositoryId}
+            </if>
+            <if test="path != null and path != ''">
+                and rrr.path = #{path}
+            </if>
+            <if test="usernames != null and usernames.size() > 0">
+                and fu.username in
+                <foreach collection="usernames" item="username" open="(" separator="," close=")">
+                    #{username}
+                </foreach>
+            </if>
+        </where>
+        group by fu.id,rrr.id
+    </select>
+
+    <!--新增数据-->
+    <insert id="insert" keyProperty="id" useGeneratedKeys="true">
+        insert into folib_user(id,username,password,original_password,avatar,email,user_type,enabled,source_id,deleted,create_by,update_by,nickname)
+        values (#{id},#{username},#{password},#{originalPassword},#{avatar},#{email},#{userType},#{enabled},#{sourceId},#{deleted},#{createBy},#{updateBy},#{nickname})
+    </insert>
+
+    <!-- 批量新增数据 -->
+    <insert id="insertBatch" keyProperty="id" useGeneratedKeys="true">
+        insert into folib_user(id,username,password,original_password,avatar,email,user_type,enabled,source_id,deleted,create_by,create_time,update_by,update_time,nickname)
+        values
+        <foreach collection="entities" item="entity" separator=",">
+            (#{entity.id},#{entity.username},#{entity.password},#{entity.originalPassword},#{entity.avatar},#{entity.email},#{entity.userType},#{entity.enabled},#{entity.sourceId},#{entity.deleted},#{entity.createBy},#{entity.createTime},#{entity.updateBy},#{entity.updateTime},#{entity.nickname})
+        </foreach>
+    </insert>
+
+    <!-- 批量新增或按主键更新数据 -->
+    <insert id="insertOrUpdateBatch" keyProperty="id" useGeneratedKeys="true">
+        insert into folib_user(id,username,password,original_password,avatar,email,user_type,enabled,source_id,deleted,create_by,update_by,nickname)
+        values
+        <foreach collection="entities" item="entity" separator=",">
+            (#{entity.id},#{entity.username},#{entity.password},#{entity.originalPassword},#{entity.avatar},#{entity.email},#{entity.userType},#{entity.enabled},#{entity.sourceId},#{entity.deleted},#{entity.createBy},#{entity.updateBy},#{entity.nickname})
+        </foreach>
+        on duplicate key update
+        id=values(id),
+        username=values(username),
+        password=values(password),
+        original_password=values(original_password),
+        avatar=values(avatar),
+        email=values(email),
+        user_type=values(user_type),
+        enabled=values(enabled),
+        source_id=values(source_id),
+        deleted=values(deleted),
+        create_by=values(create_by),
+        update_by=values(update_by),
+        nickname=values(nickname)
+    </insert>
+
+    <!-- 更新数据 -->
+    <update id="update">
+        update folib_user
+        <set>
+            <if test="id != null and id != ''">
+                id = #{id},
+            </if>
+            <if test="username != null and username != ''">
+                username = #{username},
+            </if>
+            <if test="password != null and password != ''">
+                password = #{password},
+            </if>
+            <if test="originalPassword != null and originalPassword != ''">
+                original_password = #{originalPassword},
+            </if>
+            <if test="avatar != null and avatar != ''">
+                avatar = #{avatar},
+            </if>
+            <if test="email != null and email != ''">
+                email = #{email},
+            </if>
+            <if test="userType != null and userType != ''">
+                user_type = #{userType},
+            </if>
+            <if test="enabled != null and enabled != ''">
+                enabled = #{enabled},
+            </if>
+            <if test="sourceId != null and sourceId != ''">
+                source_id = #{sourceId},
+            </if>
+            <if test="deleted != null and deleted != ''">
+                deleted = #{deleted},
+            </if>
+            <if test="createBy != null and createBy != ''">
+                CREATE_BY = #{createBy},
+            </if>
+            <if test="createTime != null">
+                CREATE_TIME = #{createTime},
+            </if>
+            <if test="updateBy != null and updateBy != ''">
+                UPDATE_BY = #{updateBy},
+            </if>
+            <if test="updateTime != null">
+                UPDATE_TIME = #{updateTime},
+            </if>
+            <if test="nickname != null and nickname != ''">
+                nickname = #{nickname},
+            </if>
+        </set>
+        where id = #{id}
+    </update>
+
+    <!--通过主键删除-->
+    <delete id="deleteById">
+        delete from folib_user where id = #{id}
+    </delete>
+</mapper>

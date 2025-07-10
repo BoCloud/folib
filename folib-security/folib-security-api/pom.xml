@@ -1,0 +1,439 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+    <modelVersion>4.0.0</modelVersion>
+
+ <parent>
+        <groupId>com.folib</groupId>
+        <artifactId>folib-security</artifactId>
+        <version>3.0-SNAPSHOT</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+
+    <artifactId>folib-security-api</artifactId>
+
+    <name>Folib: Security API</name>
+    <inceptionYear>2019</inceptionYear>
+
+     <scm>
+        <url>http://git.folib.com/folib/folib-server</url>
+        <connection>scm:git:git://git.folib.com/folib/folib-server.git</connection>
+        <developerConnection>scm:git:git://git.folib.com/folib/folib-server.git</developerConnection>
+    </scm>
+    <licenses>
+        <license>
+             <name>GNU General Public License, Version 3</name>
+             <url>https://www.gnu.org/licenses/gpl-3.0.html</url>
+            <distribution>repo</distribution>
+            <comments>GPL v3 is a strong copyleft license that requires derived works to also be open source under the GPL.</comments>
+        </license>
+    </licenses>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-source-plugin</artifactId>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>com.mycila</groupId>
+                <artifactId>license-maven-plugin</artifactId>
+                <version>5.0.0</version>
+                <configuration>
+                    <header>../../license-header.txt</header>
+                    <includes>
+                        <include>**/*.java</include>
+                    </includes>
+                    <mapping>
+                        <java>SLASHSTAR_STYLE</java>
+                    </mapping>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>format</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
+    <dependencies>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>folib-commons-core</artifactId>
+             <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>folib-configuration</artifactId>
+             <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>folib-gremlin-service</artifactId>
+             <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>folib-commons-resources</artifactId>
+             <version>${project.version}</version>
+        </dependency>
+<!--        <dependency>-->
+<!--            <groupId>${project.groupId}</groupId>-->
+<!--            <artifactId>folib-testing-core</artifactId>-->
+<!--             <version>${project.version}</version>-->
+<!--            <scope>test</scope>-->
+<!--        </dependency>-->
+
+        <dependency>
+            <groupId>org.glassfish.jersey.core</groupId>
+            <artifactId>jersey-common</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.glassfish.jersey.containers</groupId>
+            <artifactId>jersey-container-servlet-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.glassfish.jersey.core</groupId>
+            <artifactId>jersey-client</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-context</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-context-support</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+        </dependency>
+    </dependencies>
+
+    <profiles>
+        <!-- These two profiles need to be on top: -->
+        <profile>
+            <id>reserve-ports</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>build-helper-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>reserve-network-port</id>
+                                <goals>
+                                    <goal>reserve-network-port</goal>
+                                </goals>
+                                <phase>process-resources</phase>
+                                <configuration>
+                                    <portNames>
+                                        <portName>port.littleproxy.listen</portName>
+                                        <portName>port.littleproxy.shutdown</portName>
+                                        <portName>port.unboundid</portName>
+                                    </portNames>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>set-default-ports</id>
+            <activation>
+                <property>
+                    <name>skipTests</name>
+                    <value>!true</value>
+                </property>
+
+                <activeByDefault>true</activeByDefault>
+            </activation>
+
+            <properties>
+                <!-- Default ports for local development: -->
+                <port.littleproxy.listen>8180</port.littleproxy.listen>
+                <port.littleproxy.shutdown>8181</port.littleproxy.shutdown>
+                <port.unboundid>40636</port.unboundid>
+            </properties>
+        </profile>
+        <!-- These two profiles need to be on top. -->
+
+        <profile>
+            <id>unit-tests</id>
+            <activation>
+                <property>
+                    <name>skipTests</name>
+                    <value>!true</value>
+                </property>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+
+            <build>
+                <plugins>
+<!--                    <plugin>-->
+<!--                        <groupId>org.carlspring.maven</groupId>-->
+<!--                        <artifactId>unboundid-maven-plugin</artifactId>-->
+
+<!--                        <configuration>-->
+<!--                            <baseDn>dc=carlspring,dc=com</baseDn>-->
+<!--                            <portSSL>${port.unboundid}</portSSL>-->
+<!--                            <useSSL>true</useSSL>-->
+<!--                            <keyStorePassword>password</keyStorePassword>-->
+<!--                            <keyStorePath>${folib.home}/etc/ssl/keystore.jks</keyStorePath>-->
+<!--                            <trustStorePath>${folib.home}/etc/ssl/truststore.jks</trustStorePath>-->
+<!--                        </configuration>-->
+
+<!--                        <executions>-->
+<!--                            <execution>-->
+<!--                                <id>unboundid-start</id>-->
+
+<!--                                <phase>test-compile</phase>-->
+<!--                                <goals>-->
+<!--                                    <goal>start</goal>-->
+<!--                                </goals>-->
+
+<!--                                <configuration>-->
+<!--                                    <ldifFiles>-->
+<!--                                        <ldifFile>${basedir}/src/test/resources/ldap/unboundid.ldif</ldifFile>-->
+<!--                                    </ldifFiles>-->
+<!--                                </configuration>-->
+<!--                            </execution>-->
+<!--                        </executions>-->
+<!--                    </plugin>-->
+
+                    <plugin>
+                        <groupId>org.carlspring.maven</groupId>
+                        <artifactId>little-proxy-maven-plugin</artifactId>
+
+                        <configuration>
+                            <hash>5FD4F8E2A</hash>
+                        </configuration>
+
+                        <executions>
+                            <execution>
+                                <id>start</id>
+                                <phase>test-compile</phase>
+                                <goals>
+                                    <goal>start</goal>
+                                </goals>
+
+                                <configuration>
+                                    <port>${port.littleproxy.listen}</port>
+                                    <shutdownPort>${port.littleproxy.shutdown}</shutdownPort>
+
+                                    <userCredentials>
+                                        <testuser>password</testuser>
+                                    </userCredentials>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+
+                        <configuration>
+                            <systemPropertyVariables>
+                                <folib.home>${project.build.directory}/folib</folib.home>
+                                <folib.vault>${project.build.directory}/folib-data</folib.vault>
+
+                                <port.littleproxy>${port.littleproxy.listen}</port.littleproxy>
+                                <port.unboundid>${port.unboundid}</port.unboundid>
+
+                                <!-- override jre/lib/net.properties -->
+                                <jdk.http.auth.tunneling.disabledSchemes>none</jdk.http.auth.tunneling.disabledSchemes>
+                            </systemPropertyVariables>
+
+                            <useUnlimitedThreads>false</useUnlimitedThreads>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>fail-safe-integration-tests-configuration</id>
+            <activation>
+                <property>
+                    <name>integration.tests</name>
+                </property>
+            </activation>
+
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-failsafe-plugin</artifactId>
+
+                        <configuration>
+                            <systemPropertyVariables>
+                                <folib.home>${project.build.directory}/folib</folib.home>
+
+                                <port.littleproxy>${port.littleproxy.listen}</port.littleproxy>
+                                <port.unboundid>${port.unboundid}</port.unboundid>
+
+                                <!-- override jre/lib/net.properties -->
+                                <jdk.http.auth.tunneling.disabledSchemes>none</jdk.http.auth.tunneling.disabledSchemes>
+                            </systemPropertyVariables>
+
+                            <useUnlimitedThreads>false</useUnlimitedThreads>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <profile>
+            <id>stop-services-for-unit-tests</id>
+            <activation>
+                <property>
+                    <name>!integration.tests</name>
+                </property>
+            </activation>
+
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.carlspring.maven</groupId>
+                        <artifactId>unboundid-maven-plugin</artifactId>
+
+                        <configuration>
+                            <baseDn>dc=carlspring,dc=com</baseDn>
+                            <portSSL>${port.unboundid}</portSSL>
+                            <useSSL>true</useSSL>
+                            <keyStorePassword>password</keyStorePassword>
+                            <keyStorePath>${folib.home}/etc/ssl/keystore.jks</keyStorePath>
+                            <trustStorePath>${folib.home}/etc/ssl/truststore.jks</trustStorePath>
+                        </configuration>
+
+                        <executions>
+                            <execution>
+                                <id>unboundid-stop</id>
+
+                                <phase>test</phase>
+                                <goals>
+                                    <goal>stop</goal>
+                                </goals>
+
+                                <configuration>
+                                    <failIfNotRunning>false</failIfNotRunning>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+
+                    <plugin>
+                        <groupId>org.carlspring.maven</groupId>
+                        <artifactId>little-proxy-maven-plugin</artifactId>
+
+                        <configuration>
+                            <hash>5FD4F8E2A</hash>
+                        </configuration>
+
+                        <executions>
+                            <execution>
+                                <id>stop</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>stop</goal>
+                                </goals>
+
+                                <configuration>
+                                    <failIfNotRunning>false</failIfNotRunning>
+                                    <shutdownPort>${port.littleproxy.shutdown}</shutdownPort>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>stop-services-for-integration-tests</id>
+            <activation>
+                <property>
+                    <name>integration.tests</name>
+                </property>
+            </activation>
+
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.carlspring.maven</groupId>
+                        <artifactId>unboundid-maven-plugin</artifactId>
+
+                        <configuration>
+                            <baseDn>dc=carlspring,dc=com</baseDn>
+                            <portSSL>${port.unboundid}</portSSL>
+                            <useSSL>true</useSSL>
+                            <keyStorePassword>password</keyStorePassword>
+                            <keyStorePath>${folib.home}/etc/ssl/keystore.jks</keyStorePath>
+                            <trustStorePath>${folib.home}/etc/ssl/truststore.jks</trustStorePath>
+                        </configuration>
+
+                        <executions>
+                            <execution>
+                                <id>unboundid-stop</id>
+
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>stop</goal>
+                                </goals>
+
+                                <configuration>
+                                    <failIfNotRunning>false</failIfNotRunning>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+
+                    <plugin>
+                        <groupId>org.carlspring.maven</groupId>
+                        <artifactId>little-proxy-maven-plugin</artifactId>
+
+                        <configuration>
+                            <hash>5FD4F8E2A</hash>
+                        </configuration>
+
+                        <executions>
+                            <execution>
+                                <id>stop</id>
+
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>stop</goal>
+                                </goals>
+
+                                <configuration>
+                                    <failIfNotRunning>false</failIfNotRunning>
+                                    <shutdownPort>${port.littleproxy.shutdown}</shutdownPort>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+
+</project>

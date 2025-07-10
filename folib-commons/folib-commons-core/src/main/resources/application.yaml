@@ -1,0 +1,297 @@
+server:
+  port: 38080
+  ssl:
+    enabled: false
+  connection-timeout: 50000
+  session:
+    timeout: 50000
+  jetty:
+    max-http-form-post-size: 524288000 # Maximum size in bytes of the HTTP post or put content.
+http:
+  port: 38081
+spring:
+  datasource:
+    type: com.alibaba.druid.pool.DruidDataSource
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://${folib.mysql.host:127.0.0.1}:${folib.mysql.port:3306}/${folib.mysql.db:folib}?createDatabaseIfNotExist=true&useSSL=false&tinyInt1isBit=false&allowPublicKeyRetrieval=true&useUnicode=true&characterEncoding=UTF8
+    username: ${folib.mysql.user:root}
+    password: ${folib.mysql.password:folib@v587}
+    schema: classpath:db/sql/database-init.sql
+  liquibase:
+    change-log: classpath:db/changelog-master.xml
+  thymeleaf:
+    enabled: true
+    prefix: classpath:/views/
+    suffix: .html
+    cache: false
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
+    time-zone: GMT+8
+  servlet:
+    multipart:
+      enabled: true
+  # redis 配置
+  redis:
+    enabled: ${folib.redis.enabled:false}
+    #    # 地址
+    #    host: ${folib.redis.host:192.168.5.8}
+    #    # 端口，默认为6379
+    #    port: ${folib.redis.port:6379}
+    #    # 数据库索引
+    #    database: 0
+    #    # 密码
+    #    password: ${folib.redis.password:123456}
+    #    # 连接超时时间
+    #    timeout: 10s
+    #    lettuce:
+    #      pool:
+    #        # 连接池中的最小空闲连接
+    #        min-idle: 0
+    #        # 连接池中的最大空闲连接
+    #        max-idle: 8
+    #        # 连接池的最大数据库连接数
+    #        max-active: 8
+    #        # #连接池最大阻塞等待时间（使用负值表示没有限制）
+    #        max-wait: -1ms
+    cluster:
+      nodeAddresses: ${folib.redis.host:redis://127.0.0.1:6379}
+    #      nodeAddresses: ${folib.redis.host:redis://192.168.5.100:7000,redis://192.168.5.100:7001,redis://192.168.5.100:7002,redis://192.168.5.100:7003,redis://192.168.5.100:7004,redis://192.168.5.100:7005}
+    password: ${folib.redis.password:123456}
+mybatis:
+  mapper-locations: "classpath*:mapper/*.xml"
+  configuration:
+    map-underscore-to-camelcase: true
+    #log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+mapper:
+  mappers: com.folib.common.base.CommonMapper
+  identity: MYSQL
+
+scan:
+  base-proxy: ${folib.nvd:nvd.folib.com/feeds/json/cve/1.1}    #扫描网络代理地址
+  storage-base: ${folib.vault}/
+  thread-pool: 200
+
+folib:
+  enableAnalysis: ${folib.enableAnalysis:false}
+  promotion:
+    queue-size: 1000
+    thread: 2
+    retry-count: 3
+    ws-request-timout: 10
+    ws-request-timout-of-artifact-upload: 600
+  basedir: .
+  home: ${folib.basedir}/folib
+  vault: ${folib.basedir}/folib-data
+  etc: ${folib.home}/etc
+  temp: ${folib.vault}/tmp
+  artifactDownloadImmediatelyUpdate: false
+  dockerBrowseCompatibility: false
+  multipart:
+    maxFileSize: 2048             # 单个上传文件大小 （MB）
+    maxRequestSize: 2048        # 单次个上传文件总大小 （MB）
+  cluster:
+    openflag: ${folib.openflag:true}
+  docker:
+    getAppPackagePathConfig: usr/local/app # docker 扫描提供获取指定路径下的应用包 多个路径逗号隔开
+  distributed:
+    lockip: ${folib.scheduled.lockip:10.8.10.166} # 实例 host ip
+  config:
+    file: ${folib.home}/etc/conf/folib.yaml
+  storage:
+    booter:
+      basedir: ${folib.vault}/storages
+  host: localhost
+  port: 38080
+  nuget:
+    download:
+      feed: false
+  version: @{project.version}
+  revision: @{folib.revision}
+  users:
+    external:
+      cache:
+        seconds: 3600
+  sse:
+    timeoutMillis: 600000
+  graph:
+    gremlin:
+      server:
+        enabled: true
+  threadPool:
+    async:
+      corePoolSize: ${threadPool.common.core:12}
+      maxPoolSize: ${threadPool.common.max:12}
+      queueCapacity: ${threadPool.common.queue:100000000}
+      keepAliveSeconds: 0
+      threadNamePrefix: async_
+      awaitTerminationSeconds: 6
+    asyncEventListener:
+      corePoolSize: ${threadPool.common.core:12}
+      maxPoolSize: ${threadPool.common.max:12}
+      queueCapacity: ${threadPool.common.queue:100000000}
+      keepAliveSeconds: 0
+      threadNamePrefix: asyncEventListener_
+      awaitTerminationSeconds: 6
+    asyncConfig:
+      corePoolSize: 2
+      maxPoolSize: 2
+      queueCapacity: 1000
+      keepAliveSeconds: 0
+      threadNamePrefix: asyncConfig_
+      awaitTerminationSeconds: 6
+    asyncFetchRemotePackage:
+      corePoolSize: ${threadPool.common.core:12}
+      maxPoolSize: ${threadPool.common.max:12}
+      queueCapacity: ${threadPool.common.queue:100000000}
+      keepAliveSeconds: 0
+      threadNamePrefix: asyncFetchRemotePackage_
+      awaitTerminationSeconds: 6
+    asyncScan:
+      corePoolSize: ${threadPool.scan.core:2}
+      maxPoolSize: ${threadPool.scan.max:2}
+      queueCapacity: ${threadPool.scan.queue:12}
+      keepAliveSeconds: 0
+      threadNamePrefix: asyncScan_
+      awaitTerminationSeconds: 0
+    asyncWsCommand:
+      corePoolSize: 12
+      maxPoolSize: 200
+      queueCapacity: 200000
+      keepAliveSeconds: 0
+      threadNamePrefix: asyncWsCommand_
+      awaitTerminationSeconds: 6
+    asyncApiBrowse:
+      #       corePoolSize: 12
+      #       maxPoolSize: 12
+      queueCapacity: 500
+      keepAliveSeconds: 0
+      threadNamePrefix: asyncApiBrowse_
+      awaitTerminationSeconds: 6
+    asyncCopy:
+      corePoolSize: ${threadPool.common.core:12}
+      maxPoolSize: ${threadPool.common.max:12}
+      queueCapacity: ${threadPool.common.queue:100000000}
+      keepAliveSeconds: 0
+      threadNamePrefix: asyncCopy_
+      awaitTerminationSeconds: 6
+    asyncEventLog:
+      corePoolSize: ${threadPool.eventLog.core:2}
+      maxPoolSize: ${threadPool.eventLog.max:2}
+      queueCapacity: ${threadPool.eventLog.queue:100}
+      keepAliveSeconds: 0
+      threadNamePrefix: asyncEventLog_
+      awaitTerminationSeconds: 6
+    asyncWsHeartbeat:
+      corePoolSize: ${threadPool.common.max:12}
+      maxPoolSize: ${threadPool.common.max:12}
+      queueCapacity: ${threadPool.common.queue:100000000}
+      keepAliveSeconds: 0
+      threadNamePrefix: asyncWsHeartbeat_
+      awaitTerminationSeconds: 6
+    asyncPromotion:
+      corePoolSize: ${threadPool.common.core:12}
+      maxPoolSize: ${threadPool.common.max:12}
+      queueCapacity: ${threadPool.common.queue:100000000}
+      keepAliveSeconds: 0
+      threadNamePrefix: asyncPromotion_
+      awaitTerminationSeconds: 6
+    asyncDeleteArtifact:
+      corePoolSize: ${threadPool.common.core:12}
+      maxPoolSize: ${threadPool.common.max:12}
+      queueCapacity: ${threadPool.common.queue:100000}
+      keepAliveSeconds: 0
+      threadNamePrefix: asyncDeleteArtifact_
+      awaitTerminationSeconds: 6
+# Changes to these properties must also be applied to [folib/folib-web-integration-tests] and possibly the pipeline.
+# Please ping us on our chat channel (https://chat.carlspring.org/) to confirm.
+logging:
+  #level:
+  # root: debug
+  #org.springframework: debug
+  debug: false
+  console:
+    enabled: true
+  file:
+    name: ${logging.dir}/folib.log
+    enabled: true
+    size:
+      single: 128MB
+      total: 1GB
+    history: 31
+  dir: ${folib.vault}/logs
+java:
+  io:
+    tmpdir: ${folib.vault}/tmp
+ehcache:
+  disk:
+    store:
+      dir: ${folib.vault}/cache
+management:
+  metrics:
+    tags:
+      application: folib-server
+  health:
+    neo4j:
+      enabled: false
+    ldap:
+      enabled: false
+  endpoint:
+    health:
+      show-details: always
+    shutdown:
+      enabled: true
+  endpoints:
+    web:
+      exposure:
+        include: health,info,beans,metrics,trace,scheduledtasks,threaddump,loggers,startup,prometheus
+      base-path: /api/monitoring
+  prometheus:
+    enabled: true
+    path: /api/monitoring/prometheus
+cacheManagerConfiguration:
+  groupConfig:
+    name: folib
+    password: password
+  tcpIpPort: ${folib.cache.port:5701}
+  enableTcpIpConfig: true
+  tcpIp:
+    tcpIpTimeoutSeconds: 20
+    #ip地址逗号隔开
+    members: ${folib.cache.cluster:127.0.0.1:5701}
+
+  instanceId: folib
+  caches:
+    remoteRepositoryAliveness:
+      maxSizeLimit: 1000
+      maxSizePolicy: FREE_HEAP_SIZE
+      evictionPolicy: LFU
+    tags:
+      maxSizeLimit: 1000
+      maxSizePolicy: FREE_HEAP_SIZE
+      evictionPolicy: LFU
+    authentications:
+      cacheLocalEntries: true
+      evictionConfigSize: 1000
+      evictionConfigMaxSizePolicy: ENTRY_COUNT
+      invalidateOnChange: true
+      timeToLiveSeconds: 10
+rsa:
+  privateKey: MIICdQIBADANBgkqhkiG9w0BAQEFAASCAl8wggJbAgEAAoGBAIyu/3z87O6l94pIricIgo1VpYvNuK/StdlehIaQM6R9PmDAr5/phnFYWJEh+ZhMUIl6c/qIvcQr0y0Q2FRPF6085l4QLvbJI+FQ9xSspKWFGEzUuoEVogOtjlBz0Fl3VXO0wmZSrCnUhF14PWWBNz5e0X1ZIVEreGWj4XrCR+NjAgMBAAECgYB53Kig2vJdstQfK9/3Hc8AoHzbAiOF4e710ILZkRW62WZsJty6l22GxzFI3nY3L3vf6nuGPGatBA1UDzBkr3Jgqm0TSKSqlZokmCs3v1/gtkr/TSt36F58lAswR4I5iPdcDXkNfViidzqnvCahpwWpUAjteeUsx1hBQM1p8gWvOQJBANFs78S/EXfmkxy0d4Pf7uoFRXlrMC4SpP/9AjKHaRexbLesG4jYXLclx16pZXj7VqOWBORcVBKn9y1guFOnYdUCQQCr+G3EsX++e8G32lYmYnNp082Fg+tGSz2RG/LrwDqJOSyuB87LFJcRphNdo266f23SpQI2luqh91ByiBatPRRXAkBNlZTyB3LaP4JqlPTd1xz0d4V4aNxNhTy5VSr2OzIUw/cpyEnfFYCrnQRSLmFYQ4yiR9aCHy5KRw2MMxO2cgENAkAs9RRVQIYB2T6qftTY0hIUD4ACMJuYU+Ezh1f5U9a5uw24LWhdZPOddIpJh4lSDjA6ylKKzOdoEkygtH0hKv+fAkBcHH9QUQsUE40ffNcITptbMJGfQzkl3yYCwuM8xrK3KyvYLSk5qL+xcCnTloboTjVNuwgJWuiujBy6DlAZTAj/
+  publicKey: MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCMrv98/OzupfeKSK4nCIKNVaWLzbiv0rXZXoSGkDOkfT5gwK+f6YZxWFiRIfmYTFCJenP6iL3EK9MtENhUTxetPOZeEC72ySPhUPcUrKSlhRhM1LqBFaIDrY5Qc9BZd1VztMJmUqwp1IRdeD1lgTc+XtF9WSFRK3hlo+F6wkfjYwIDAQAB
+swagger:
+  enable: ${folib.swagger.enable:false}
+thirdParty:
+  foeyes:
+    enable: ${folib.thirdParty.foeyes.enable:false}
+    baseUrl: ${folib.thirdParty.foeyes.baseUrl:http://127.0.0.1:9527}
+    accessKey: ${folib.thirdParty.foeyes.accessKey:racdvMVzV9Wnqu8NAfQkyrsD0a2N0fNE}
+    username: ""
+    password: ""
+  qax:
+    enable: ${folib.thirdParty.qax.enable:false}
+    baseUrl: ${folib.thirdParty.qax.baseUrl:https://127.0.0.1:8443/zuul/scan-center/task/sbom/analysis}
+    privateToken: ${folib.thirdParty.qax.private_token:}
+    projectId: ${folib.thirdParty.qax.projectId:}
+    username: ${folib.thirdParty.qax.username:}
+    password: ${folib.thirdParty.qax.password:}
+    tags: ${folib.thirdParty.qax.tags:folib-sbom}

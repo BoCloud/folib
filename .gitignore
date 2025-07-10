@@ -1,0 +1,55 @@
+# common ignore
+*~
+MANIFEST.MF
+target/
+tmp/
+*.versionsBackup
+.m2/
+
+# Java Files #
+*.jar
+*.war
+*.class
+dist
+
+# eclipse specific
+.settings
+.project
+.classpath
+.metadata
+.factorypath
+
+# idea specific
+.idea/*
+!.idea/codeStyleSettings.xml
+*.iml
+*.ipr
+*.iws
+
+# Locally stored "Eclipse launch configurations"
+*.launch
+
+# unix specific
+.DS_Store
+.directory
+
+# static plugins
+.pmd
+
+# log files
+logs/
+*.log
+
+lib/*
+!folib-security/folib-authentication-registry/src/test/resources/webapp/WEB-INF/lib/folib-example-authentication-provider-1.0-SNAPSHOT.jar
+!folib-storage/folib-storage-layout-providers/folib-storage-maven-layout/folib-storage-maven-layout-provider/src/test/resources/artifacts/properties-injector-1.7.jar
+!folib-storage/folib-storage-layout-providers/folib-storage-maven-layout/folib-storage-maven-layout-provider/src/test/resources/artifacts/slf4j-log4j12-1.7.26.jar
+
+.idea
+/folib/
+/folib-data/
+/folib-web-vue/node_modules/
+/folib-web-vue/dist/
+/folib-web-vue/yarn.lock
+*/node_modules/
+**/docs/

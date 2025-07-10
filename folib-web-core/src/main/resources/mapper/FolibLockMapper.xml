@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.folib.mapper.FolibLockMapper">
+
+    <insert id="insertLock">
+        INSERT INTO
+            folib_lock
+            (
+             name,
+             lock_until,
+             locked_at,
+             locked_by
+             )
+        VALUES(
+               #{name},
+               #{lockUntil,jdbcType=TIMESTAMP},
+               #{lockedAt,jdbcType=TIMESTAMP},
+               #{lockedBy}
+               )
+    </insert>
+
+    <resultMap id="folibLock" type="com.folib.entity.FolibLock">
+        <result property="name" column="name" />
+        <result property="lockUntil" column="lock_until" javaType="java.sql.Timestamp"/>
+        <result property="lockedAt" column="locked_at" javaType="java.sql.Timestamp"/>
+        <result property="lockedBy" column="locked_by" />
+    </resultMap>
+
+    <select id="selectFolibLock" resultMap="folibLock">
+        SELECT
+            name,
+            lock_until,
+            locked_at,
+            locked_by
+        FROM
+            folib_lock
+        WHERE name =#{name}
+    </select>
+
+    <delete id="deleteFolibLock">
+        DELETE FROM
+                   folib_lock
+        WHERE
+            name=#{name}
+    </delete>
+
+    <update id="updateFolibLock">
+        UPDATE
+            folib_lock
+        SET lock_until=#{lockUntil,jdbcType=TIMESTAMP},
+            locked_at=#{lockedAt,jdbcType=TIMESTAMP},
+            locked_by=#{lockedBy}
+        WHERE name=#{name}
+    </update>
+
+</mapper>

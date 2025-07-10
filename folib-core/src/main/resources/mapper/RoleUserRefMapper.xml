@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.folib.mapper.RoleUserRefMapper">
+    <resultMap type="com.folib.entity.RoleUserRef" id="RoleUserRefMap">
+        <result property="id" column="id"/>
+        <result property="roleId" column="role_id"/>
+        <result property="entityId" column="entity_id"/>
+        <result property="refType" column="ref_type"/>
+        <result property="createBy" column="CREATE_BY"/>
+        <result property="createTime" column="CREATE_TIME"/>
+    </resultMap>
+
+    <!-- 通过ID查询单条数据 -->
+    <select id="queryById" resultMap="RoleUserRefMap">
+        select
+            id,role_id,entity_id,ref_type,CREATE_BY,CREATE_TIME
+        from role_user_ref
+        where id = #{id}
+    </select>
+
+    <!--分页查询指定行数据-->
+    <select id="queryAllByLimit" resultMap="RoleUserRefMap">
+        select
+        id,role_id,entity_id,ref_type,CREATE_BY,CREATE_TIME
+        from role_user_ref
+        <where>
+            <if test="id != null and id != ''">
+                and id = #{id}
+            </if>
+            <if test="roleId != null and roleId != ''">
+                and role_id = #{roleId}
+            </if>
+            <if test="entityId != null and entityId != ''">
+                and entity_id = #{entityId}
+            </if>
+            <if test="refType != null and refType != ''">
+                and ref_type = #{refType}
+            </if>
+            <if test="createBy != null and createBy != ''">
+                and CREATE_BY = #{createBy}
+            </if>
+            <if test="createTime != null and createTime != ''">
+                and CREATE_TIME = #{createTime}
+            </if>
+        </where>
+        limit #{pageable.offset}, #{pageable.pageSize}
+    </select>
+
+    <!--统计总行数-->
+    <select id="count" resultType="java.lang.Long">
+        select count(1)
+        from role_user_ref
+        <where>
+            <if test="id != null and id != ''">
+                and id = #{id}
+            </if>
+            <if test="roleId != null and roleId != ''">
+                and role_id = #{roleId}
+            </if>
+            <if test="entityId != null and entityId != ''">
+                and entity_id = #{entityId}
+            </if>
+            <if test="refType != null and refType != ''">
+                and ref_type = #{refType}
+            </if>
+            <if test="createBy != null and createBy != ''">
+                and CREATE_BY = #{createBy}
+            </if>
+            <if test="createTime != null and createTime != ''">
+                and CREATE_TIME = #{createTime}
+            </if>
+        </where>
+    </select>
+
+    <!--新增数据-->
+    <insert id="insert" keyProperty="id" useGeneratedKeys="true">
+        insert into role_user_ref(id,role_id,entity_id,ref_type,CREATE_BY,CREATE_TIME)
+        values (#{id},#{roleId},#{entityId},#{refType},#{createBy},#{createTime})
+    </insert>
+
+    <!-- 批量新增数据 -->
+    <insert id="insertBatch" keyProperty="id" useGeneratedKeys="true">
+        insert into role_user_ref(id,role_id,entity_id,ref_type,CREATE_BY,CREATE_TIME)
+        values
+        <foreach collection="entities" item="entity" separator=",">
+            (#{entity.id},#{entity.roleId},#{entity.entityId},#{entity.refType},#{entity.createBy},#{entity.createTime})
+        </foreach>
+    </insert>
+
+    <!-- 批量新增或按主键更新数据 -->
+    <insert id="insertOrUpdateBatch" keyProperty="id" useGeneratedKeys="true">
+        insert into role_user_ref(id,role_id,entity_id,ref_type,CREATE_BY,CREATE_TIME)
+        values
+        <foreach collection="entities" item="entity" separator=",">
+            (#{entity.id},#{entity.roleId},#{entity.entityId},#{entity.refType},#{entity.createBy},#{entity.createTime})
+        </foreach>
+        on duplicate key update
+        id=values(id),
+        role_id=values(role_id),
+        entity_id=values(entity_id),
+        ref_type=values(ref_type),
+        CREATE_BY=values(CREATE_BY),
+        CREATE_TIME=values(CREATE_TIME)
+    </insert>
+
+    <!-- 更新数据 -->
+    <update id="update">
+        update role_user_ref
+        <set>
+            <if test="id != null and id != ''">
+                id = #{id},
+            </if>
+            <if test="roleId != null and roleId != ''">
+                role_id = #{roleId},
+            </if>
+            <if test="entityId != null and entityId != ''">
+                entity_id = #{entityId},
+            </if>
+            <if test="refType != null and refType != ''">
+                ref_type = #{refType},
+            </if>
+            <if test="createBy != null and createBy != ''">
+                CREATE_BY = #{createBy},
+            </if>
+            <if test="createTime != null and createTime != ''">
+                CREATE_TIME = #{createTime},
+            </if>
+        </set>
+        where id = #{id}
+    </update>
+
+    <!--通过主键删除-->
+    <delete id="deleteById">
+        delete from role_user_ref where id = #{id}
+    </delete>
+</mapper>

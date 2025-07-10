@@ -1,0 +1,245 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.folib.scanner.mapper.FolibScannerMapper">
+
+    <!-- 可根据自己的需求，是否要使用 -->
+    <resultMap type="com.folib.scanner.entity.FolibScanner" id="folibScannerMap">
+        <result property="path" column="path"/>
+        <result property="repository" column="repository"/>
+        <result property="storage" column="storage"/>
+        <result property="artifactPath" column="artifact_path"/>
+        <result property="report" column="report"/>
+        <result property="fileType" column="file_type"/>
+        <result property="scanStatus" column="scan_status"/>
+        <result property="onScan" column="on_scan"/>
+        <result property="scanTime" column="scan_time"/>
+        <result property="level" column="level"/>
+        <result property="dependencyCount" column="dependency_count"/>
+        <result property="vulnerableCount" column="vulnerable_count"/>
+        <result property="vulnerabilitesCount" column="vulnerabilites_count"/>
+        <result property="suppressedCount" column="suppressed_count"/>
+        <result property="cveCheckedTime" column="cve_checked_time"/>
+        <result property="cveUpdateTime" column="cve_update_time"/>
+    </resultMap>
+
+    <sql id="storageCommon">
+        <if test="baseQuery.storageIdList!= null and baseQuery.storageIdList.size() > 0">
+            AND a.storage IN
+            <foreach collection="baseQuery.storageIdList" item="storageId" open="(" close=")" separator=",">
+                #{storageId}
+            </foreach>
+        </if>
+        <if test="baseQuery.notInStorageIdList!= null and baseQuery.notInStorageIdList.size() > 0">
+            AND a.storage NOT IN
+            <foreach collection="baseQuery.notInStorageIdList" item="storageId" open="(" close=")" separator=",">
+                #{storageId}
+            </foreach>
+        </if>
+    </sql>
+
+    <update id="updateByStorage">
+        update folib_scanner
+        set on_scan=#{enableScan}
+        where repository = #{repository}
+          and storage = #{storage}
+    </update>
+
+    <select id="selectEnableScan" resultMap="folibScannerMap">
+        select *
+        from folib_scanner
+        WHERE scan_status in ('SCANFAILED', 'UNSCAN')
+          AND on_scan = 1
+    </select>
+
+    <update id="updateScaning">
+        UPDATE folib_scanner
+        SET scan_status ='SCANFAILED'
+        WHERE scan_status = 'SCANING'
+          AND on_scan = 1
+    </update>
+    <select id="getScanSum" resultType="com.folib.scanner.entity.ScanSumVo">
+        SELECT IFNULL(SUM(a.dependency_count), 0)     AS denpendencySum,
+               IFNULL(SUM(a.vulnerable_count), 0)     AS vulnerableSum,
+               IFNULL(SUM(a.vulnerabilites_count), 0) AS vulnerabilitesSum,
+               IFNULL(SUM(a.suppressed_count), 0)     AS suppressedSum
+        FROM folib_scanner a
+        <where>
+            a.on_scan = 1
+            <include refid="storageCommon"/>
+        </where>
+    </select>
+
+    <select id="getScannerSumDifVoList" resultType="com.folib.scanner.entity.ScannerSumDifVo">
+        SELECT DISTINCT r.id,r.`storage`,
+            r.`repository`,
+            r.layout,
+            IFNULL(COUNT(a.path), 0)               AS countFolib,
+            IFNULL(SUM(a.dependency_count), 0)     AS denpendencySum,
+            IFNULL(SUM(a.vulnerable_count), 0)     AS vulnerableSum,
+            IFNULL(SUM(a.vulnerabilites_count), 0) AS vulnerabilitesSum,
+            IFNULL(SUM(a.suppressed_count), 0)     AS suppressedSum
+        FROM scan_rules r
+        LEFT JOIN folib_scanner AS a ON r.`storage` = a.`storage`
+        AND r.repository = a.repository
+        <where>
+            r.on_scan = 1
+            <if test="baseQuery.storageIdList!= null and baseQuery.storageIdList.size() > 0">
+                AND r.storage IN
+                <foreach collection="baseQuery.storageIdList" item="storageId" open="(" close=")" separator=",">
+                    #{storageId}
+                </foreach>
+            </if>
+            <if test="baseQuery.notInStorageIdList!= null and baseQuery.notInStorageIdList.size() > 0">
+                AND r.storage NOT IN
+                <foreach collection="baseQuery.notInStorageIdList" item="storageId" open="(" close=")" separator=",">
+                    #{storageId}
+                </foreach>
+            </if>
+        </where>
+        GROUP BY repository,
+        `storage`
+    </select>
+
+
+    <select id="weekDayCount" resultType="com.folib.scanner.entity.ScanSumByDate">
+        SELECT
+        DATE_FORMAT(d.date,'%m-%d') as date,
+        IFNULL( T.countFolib, 0 ) AS countFolib,
+        IFNULL( T.denpendencySum, 0 ) AS denpendencySum,
+        IFNULL( T.vulnerableSum, 0 ) AS vulnerableSum,
+        IFNULL( T.vulnerabilitesSum, 0 ) AS vulnerabilitesSum,
+        IFNULL( T.suppressedSum, 0 ) AS suppressedSum
+        FROM
+        (
+        SELECT
+        date_sub( curdate(), INTERVAL WEEKDAY( curdate()) + 0 DAY ) AS date UNION ALL
+        SELECT
+        date_sub( curdate(), INTERVAL WEEKDAY( curdate()) - 1 DAY ) AS date UNION ALL
+        SELECT
+        date_sub( curdate(), INTERVAL WEEKDAY( curdate()) - 2 DAY ) AS date UNION ALL
+        SELECT
+        date_sub( curdate(), INTERVAL WEEKDAY( curdate()) - 3 DAY ) AS date UNION ALL
+        SELECT
+        date_sub( curdate(), INTERVAL WEEKDAY( curdate()) - 4 DAY ) AS date UNION ALL
+        SELECT
+        date_sub( curdate(), INTERVAL WEEKDAY( curdate()) - 5 DAY ) AS date UNION ALL
+        SELECT
+        date_sub( curdate(), INTERVAL WEEKDAY( curdate()) - 6 DAY ) AS date
+        ) d
+        LEFT JOIN (
+        SELECT DISTINCT
+        date( a.scan_time ) AS date,
+        IFNULL( COUNT( a.path ), 0 ) AS countFolib,
+        IFNULL( SUM( a.dependency_count ), 0 ) AS denpendencySum,
+        IFNULL( SUM( a.vulnerable_count ), 0 ) AS vulnerableSum,
+        IFNULL( SUM( a.vulnerabilites_count ), 0 ) AS vulnerabilitesSum,
+        IFNULL( SUM( a.suppressed_count ), 0 ) AS suppressedSum
+        FROM
+        folib_scanner a
+        <where>
+            a.on_scan = 1
+            <include refid="storageCommon"/>
+            AND DATE_SUB( CURDATE(), INTERVAL 7 DAY ) &lt;= date( a.scan_time )
+        </where>
+        GROUP BY
+        date( a.scan_time )
+        ) T ON T.date = d.date
+        GROUP BY
+        d.date
+    </select>
+    <select id="mounthDayCount"  resultType="com.folib.scanner.entity.ScanSumByDate">
+        SELECT DISTINCT date(a.scan_time) as date, IFNULL( COUNT( a.path ), 0 ) AS countFolib,IFNULL(
+        SUM(a.dependency_count) ,0) AS denpendencySum ,
+        IFNULL( SUM(a.vulnerable_count) ,0) AS vulnerableSum,
+        IFNULL( SUM(a.vulnerabilites_count),0) AS vulnerabilitesSum,
+        IFNULL( SUM(a.suppressed_count) ,0) AS suppressedSum
+        FROM folib_scanner a
+        <where>
+            a.on_scan = 1
+            <include refid="storageCommon"/>
+            AND DATE_SUB(CURDATE(), INTERVAL 30 DAY)&lt;= date(a.scan_time) GROUP BY date(a.scan_time)
+        </where>
+    </select>
+
+    <select id="getCountByDayOne" resultType="com.folib.scanner.entity.ScanSumByDate">
+        SELECT  IFNULL( COUNT( a.path ), 0 ) AS countFolib,IFNULL(
+        SUM(a.dependency_count) ,0) AS denpendencySum ,
+        IFNULL( SUM(a.vulnerable_count) ,0) AS vulnerableSum,
+        IFNULL( SUM(a.vulnerabilites_count),0) AS vulnerabilitesSum,
+        IFNULL( SUM(a.suppressed_count) ,0) AS suppressedSum
+        FROM folib_scanner a
+        <where>
+            a.on_scan = 1
+            <include refid="storageCommon"/>
+            AND DATE_SUB(CURDATE(), INTERVAL #{dateNum} DAY)&lt;= date(a.scan_time)
+        </where>
+    </select>
+    <select id="selectFolibScannerCount" resultType="java.lang.Integer">
+        SELECT count(a.path) FROM folib_scanner a
+        <where>
+            <include refid="storageCommon"/>
+            <if test="folibScanner.onScan != null">
+                AND a.on_scan = #{folibScanner.onScan}
+            </if>
+            <if test="folibScanner.scanStatus != null">
+                AND a.scan_status = #{folibScanner.scanStatus}
+            </if>
+        </where>
+    </select>
+    <select id="selectDockerList" resultType="com.folib.scanner.entity.FolibScannerDockerTableVO">
+        SELECT
+            a.`repository`,
+            a.`storage`,
+            MAX(a.`scan_time`) scanTime,
+            IFNULL(SUM(a.`dependency_count`),0) dependencyCount,
+            IFNULL(SUM(a.`vulnerable_count`),0) vulnerableCount,
+            IFNULL(SUM(a.`vulnerabilites_count`),0) vulnerabilitesCount,
+            IFNULL(SUM(a.`suppressed_count`),0) suppressedCount,
+            MAX(a.`cve_checked_time`) cveCheckedTime,
+            MAX(a.`cve_update_time`) cveUpdateTime,
+            SUBSTRING_INDEX( a.path, '/temp', 1 ) versionPath,
+            SUBSTRING_INDEX( SUBSTRING_INDEX( SUBSTRING_INDEX( path, repository,- 1 ), '/temp', 1 ), '/',- 1 ) version
+        FROM
+            folib_scanner a
+        <where>
+            a.storage = #{storage}
+            AND a.repository = #{repository}
+            <if test="artifactName != null and artifactName != ''">
+                AND LOCATE(#{artifactName}, a.path) > 0
+            </if>
+        </where>
+        GROUP BY versionPath
+    </select>
+    <select id="selectDockerChildList" resultType="com.folib.scanner.entity.FolibScanner">
+        SELECT
+            a.`repository`,
+            a.`storage`,
+            a.`scan_time` scanTime,
+            a.`dependency_count` dependencyCount,
+            a.`vulnerable_count` vulnerableCount,
+            a.`vulnerabilites_count` vulnerabilitesCount,
+            a.`suppressed_count` suppressedCount,
+            a.`cve_checked_time` cveCheckedTime,
+            a.`cve_update_time` cveUpdateTime,
+            a.path
+        FROM
+            folib_scanner a
+        WHERE
+            a.storage = #{storage}
+            AND a.repository = #{repository}
+            AND SUBSTRING_INDEX( a.path, '/temp', 1 )  = #{version}
+    </select>
+
+    <delete id="deleteByPathLike">
+        DELETE
+        FROM
+            folib_scanner
+        WHERE
+            `storage` = #{storage}
+            AND repository = #{repository}
+            AND path LIKE CONCAT(#{path}, '%')
+    </delete>
+
+
+</mapper>

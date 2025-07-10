@@ -1,0 +1,46 @@
+/*
+ * Folib - [新一代AI制品仓库]
+ * Copyright (C) 2025 bocloud.com.cn <folib@beyondcent.com>
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * 本程序是自由软件：您可依据GNU通用公共许可证（GPL-3.0+）条款重新发布和修改，
+ * 但禁止任何形式的商业售卖行为（包括但不限于：直接销售、捆绑销售、云服务商用）。
+ *
+ * This program is distributed WITHOUT ANY WARRANTY.
+ * Commercial sale of this software is expressly prohibited.
+ *
+ * For license details, see: https://www.gnu.org/licenses/gpl-3.0.html
+ * 商业授权咨询请联系：folib@beyondcent.com
+ */
+package com.folib.mapper;
+
+import com.folib.entity.VulnerableSoftwareEntity;
+import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+
+@Mapper
+public interface VulnerableSoftwareMapper {
+
+    /**
+     * 通过 CPE v2.3 字符串返回 VulnerableSoftware。
+     * @param cpe23 CPE 2.3 字符串
+     * @return 一个 VulnerableSoftware 对象，如果未找到，则为 null
+     */
+    VulnerableSoftwareEntity getVulnerableSoftwareByCpe23(String cpe23,
+                                                          String versionEndExcluding, String versionEndIncluding,
+                                                          String versionStartExcluding, String versionStartIncluding);
+
+    /**
+     * 批量插入或更新 VulnerableSoftware 对象
+     * @param vsList VulnerableSoftware 对象列表
+     */
+    @Transactional(rollbackFor = Exception.class)
+    int insertOrUpdateBatch( @Param("entities")List<VulnerableSoftwareEntity> vsList);
+}

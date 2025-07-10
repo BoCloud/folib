@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.folib.mapper.LicenseMapper">
+
+    <resultMap id="licenseResultMap" type="com.folib.entity.License">
+        <id property="id" column="id"/>
+        <result property="createTime" column="create_time"/>
+        <result property="licenseId" column="license_id"/>
+        <result property="licenseName" column="license_name"/>
+        <result property="licenseUrl" column="license_url"/>
+        <result property="isCustomLicense" column="is_custom_license"/>
+        <result property="isDeprecated" column="is_deprecated"/>
+        <result property="isOsiApproved" column="is_osi_approved"/>
+        <result property="isFsfLibre" column="is_fsf_libre"/>
+        <result property="blackWhiteType" column="black_white_type"/>
+        <result property="header" column="header"/>
+        <result property="template" column="template"/>
+        <result property="content" column="content"/>
+        <result property="contentCn" column="content_cn"/>
+        <result property="comment" column="comment"/>
+    </resultMap>
+
+    <select id="selectLicense" resultMap="licenseResultMap">
+        SELECT
+            id,create_time,license_id,license_name,license_url,black_white_type
+        FROM
+            license
+        <where>
+            <if test="searchKeyword != null and searchKeyword != ''">
+                and (
+                license_name like concat(#{searchKeyword}, '%')
+                or
+                license_id like concat(#{searchKeyword}, '%')
+                )
+            </if>
+            <if test="licenseId != null and licenseId != ''">
+                and license_id = #{licenseId}
+            </if>
+            <if test="blackWhiteType != null">
+                and black_white_type = #{blackWhiteType}
+            </if>
+            <if test="excludeBlackWhiteType != null">
+                and black_white_type != #{excludeBlackWhiteType}
+            </if>
+            <if test="isDeprecated != null">
+                and is_deprecated = #{isDeprecated}
+            </if>
+        </where>
+        ORDER BY license_id
+    </select>
+
+</mapper>

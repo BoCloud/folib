@@ -1,0 +1,47 @@
+/*
+ * Folib - [新一代AI制品仓库]
+ * Copyright (C) 2025 bocloud.com.cn <folib@beyondcent.com>
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * 本程序是自由软件：您可依据GNU通用公共许可证（GPL-3.0+）条款重新发布和修改，
+ * 但禁止任何形式的商业售卖行为（包括但不限于：直接销售、捆绑销售、云服务商用）。
+ *
+ * This program is distributed WITHOUT ANY WARRANTY.
+ * Commercial sale of this software is expressly prohibited.
+ *
+ * For license details, see: https://www.gnu.org/licenses/gpl-3.0.html
+ * 商业授权咨询请联系：folib@beyondcent.com
+ */
+package com.folib.model.seaializer;
+
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.JsonSerializer;
+import com.fasterxml.jackson.databind.SerializerProvider;
+import com.folib.util.HelmVersionUtil;
+import java.io.IOException;
+import java.util.Map;
+
+public class ChartAnnotationsSerializer extends JsonSerializer<Map<String, JsonNode>> {
+    public void serialize(Map<String, JsonNode> stringJsonNodeMap, JsonGenerator jsonGenerator, SerializerProvider serializerProvider) throws IOException {
+        jsonGenerator.writeStartObject();
+        for (Map.Entry<String, JsonNode> entry : stringJsonNodeMap.entrySet()) {
+            if (((JsonNode)entry.getValue()).isTextual()) {
+                try {
+                    Float.parseFloat(((JsonNode)entry.getValue()).textValue());
+                    jsonGenerator.writeObjectField(entry.getKey(),
+                            HelmVersionUtil.markWithReplacePattern(((JsonNode)entry.getValue()).textValue()));
+                } catch (NumberFormatException e) {
+                    jsonGenerator.writeObjectField(entry.getKey(), ((JsonNode)entry.getValue()).textValue());
+                }
+                continue;
+            }
+            jsonGenerator.writeObjectField(entry.getKey(), entry.getValue());
+        }
+        jsonGenerator.writeEndObject();
+    }
+}

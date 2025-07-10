@@ -1,0 +1,71 @@
+host: 0.0.0.0
+port: 8182
+#evaluationTimeout: 30000
+channelizer: org.apache.tinkerpop.gremlin.server.channel.WebSocketChannelizer
+graphManager: org.janusgraph.graphdb.management.JanusGraphManager
+graphs: {}
+scriptEngines:
+  gremlin-groovy:
+    plugins:
+      org.janusgraph.graphdb.tinkerpop.plugin.JanusGraphGremlinPlugin: {}
+      org.apache.tinkerpop.gremlin.server.jsr223.GremlinServerGremlinPlugin: {}
+      org.apache.tinkerpop.gremlin.jsr223.ImportGremlinPlugin:
+        classImports:
+          - java.lang.Math
+          - org.opencypher.gremlin.traversal.CustomFunctions
+          - org.opencypher.gremlin.traversal.CustomPredicate
+        methodImports:
+          - java.lang.Math#*
+          - org.opencypher.gremlin.traversal.CustomPredicate#*
+          - org.opencypher.gremlin.traversal.CustomFunctions#*
+serializers:
+  - { className: org.apache.tinkerpop.gremlin.util.ser.GraphSONMessageSerializerV3, config: { ioRegistries: [org.apache.tinkerpop.gremlin.tinkergraph.structure.TinkerIoRegistryV3] }}            # application/json
+  - { className: org.apache.tinkerpop.gremlin.util.ser.GraphBinaryMessageSerializerV1 }                                                                                                           # application/vnd.graphbinary-v1.0
+  - { className: org.apache.tinkerpop.gremlin.util.ser.GraphBinaryMessageSerializerV1, config: { serializeResultToString: true }}
+processors:
+  - className: org.apache.tinkerpop.gremlin.server.op.session.SessionOpProcessor
+    config:
+      sessionTimeout: 28800000
+  - className: org.apache.tinkerpop.gremlin.server.op.traversal.TraversalOpProcessor
+    config:
+      cacheExpirationTime: 600000
+      cacheMaxSize: 1000
+maxInitialLineLength: 4096
+maxHeaderSize: 8192
+
+
+
+threadPoolWorker: ${folib.thread.pool.worker:6}
+gremlinPool: ${folib.gremlin.pool:6}
+
+#maxWorkQueueSize: 工作队列的最大长度，默认是 8192。控制服务器处理的最大并发任务数量。
+maxWorkQueueSize: ${folib.max.work.queue.size:16384}
+
+#会话任务队列的最大长度，默认是 4096。控制每个会话的最大任务数量。
+maxSessionTaskQueueSize: ${folib.max.session.task.queue.size:8192}
+
+#设置 HTTP 请求内容的最大大小，单位是字节。这里设置为 65536 字节（64KB），表示服务器能够接受的单个请求体的最大大小
+maxContentLength: ${folib.max.content.length:1048576}
+
+#设置 HTTP 请求块（chunk）的最大大小，单位是字节。这里设置为 8192 字节（8KB），用来控制分块传输时的每个块的大小。
+maxChunkSize: ${folib.max.chunk.size:65536}
+
+#控制网络传输中最大缓冲区组件数量。这里设置为 1024，这意味着传输时，最多可以积累 1024 个内存缓冲区，用于优化网络传输的性能。
+maxAccumulationBufferComponents: ${folib.max.accumulation.buffer.components:2048}
+
+#设置每次迭代结果返回的批量大小。这里设置为 64，意味着一次性返回的查询结果集最多包含 64 条记录。较小的批处理数量可以降低单次网络传输的压力，但如果需要处理大量数据，可能会增加传输次数。
+resultIterationBatchSize: ${folib.result.iteration.batch.size:256}
+#如果设置为 true 并且服务器运行在 Linux 上，可以启用 epoll，这是一种高效的 I/O 事件处理机制，有助于提升吞吐量。
+useEpollEventLoop: ${folib.use.epoll.event.loop:true}
+
+#适当的超时设置可以防止无效连接长期占用系统资源，提升系统的并发处理能力。
+idleConnectionTimeout: ${folib.idle.connection.timeout:30000}
+
+#Gremlin 脚本执行的超时时间，单位为毫秒，默认是 30,000 毫秒（30 秒）。
+evaluationTimeout: ${folib.evaluation.timeout:30000}
+
+#Netty 写缓冲区的高水位标记，默认是 65536（64KB），高于此值时停止写入。
+writeBufferHighWaterMark: ${folib.write.buffer.high.water.mark:65536}
+
+#Netty 写缓冲区的低水位标记，默认是 32768（32KB），低于此值时恢复写入。
+writeBufferLowWaterMark: ${folib.write.buffer.low.water.mark:32768}

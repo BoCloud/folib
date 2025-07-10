@@ -1,0 +1,191 @@
+configuration:
+  instanceName: folib
+  version: ${project.version}
+  revision: ${folib.revision}
+  baseUrl: http://localhost:38080/
+  port: 38080
+  sessionConfiguration:
+    timeoutSeconds: 14400
+  remoteRepositoriesConfiguration:
+    checkIntervalSeconds: 60
+    heartbeatThreadsNumber: 5
+    retryArtifactDownloadConfiguration:
+      timeoutSeconds: 60
+      maxNumberOfAttempts: 5
+      minAttemptsIntervalSeconds: 5
+  corsConfiguration:
+    allowedCredentials: true
+    maxAge: 600
+    allowedOrigins:
+      - "*"
+    allowedMethods:
+      - GET
+      - PUT
+      - POST
+      - DELETE
+      - OPTIONS
+    allowedHeaders:
+      - Accept
+      - Accepts
+      - Authorization
+      - Access-Control-Allow-Headers
+      - Access-Control-Request-Headers
+      - Access-Control-Request-Method
+      - DNT
+      - Keep-Alive
+      - User-Agent
+      - X-Requested-With
+      - If-Modified-Since
+      - Cache-Control
+      - Content-Type
+      - Content-Range,Range
+  storages:
+    public-project:
+      id: "public-project"
+      users:
+        - "admin"
+      admin: "admin"
+      storageProvider: "local"
+      repositories:
+        central-maven:
+          id: "central-maven"
+          policy: "mixed"
+          storageProvider: "local"
+          layout: "Maven 2"
+          subLayout: "maven"
+          type: "proxy"
+          secured: false
+          status: "In Service"
+          artifactMaxSize: 104857600
+          trashEnabled: true
+          allowsForceDeletion: true
+          allowsDeployment: false
+          allowsRedeployment: false
+          allowsDeletion: true
+          allowsDirectoryBrowsing: true
+          checksumHeadersEnabled: false
+          remoteRepository:
+            url: "https://repo.maven.apache.org/maven2/"
+            downloadRemoteIndexes: false
+            autoBlocking: true
+            checksumValidation: true
+            checksumPolicy: "None"
+            checkIntervalSeconds: 60
+            autoImportRemoteSSLCertificate: false
+          customConfigurations: []
+          repositoryConfiguration:
+            type: "Maven 2"
+            indexingEnabled: true
+            indexingClassNamesEnabled: true
+            cronExpression: "0 0 2 * * ?"
+            metadataExpirationStrategy: "checksum"
+          groupRepositories: []
+          artifactCoordinateValidators:
+            - "maven-snapshot-version-validator"
+            - "maven-release-version-validator"
+            - "redeployment-validator"
+          vulnerabilityWhites: []
+          vulnerabilityBlacks: []
+          scope: 1
+          allowAnonymous: true
+          groupRepository: false
+          inService: true
+          proxyRepository: true
+          hostedRepository: false
+          acceptsReleases: true
+          acceptsSnapshots: true
+          virtualRepository: false
+          eligibleForCustomConnectionPool: false
+        aliyun-maven:
+          id: "aliyun-maven"
+          policy: "mixed"
+          storageProvider: "local"
+          layout: "Maven 2"
+          subLayout: "maven"
+          type: "proxy"
+          secured: false
+          status: "In Service"
+          artifactMaxSize: 104857600
+          trashEnabled: true
+          allowsForceDeletion: true
+          allowsDeployment: false
+          allowsRedeployment: false
+          allowsDeletion: true
+          allowsDirectoryBrowsing: true
+          checksumHeadersEnabled: false
+          remoteRepository:
+            url: "https://maven.aliyun.com/repository/public/"
+            downloadRemoteIndexes: false
+            autoBlocking: true
+            checksumValidation: true
+            checksumPolicy: "None"
+            checkIntervalSeconds: 60
+            autoImportRemoteSSLCertificate: false
+          customConfigurations: []
+          groupRepositories: []
+          artifactCoordinateValidators:
+            - "maven-snapshot-version-validator"
+            - "maven-release-version-validator"
+            - "redeployment-validator"
+          vulnerabilityWhites: []
+          vulnerabilityBlacks: []
+          scope: 1
+          allowAnonymous: true
+          groupRepository: false
+          inService: true
+          proxyRepository: true
+          hostedRepository: false
+          acceptsReleases: true
+          acceptsSnapshots: true
+          virtualRepository: false
+          eligibleForCustomConnectionPool: false
+        taobao-npm:
+          id: "taobao-npm"
+          policy: "release"
+          storageProvider: "local"
+          layout: "npm"
+          subLayout: "npm"
+          type: "proxy"
+          secured: false
+          status: "In Service"
+          artifactMaxSize: 104857600
+          trashEnabled: true
+          allowsForceDeletion: true
+          allowsDeployment: false
+          allowsRedeployment: false
+          allowsDeletion: true
+          allowsDirectoryBrowsing: true
+          checksumHeadersEnabled: true
+          proxyConfiguration:
+            nonProxyHosts: []
+          remoteRepository:
+            url: "https://registry.npmmirror.com/"
+            downloadRemoteIndexes: false
+            autoBlocking: true
+            checksumValidation: true
+            username: ""
+            password: ""
+            checksumPolicy: "None"
+            checkIntervalSeconds: 60
+            autoImportRemoteSSLCertificate: false
+          customConfigurations: []
+          groupRepositories: []
+          artifactCoordinateValidators:
+            - "redeployment-validator"
+            - "generic-release-version-validator"
+            - "generic-snapshot-version-validator"
+          vulnerabilityWhites: []
+          vulnerabilityBlacks: []
+          scope: 1
+          allowAnonymous: true
+          groupRepository: false
+          inService: true
+          proxyRepository: true
+          hostedRepository: false
+          acceptsReleases: true
+          acceptsSnapshots: false
+          virtualRepository: false
+          eligibleForCustomConnectionPool: false
+  routingRules:
+    rules:
+

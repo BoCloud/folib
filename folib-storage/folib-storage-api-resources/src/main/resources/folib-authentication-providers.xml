@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:cache="http://www.springframework.org/schema/cache"
+
+       xmlns="http://www.springframework.org/schema/beans"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+                           http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
+                           http://www.springframework.org/schema/cache http://www.springframework.org/schema/cache/spring-cache.xsd
+
+                           http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util.xsd">
+
+    <context:annotation-config />
+    <cache:annotation-driven />
+
+    <bean id="dataBaseUserDetailService" class="com.folib.users.userdetails.DataBaseUserDetailService"/>
+    <!-- UserDetailsServices -->
+    <bean id="yamlUserDetailService" class="com.folib.users.userdetails.YamlUserDetailService"/>
+    <import resource="classpath:/com/folib/authentication/external/ldap/folib-authentication-providers.xml" />
+
+    <bean
+            class="com.folib.authentication.api.CacheManagerAuthenticationCache" />
+
+    <!-- AuthenticationProviders -->
+    <bean id="passwordAuthenticationProvider"
+          class="com.folib.authentication.api.password.PasswordAuthenticationProvider" />
+
+    <bean id="jwtAuthenticationProvider"
+          class="com.folib.authentication.api.jwt.JwtAuthenticationProvider">
+    </bean>
+
+    <bean id="securityTokenAuthenticationProvider"
+          class="com.folib.authentication.api.nuget.SecurityTokenAuthenticationProvider">
+        <constructor-arg>
+            <bean id="securityTokenClaimsProvider" class="com.folib.authentication.api.nuget.SecurityTokenClaimsProvider"/>
+        </constructor-arg>
+    </bean>
+
+</beans>

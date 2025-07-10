@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:context="http://www.springframework.org/schema/context"
+    xmlns:util="http://www.springframework.org/schema/util"
+    xmlns:cache="http://www.springframework.org/schema/cache"
+    xmlns:security="http://www.springframework.org/schema/security"
+
+    xmlns="http://www.springframework.org/schema/beans"
+    xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+                           http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
+                           http://www.springframework.org/schema/cache http://www.springframework.org/schema/cache/spring-cache.xsd
+                           http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util.xsd
+                           http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util.xsd
+                           http://www.springframework.org/schema/security http://www.springframework.org/schema/security/spring-security.xsd">
+
+    <context:annotation-config />  
+      
+    <bean id="ldapRolesMapping" class="com.folib.ldap.LdapRolesMappingFactoryBean"/>
+
+    <bean id="ldapAuthoritiesExternalToInternalMapper"
+        class="com.folib.authentication.support.AuthoritiesExternalToInternalMapper">
+        <property name="rolesMapping" ref="ldapRolesMapping"/>
+    </bean>
+
+    <bean id="contextSource"
+        class="org.springframework.security.ldap.DefaultSpringSecurityContextSource">
+        <constructor-arg
+            value="${folib.authentication.ldap.url}" />
+        <property name="anonymousReadOnly" value="false" />
+        <property name="userDn" value="${folib.authentication.ldap.managerDn}"/>
+        <property name="password" value="${folib.authentication.ldap.managerPassword}"/>
+    </bean>
+
+    <bean id="ldapTemplate" class="org.springframework.ldap.core.LdapTemplate">
+        <property name="contextSource" ref="contextSource" />
+    </bean>
+
+    <bean id="ldapAuthoritiesPopulator" class="com.folib.ldap.MappedAuthoritiesPopulator">
+        <constructor-arg ref="ldapAuthoritiesExternalToInternalMapper"/>
+        <property name="delegate">
+            <bean class="org.springframework.security.ldap.userdetails.DefaultLdapAuthoritiesPopulator">
+                <constructor-arg ref="contextSource"/>
+                <constructor-arg value="${folib.authentication.ldap.authorities.groupSearchBase}"/>
+                <property name="groupSearchFilter" value="${folib.authentication.ldap.authorities.groupSearchFilter}"/>
+                <property name="convertToUpperCase" value="${folib.authentication.ldap.authorities.convertToUpperCase}"/>
+                <property name="groupRoleAttribute" value="${folib.authentication.ldap.authorities.groupRoleAttribute}"/>
+                <property name="rolePrefix" value="${folib.authentication.ldap.authorities.rolePrefix}"/>
+                <property name="searchSubtree" value="${folib.authentication.ldap.authorities.searchSubtree}"/>
+            </bean>
+        </property> 
+    </bean>
+
+    <bean id="ldapUserDetailsService" class="org.springframework.security.ldap.userdetails.LdapUserDetailsService">
+        <constructor-arg>
+            <bean
+                class="org.springframework.security.ldap.search.FilterBasedLdapUserSearch">
+                <constructor-arg
+                    value="${folib.authentication.ldap.userSearchBase}" />
+                <constructor-arg
+                    value="${folib.authentication.ldap.userSearchFilter}" />
+                <constructor-arg ref="contextSource" />
+            </bean>
+        </constructor-arg>
+        <constructor-arg ref="ldapAuthoritiesPopulator"/>
+        <property name="userDetailsMapper" ref="customUserDetailsMapper"/>
+    </bean>
+    
+    <bean id="customUserDetailsMapper" class="com.folib.ldap.CustomLdapUserDetailsMapper">
+        <property name="userPasswordEncoded" value="${folib.authentication.ldap.userPasswordEncoded}"/>
+    </bean>
+
+</beans>

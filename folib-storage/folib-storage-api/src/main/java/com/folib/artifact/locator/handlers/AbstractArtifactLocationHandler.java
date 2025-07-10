@@ -1,0 +1,100 @@
+/*
+ * Folib - [新一代AI制品仓库]
+ * Copyright (C) 2025 bocloud.com.cn <folib@beyondcent.com>
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * 本程序是自由软件：您可依据GNU通用公共许可证（GPL-3.0+）条款重新发布和修改，
+ * 但禁止任何形式的商业售卖行为（包括但不限于：直接销售、捆绑销售、云服务商用）。
+ *
+ * This program is distributed WITHOUT ANY WARRANTY.
+ * Commercial sale of this software is expressly prohibited.
+ *
+ * For license details, see: https://www.gnu.org/licenses/gpl-3.0.html
+ * 商业授权咨询请联系：folib@beyondcent.com
+ */
+package com.folib.artifact.locator.handlers;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.stream.Stream;
+
+import com.folib.providers.io.RepositoryFiles;
+import com.folib.providers.io.RepositoryPath;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ * @author veadan
+ * @author stodorov
+ */
+public abstract class AbstractArtifactLocationHandler
+        implements ArtifactDirectoryOperation
+{
+    private static final Logger logger = LoggerFactory.getLogger(AbstractArtifactLocationHandler.class);
+    
+    private LinkedHashMap<RepositoryPath, List<RepositoryPath>> visitedRootPaths = new LinkedHashMap<>();
+
+    /**
+     * The base path within the repository from where to start scanning for artifacts.
+     */
+    private RepositoryPath basePath;
+
+
+    @Override
+    public LinkedHashMap<RepositoryPath, List<RepositoryPath>> getVisitedRootPaths()
+    {
+        return visitedRootPaths;
+    }
+
+    public List<RepositoryPath> getVersionDirectories(RepositoryPath basePath)
+        throws IOException
+    {
+        Set<RepositoryPath> versionDirectorySet = new TreeSet<>();
+        try (Stream<Path> pathStream = Files.walk(basePath)) {
+            pathStream
+                    .forEach(p -> {
+                        if (isMetadata(p))
+                        {
+                            versionDirectorySet.add((RepositoryPath) p.getParent());
+                        }
+                    });
+
+            return new ArrayList<>(versionDirectorySet);
+        }
+    }
+
+    protected boolean isMetadata(Path path)
+    {
+        try
+        {
+            return Boolean.TRUE.equals(RepositoryFiles.isMetadata((RepositoryPath) path));
+        }
+        catch (IOException e)
+        {
+            logger.error("Failed to read Path attributes for [{}]", path, e);
+            return false;
+        }
+    }
+
+    @Override
+    public RepositoryPath getBasePath()
+    {
+        return basePath;
+    }
+
+    public void setBasePath(RepositoryPath basePath)
+    {
+        this.basePath = basePath;
+    }
+    
+}

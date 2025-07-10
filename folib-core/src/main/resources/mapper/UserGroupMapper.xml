@@ -1,0 +1,221 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.folib.mapper.UserGroupMapper">
+    <resultMap type="com.folib.entity.UserGroup" id="UserGroupMap">
+        <result property="id" column="id"/>
+        <result property="groupName" column="group_name"/>
+        <result property="description" column="description"/>
+        <result property="joinGroup" column="join_group"/>
+        <result property="deleted" column="deleted"/>
+        <result property="isDefault" column="is_default"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="updateTime" column="update_time"/>
+    </resultMap>
+
+    <!-- 通过ID查询单条数据 -->
+    <select id="queryById" resultMap="UserGroupMap">
+        select
+            id,group_name,description,join_group,deleted,is_default,create_by,create_time,update_by,update_time
+        from user_group
+        where id = #{id} and deleted = '0'
+    </select>
+
+    <!--分页查询指定行数据-->
+    <select id="queryAllByLimit" resultType="com.folib.dto.UserGroupListDTO" >
+        select
+        ug.id,
+        ug.deleted,
+        ug.is_default,
+        group_name,
+        description,
+        join_group,
+        ug.create_by,
+        group_concat(distinct rrr.role_id) as roles
+        from
+        user_group ug
+        left join role_resource_ref rrr on
+        ug.id = rrr.entity_id
+        and rrr.ref_type = 2
+        where ug.deleted = '0'
+            <if test="userGroup.id != null and userGroup.id != ''">
+                and ug.id = #{userGroup.id}
+            </if>
+            <if test="userGroup.groupName != null and userGroup.groupName != ''">
+                and ug.group_name  = #{userGroup.groupName}
+            </if>
+            <if test="userGroup.matchGroupName != null and userGroup.matchGroupName != ''">
+                and ug.group_name like concat('%',#{userGroup.matchGroupName},'%')
+            </if>
+            <if test="userGroup.description != null and userGroup.description != ''">
+                and description = #{userGroup.description}
+            </if>
+            <if test="userGroup.joinGroup != null and userGroup.joinGroup != ''">
+                and join_group = #{userGroup.joinGroup}
+            </if>
+            <if test="userGroup.deleted != null and userGroup.deleted != ''">
+                and ug.deleted = #{userGroup.deleted}
+            </if>
+        group by ug.id
+    </select>
+
+    <!--统计总行数-->
+    <select id="count" resultType="java.lang.Long">
+        select count(1)
+        from user_group
+        where deleted = '0'
+            <if test="id != null and id != ''">
+                and id = #{id}
+            </if>
+            <if test="groupName != null and groupName != ''">
+                and group_name = #{groupName}
+            </if>
+            <if test="description != null and description != ''">
+                and description = #{description}
+            </if>
+            <if test="joinGroup != null and joinGroup != ''">
+                and join_group = #{joinGroup}
+            </if>
+            <if test="deleted != null and deleted != ''">
+                and deleted = #{deleted}
+            </if>
+            <if test="createBy != null and createBy != ''">
+                and create_by = #{createBy}
+            </if>
+            <if test="createTime != null and createTime != ''">
+                and create_time = #{createTime}
+            </if>
+            <if test="updateBy != null and updateBy != ''">
+                and update_by = #{updateBy}
+            </if>
+            <if test="updateTime != null and updateTime != ''">
+                and update_time = #{updateTime}
+            </if>
+    </select>
+    <select id="queryGroupDetailById" resultType="com.folib.dto.UserGroupDTO">
+        select
+            ug.*,
+            group_concat(distinct ugr.user_id) as users,
+            GROUP_CONCAT(distinct rrr.role_id) AS roles
+        from
+            user_group ug
+                left join user_group_ref ugr on
+                ug.id = ugr.user_group_id
+                left join role_resource_ref rrr on
+                rrr.entity_id = ug.id
+                    and rrr.ref_type = 2
+        where ug.deleted = 0 and ug.id = #{groupId};
+    </select>
+
+    <!--新增数据-->
+    <insert id="insert" keyProperty="id" useGeneratedKeys="true">
+        insert into user_group(id,group_name,description,join_group,deleted,create_by,is_default,update_by)
+        values (#{id},#{groupName},#{description},#{joinGroup},#{deleted},#{createBy},#{isDefault},#{updateBy})
+    </insert>
+
+    <!-- 批量新增数据 -->
+    <insert id="insertBatch" keyProperty="id" useGeneratedKeys="true">
+        insert into user_group(id,group_name,description,join_group,deleted,is_default,create_by,update_by)
+        values
+        <foreach collection="entities" item="entity" separator=",">
+            (#{entity.id},#{entity.groupName},#{entity.description},#{entity.joinGroup},#{entity.deleted,#{entity.isDefault},#{entity.createBy},#{entity.updateBy})
+        </foreach>
+    </insert>
+
+    <!-- 批量新增或按主键更新数据 -->
+    <insert id="insertOrUpdateBatch" keyProperty="id" useGeneratedKeys="true">
+        insert into user_group(id,group_name,description,join_group,deleted,is_default,create_by,update_by)
+        values
+        <foreach collection="entities" item="entity" separator=",">
+            (#{entity.id},#{entity.groupName},#{entity.description},#{entity.joinGroup},#{entity.deleted},#{entity.isDefault},#{entity.createBy},#{entity.updateBy})
+        </foreach>
+        on duplicate key update
+        id=values(id),
+        group_name=values(group_name),
+        description=values(description),
+        join_group=values(join_group),
+        deleted=values(deleted),
+        is_default=values(is_default),
+        create_by=values(create_by),
+        update_by=values(update_by)
+    </insert>
+
+    <!-- 更新数据 -->
+    <update id="update">
+        update user_group
+        <set>
+            <if test="description != null and description != ''">
+                description = #{description},
+            </if>
+            <if test="groupName != null and groupName != ''">
+                group_name = #{groupName},
+            </if>
+            <if test="joinGroup != null and joinGroup != ''">
+                join_group = #{joinGroup},
+            </if>
+            <if test="deleted != null and deleted != ''">
+                deleted = #{deleted},
+            </if>
+            <if test="isDefault != null and isDefault != ''">
+                is_default = #{isDefault},
+            </if>
+            <if test="createBy != null and createBy != ''">
+                create_by = #{createBy},
+            </if>
+            <if test="createTime != null and createTime != ''">
+                create_time = #{createTime},
+            </if>
+            <if test="updateBy != null and updateBy != ''">
+                update_by = #{updateBy},
+            </if>
+            <if test="updateTime != null and updateTime != ''">
+                update_time = #{updateTime},
+            </if>
+        </set>
+        where id = #{id}
+    </update>
+
+    <!--通过主键删除-->
+    <delete id="deleteById">
+        delete from user_group where id = #{id}
+    </delete>
+
+    <select id="queryAllByUser" resultType="com.folib.dto.UserGroupListDTO" >
+        select
+            ug.id,
+            ug.deleted,
+            ug.is_default,
+            ug.group_name,
+            ug.`description`,
+            ug.join_group,
+            ug.create_by,
+            COUNT(ugr.id) AS user_count
+        from
+            user_group  ug
+        left join user_group_ref  ugr on ug.id = ugr.user_group_id
+        where ug.deleted = '0'
+        <if test="userGroup.id != null and userGroup.id != ''">
+            and ug.id = #{userGroup.id}
+        </if>
+        <if test="userGroup.groupName != null and userGroup.groupName != ''">
+            and ug.group_name  = #{userGroup.groupName}
+        </if>
+        <if test="userGroup.matchGroupName != null and userGroup.matchGroupName != ''">
+            and ug.group_name like concat('%',#{userGroup.matchGroupName},'%')
+        </if>
+        <if test="userGroup.description != null and userGroup.description != ''">
+            and ug.`description` = #{userGroup.description}
+        </if>
+        <if test="userGroup.joinGroup != null and userGroup.joinGroup != ''">
+            and ug.join_group = #{userGroup.joinGroup}
+        </if>
+        <if test="userGroup.deleted != null and userGroup.deleted != ''">
+            and ug.deleted = #{userGroup.deleted}
+        </if>
+        group by ug.id
+        order by ug.create_time  DESC
+    </select>
+
+
+</mapper>

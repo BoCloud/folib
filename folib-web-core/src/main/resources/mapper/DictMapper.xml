@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.folib.mapper.DictMapper">
+
+    <resultMap id="dictResultMap" type="com.folib.entity.Dict">
+        <id property="id" column="id"/>
+        <result property="createTime" column="create_time"/>
+        <result property="dictType" column="dict_type"/>
+        <result property="dictKey" column="dict_key"/>
+        <result property="dictValue" column="dict_value"/>
+        <result property="alias" column="alias"/>
+        <result property="comment" column="comment"/>
+    </resultMap>
+
+    <select id="selectOneDict" resultMap="dictResultMap">
+        SELECT
+            *
+        FROM
+            dict
+        WHERE
+            dict_key = #{dictKey}
+        ORDER BY create_time DESC
+        LIMIT 1 FOR UPDATE
+    </select>
+
+    <delete id="deleteHistoryDataForUploadProcessBySeconds">
+        DELETE
+        FROM
+            dict
+        WHERE
+            dict_type = 'upload_process'
+            AND
+            TIMESTAMPDIFF(
+                SECOND,
+            create_time,
+            now()) > #{seconds}
+    </delete>
+
+    <insert id="batchInsertDict">
+        INSERT INTO `dict` ( `dict_type`, `dict_key`, `dict_value`, `alias`, `comment` )
+        VALUES
+        <foreach collection="dictList" item="item" separator=",">
+            (#{item.dictType}, #{item.dictKey}, #{item.dictValue}, #{item.alias}, #{item.comment})
+        </foreach>
+    </insert>
+</mapper>

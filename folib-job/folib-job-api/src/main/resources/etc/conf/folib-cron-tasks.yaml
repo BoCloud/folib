@@ -1,0 +1,26 @@
+cronTasksConfiguration:
+  cronTaskConfigurations:
+    - uuid: 463ff872-b7b2-4cb9-aff9-37b3baed4f14
+      name: Clear Each Repository's Trash Cron Job
+      jobClass: com.folib.job.tasks.ClearRepositoryTrashCronTask
+      cronExpression: 0 0 1 * * ?
+      oneTimeExecution: false
+      immediateExecution: false
+    - uuid: b44164a5-c900-43ff-8d13-7a0d0e509d1d
+      name: Re-build All Maven Repositories Metadata Files Cron Task
+      jobClass: com.folib.job.tasks.RebuildMavenMetadataCronTask
+      cronExpression: 0 0 1 * * ?
+      oneTimeExecution: false
+      immediateExecution: false
+    - uuid: 00dcbfe3-461b-4dc7-995b-4cc637ca611e
+      name: Docker仓库清理任务
+      jobClass: com.folib.job.tasks.CleanupDockerRepositoryCronTask
+      cronExpression: 0 0 1 * * ?
+      oneTimeExecution: false
+      immediateExecution: false
+    - uuid: e4087b9a-202d-46d0-972a-5fb374b6b423
+      name: 定时清除晋级/分发记录表数据任务
+      jobClass: com.folib.job.tasks.ClearArtifactSyncRecordCronTask
+      cronExpression: 0 0 0 1/7 * ?
+      oneTimeExecution: false
+      immediateExecution: false

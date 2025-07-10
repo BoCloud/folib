@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.folib.mapper.ResourceMapper">
+    <resultMap type="com.folib.entity.Resource" id="ResourceMap">
+        <result property="id" column="id" />
+        <result property="apiAuthoritie" column="api_authoritie" />
+        <result property="storageId" column="storage_id" />
+        <result property="repositoryId" column="repository_id"/>
+        <result property="path" column="path" />
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+    </resultMap>
+
+    <!-- 通过ID查询单条数据 -->
+    <select id="queryById" resultMap="ResourceMap">
+        select
+            id,api_authoritie,storage_id,repository_id,path,create_by,create_time
+        from resource
+        where id = #{id}
+    </select>
+
+    <!--分页查询指定行数据-->
+    <select id="queryAllByLimit" resultMap="ResourceMap">
+        select
+        id,api_authoritie,storage_id,repository_id,path,create_by,create_time
+        from resource
+        <where>
+            <if test="resource.id != null and resource.id != ''">
+                and resource.id = #{resource.id}
+            </if>
+            <if test="resource.apiAuthoritie != null and resource.apiAuthoritie != ''">
+                and resource.api_authoritie = #{resource.apiAuthoritie}
+            </if>
+            <if test="resource.storageId != null and resource.storageId != ''">
+                and resource.storage_id = #{resource.storageId}
+            </if>
+            <if test="resource.repositoryId != null and resource.repositoryId != ''">
+                and resource.repository_id = #{resource.repositoryId}
+            </if>
+            <if test="resource.path != null and resource.path != ''">
+                and resource.path = #{resource.path}
+            </if>
+            <if test="resource.createBy != null and resource.createBy != ''">
+                and resource.create_by = #{resource.createBy}
+            </if>
+        </where>
+    </select>
+
+    <!--统计总行数-->
+    <select id="count" resultType="java.lang.Long">
+        select count(1)
+        from resource
+        <where>
+            <if test="id != null and id != ''">
+                and id = #{id}
+            </if>
+            <if test="apiAuthoritie != null and apiAuthoritie != ''">
+                and api_authoritie = #{apiAuthoritie}
+            </if>
+            <if test="storageId != null and storageId != ''">
+                and storage_id = #{storageId}
+            </if>
+            <if test="repositoryId != null and repositoryId != ''">
+                and repository_id = #{repositoryId}
+            </if>
+            <if test="path != null and path != ''">
+                and path = #{path}
+            </if>
+            <if test="createBy != null and createBy != ''">
+                and create_by = #{createBy}
+            </if>
+            <if test="createTime != null and createTime != ''">
+                and create_time = #{createTime}
+            </if>
+        </where>
+    </select>
+    <select id="findResources" resultType="com.folib.entity.Resource">
+        select * from resource r
+        where
+        <foreach collection="resources" item="resource" separator="or" open="(" close=")">
+            ( <if test="resource.storageId != null and resource.storageId != ''">
+                r.storage_id = #{resource.storageId}
+            </if>
+            <if test="resource.repositoryId != null and resource.repositoryId != ''" >
+                and r.repository_id = #{resource.repositoryId}
+            </if>
+            <if test="resource.path != null and resource.path != ''">
+                and r.path = #{resource.path}
+            </if>)
+        </foreach>
+    </select>
+
+    <!--新增数据-->
+    <insert id="insert" keyProperty="id" useGeneratedKeys="true">
+        insert into resource(id,api_authoritie,storage_id,repository_id,path,create_by)
+        values (#{id},#{apiAuthoritie},#{storageId},#{repositoryId},#{path},#{createBy})
+    </insert>
+
+    <!-- 批量新增数据 -->
+    <insert id="insertBatch" keyProperty="id" useGeneratedKeys="true">
+        insert into resource(id,api_authoritie,storage_id,repository_id,path,create_by)
+        values
+        <foreach collection="entities" item="entity" separator=",">
+            (#{entity.id},#{entity.apiAuthoritie},#{entity.storageId},#{entity.repositoryId},#{entity.path},#{entity.createBy})
+        </foreach>
+    </insert>
+
+    <!-- 批量新增或按主键更新数据 -->
+    <insert id="insertOrUpdateBatch" keyProperty="id" useGeneratedKeys="true">
+        insert into resource(id,api_authoritie,storage_id,repository_id,path,create_by)
+        values
+        <foreach collection="entities" item="entity" separator=",">
+            (#{entity.id},#{entity.apiAuthoritie},#{entity.storageId},#{entity.repositoryId},#{entity.path},#{entity.createBy})
+        </foreach>
+        on duplicate key update
+        id=values(id),
+        api_authoritie=values(api_authoritie),
+        storage_id=values(storage_id),
+        repository_id=values(repository_id),
+        path=values(path),
+        create_by=values(create_by),
+        create_time=values(create_time)
+    </insert>
+
+    <!-- 更新数据 -->
+    <update id="update">
+        update resource
+        <set>
+            <if test="id != null and id != ''">
+                id = #{id},
+            </if>
+            <if test="apiAuthoritie != null and apiAuthoritie != ''">
+                api_authoritie = #{apiAuthoritie},
+            </if>
+            <if test="storageId != null and storageId != ''">
+                storage_id = #{storageId},
+            </if>
+            <if test="repositoryId != null and repositoryId != ''">
+                repository_id = #{repositoryId},
+            </if>
+            <if test="path != null and path != ''">
+                path = #{path},
+            </if>
+            <if test="createBy != null and createBy != ''">
+                create_by = #{createBy},
+            </if>
+            <if test="createTime != null and createTime != ''">
+                create_time = #{createTime},
+            </if>
+        </set>
+        where id = #{id}
+    </update>
+
+    <!--通过主键删除-->
+    <delete id="deleteById">
+        delete from resource where id = #{id}
+    </delete>
+</mapper>

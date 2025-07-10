@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+            http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.8.xsd">
+
+    <!--初始化数据库结构与存储过程-->
+    <include file="classpath:db/changelog/changelog_init.xml"/>
+    <include file="classpath:db/changelog/changelog_license_init.xml"/>
+    <!--后续增加的按照写对应的sql与changelog-->
+</databaseChangeLog>

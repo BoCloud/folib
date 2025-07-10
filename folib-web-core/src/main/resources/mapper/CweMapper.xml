@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.folib.mapper.CweMapper">
+    <resultMap type="com.folib.scanner.vulnerability.model.Cwe" id="CweMap">
+        <result property="id" column="id"/>
+        <result property="cweId" column="cweid"/>
+        <result property="name" column="name"/>
+    </resultMap>
+
+    <select id="getAllCwes" resultMap="CweMap">
+        select
+        id,cweid,name
+        from cwe
+    </select>
+
+    <!-- 通过ID查询单条数据 -->
+    <select id="getCweById" resultMap="CweMap">
+        select
+        id,cweid,name
+        from cwe
+        where cweid = #{cweId}
+    </select>
+
+    <!--分页查询指定行数据-->
+    <select id="queryAllByLimit" resultMap="CweMap">
+        select
+        id,cweid,name
+        from cwe
+        <where>
+            <if test="id != null and id != ''">
+                and id = #{id}
+            </if>
+            <if test="cweid != null and cweid != ''">
+                and cweid = #{cweid}
+            </if>
+            <if test="name != null and name != ''">
+                and name = #{name}
+            </if>
+        </where>
+        limit #{pageable.offset}, #{pageable.pageSize}
+    </select>
+
+    <!--统计总行数-->
+    <select id="count" resultType="java.lang.Long">
+        select count(1)
+        from cwe
+        <where>
+            <if test="id != null and id != ''">
+                and id = #{id}
+            </if>
+            <if test="cweid != null and cweid != ''">
+                and cweid = #{cweid}
+            </if>
+            <if test="name != null and name != ''">
+                and name = #{name}
+            </if>
+        </where>
+    </select>
+
+    <!--新增数据-->
+    <insert id="insert" keyProperty="id" useGeneratedKeys="true">
+        insert into cwe(id,cweid,name)
+        values (#{id},#{cweid},#{name})
+    </insert>
+
+    <!-- 批量新增数据 -->
+    <insert id="insertBatch" keyProperty="id" useGeneratedKeys="true">
+        insert into cwe(id,cweid,name)
+        values
+        <foreach collection="entities" item="entity" separator=",">
+            (#{entity.id},#{entity.cweid},#{entity.name})
+        </foreach>
+    </insert>
+
+    <!-- 批量新增或按主键更新数据 -->
+    <insert id="insertOrUpdateBatch" useGeneratedKeys="true">
+        insert into cwe(id,cweid,name)
+        values
+        <foreach collection="entities" item="entity" separator=",">
+            (#{entity.id},#{entity.cweId},#{entity.name})
+        </foreach>
+        on duplicate key update
+        id=values(id),
+        cweid=values(cweid),
+        name=values(name)
+    </insert>
+
+    <!-- 更新数据 -->
+    <update id="update">
+        update cwe
+        <set>
+            <if test="id != null and id != ''">
+                id = #{id},
+            </if>
+            <if test="cweid != null and cweid != ''">
+                cweid = #{cweid},
+            </if>
+            <if test="name != null and name != ''">
+                name = #{name},
+            </if>
+        </set>
+        where id = #{id}
+    </update>
+
+    <!--通过主键删除-->
+    <delete id="deleteById">
+        delete from cwe where id = #{id}
+    </delete>
+</mapper>

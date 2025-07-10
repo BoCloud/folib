@@ -1,0 +1,374 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.folib.mapper.VulnerableSoftwareMapper">
+<!--    <resultMap type="com.veadan.folib.domain.vulnerability.model.VulnerableSoftware" id="VulnerableSoftwareMap">-->
+<!--        <result property="id" column="id" jdbcType="BIGINT"/>-->
+<!--        <result property="cpe22" column="cpe22" jdbcType="String"/>-->
+<!--        <result property="cpe23" column="cpe23" jdbcType="String"/>-->
+<!--        <result property="edition" column="edition" jdbcType="String"/>-->
+<!--        <result property="language" column="language" jdbcType="String"/>-->
+<!--        <result property="other" column="other" jdbcType="String"/>-->
+<!--        <result property="part" column="part" jdbcType="String"/>-->
+<!--        <result property="product" column="product" jdbcType="String"/>-->
+<!--        <result property="purl" column="purl" jdbcType="String"/>-->
+<!--        <result property="purlName" column="purl_name" jdbcType="String"/>-->
+<!--        <result property="purlNamespace" column="purl_namespace" jdbcType="String"/>-->
+<!--        <result property="purlQualifiers" column="purl_qualifiers" jdbcType="String"/>-->
+<!--        <result property="purlSubpath" column="purl_subpath" jdbcType="String"/>-->
+<!--        <result property="purlType" column="purl_type" jdbcType="String"/>-->
+<!--        <result property="purlVersion" column="purl_version" jdbcType="String"/>-->
+<!--        <result property="swedition" column="swedition" jdbcType="String"/>-->
+<!--        <result property="targethw" column="targethw" jdbcType="String"/>-->
+<!--        <result property="targetsw" column="targetsw" jdbcType="String"/>-->
+<!--        <result property="update" column="update" jdbcType="String"/>-->
+<!--        <result property="uuid" column="uuid" jdbcType="String"/>-->
+<!--        <result property="vendor" column="vendor" jdbcType="String"/>-->
+<!--        <result property="version" column="version" jdbcType="String"/>-->
+<!--        <result property="versionendexcluding" column="versionendexcluding" jdbcType="String"/>-->
+<!--        <result property="versionendincluding" column="versionendincluding" jdbcType="String"/>-->
+<!--        <result property="versionstartexcluding" column="versionstartexcluding" jdbcType="String"/>-->
+<!--        <result property="versionstartincluding" column="versionstartincluding" jdbcType="String"/>-->
+<!--        <result property="vulnerable" column="vulnerable" jdbcType="BIT"/>-->
+<!--    </resultMap>-->
+
+    <!-- 通过ID查询单条数据 -->
+    <select id="queryById"  >
+        select
+        id,cpe22,cpe23,edition,language,other,part,product,purl,purl_name,purl_namespace,purl_qualifiers,purl_subpath,purl_type,purl_version,swedition,targethw,targetsw,update,uuid,vendor,version,versionendexcluding,versionendincluding,versionstartexcluding,versionstartincluding,vulnerable
+        from vulnerable_software
+        where id = #{id}
+    </select>
+    <select id="getVulnerableSoftwareByCpe23" resultType="com.folib.entity.VulnerableSoftwareEntity">
+        select * from vulnerable_software
+        where cpe23 = #{cpe23}
+        and versionendexcluding = #{versionEndExcluding}
+        and versionendincluding = #{versionEndIncluding}
+        and versionstartexcluding = #{versionStartExcluding}
+        and versionstartincluding = #{versionStartIncluding}
+    </select>
+
+    <!--分页查询指定行数据-->
+    <select id="queryAllByLimit" >
+        select
+        id,cpe22,cpe23,edition,language,other,part,product,purl,purl_name,purl_namespace,purl_qualifiers,purl_subpath,purl_type,purl_version,swedition,targethw,targetsw,update,uuid,vendor,version,versionendexcluding,versionendincluding,versionstartexcluding,versionstartincluding,vulnerable
+        from vulnerable_software
+        <where>
+            <if test="id != null and id != ''">
+                and id = #{id}
+            </if>
+            <if test="cpe22 != null and cpe22 != ''">
+                and cpe22 = #{cpe22}
+            </if>
+            <if test="cpe23 != null and cpe23 != ''">
+                and cpe23 = #{cpe23}
+            </if>
+            <if test="edition != null and edition != ''">
+                and edition = #{edition}
+            </if>
+            <if test="language != null and language != ''">
+                and language = #{language}
+            </if>
+            <if test="other != null and other != ''">
+                and other = #{other}
+            </if>
+            <if test="part != null and part != ''">
+                and part = #{part}
+            </if>
+            <if test="product != null and product != ''">
+                and product = #{product}
+            </if>
+            <if test="purl != null and purl != ''">
+                and purl = #{purl}
+            </if>
+            <if test="purlName != null and purlName != ''">
+                and purl_name = #{purlName}
+            </if>
+            <if test="purlNamespace != null and purlNamespace != ''">
+                and purl_namespace = #{purlNamespace}
+            </if>
+            <if test="purlQualifiers != null and purlQualifiers != ''">
+                and purl_qualifiers = #{purlQualifiers}
+            </if>
+            <if test="purlSubpath != null and purlSubpath != ''">
+                and purl_subpath = #{purlSubpath}
+            </if>
+            <if test="purlType != null and purlType != ''">
+                and purl_type = #{purlType}
+            </if>
+            <if test="purlVersion != null and purlVersion != ''">
+                and purl_version = #{purlVersion}
+            </if>
+            <if test="swedition != null and swedition != ''">
+                and swedition = #{swedition}
+            </if>
+            <if test="targethw != null and targethw != ''">
+                and targethw = #{targethw}
+            </if>
+            <if test="targetsw != null and targetsw != ''">
+                and targetsw = #{targetsw}
+            </if>
+            <if test="update != null and update != ''">
+                and update = #{update}
+            </if>
+            <if test="uuid != null and uuid != ''">
+                and uuid = #{uuid}
+            </if>
+            <if test="vendor != null and vendor != ''">
+                and vendor = #{vendor}
+            </if>
+            <if test="version != null and version != ''">
+                and version = #{version}
+            </if>
+            <if test="versionendexcluding != null and versionendexcluding != ''">
+                and versionendexcluding = #{versionendexcluding}
+            </if>
+            <if test="versionendincluding != null and versionendincluding != ''">
+                and versionendincluding = #{versionendincluding}
+            </if>
+            <if test="versionstartexcluding != null and versionstartexcluding != ''">
+                and versionstartexcluding = #{versionstartexcluding}
+            </if>
+            <if test="versionstartincluding != null and versionstartincluding != ''">
+                and versionstartincluding = #{versionstartincluding}
+            </if>
+            <if test="vulnerable != null and vulnerable != ''">
+                and vulnerable = #{vulnerable}
+            </if>
+        </where>
+        limit #{pageable.offset}, #{pageable.pageSize}
+    </select>
+
+    <!--统计总行数-->
+    <select id="count" resultType="java.lang.Long">
+        select count(1)
+        from vulnerable_software
+        <where>
+            <if test="id != null and id != ''">
+                and id = #{id}
+            </if>
+            <if test="cpe22 != null and cpe22 != ''">
+                and cpe22 = #{cpe22}
+            </if>
+            <if test="cpe23 != null and cpe23 != ''">
+                and cpe23 = #{cpe23}
+            </if>
+            <if test="edition != null and edition != ''">
+                and edition = #{edition}
+            </if>
+            <if test="language != null and language != ''">
+                and language = #{language}
+            </if>
+            <if test="other != null and other != ''">
+                and other = #{other}
+            </if>
+            <if test="part != null and part != ''">
+                and part = #{part}
+            </if>
+            <if test="product != null and product != ''">
+                and product = #{product}
+            </if>
+            <if test="purl != null and purl != ''">
+                and purl = #{purl}
+            </if>
+            <if test="purlName != null and purlName != ''">
+                and purl_name = #{purlName}
+            </if>
+            <if test="purlNamespace != null and purlNamespace != ''">
+                and purl_namespace = #{purlNamespace}
+            </if>
+            <if test="purlQualifiers != null and purlQualifiers != ''">
+                and purl_qualifiers = #{purlQualifiers}
+            </if>
+            <if test="purlSubpath != null and purlSubpath != ''">
+                and purl_subpath = #{purlSubpath}
+            </if>
+            <if test="purlType != null and purlType != ''">
+                and purl_type = #{purlType}
+            </if>
+            <if test="purlVersion != null and purlVersion != ''">
+                and purl_version = #{purlVersion}
+            </if>
+            <if test="swedition != null and swedition != ''">
+                and swedition = #{swedition}
+            </if>
+            <if test="targethw != null and targethw != ''">
+                and targethw = #{targethw}
+            </if>
+            <if test="targetsw != null and targetsw != ''">
+                and targetsw = #{targetsw}
+            </if>
+            <if test="update != null and update != ''">
+                and update = #{update}
+            </if>
+            <if test="uuid != null and uuid != ''">
+                and uuid = #{uuid}
+            </if>
+            <if test="vendor != null and vendor != ''">
+                and vendor = #{vendor}
+            </if>
+            <if test="version != null and version != ''">
+                and version = #{version}
+            </if>
+            <if test="versionendexcluding != null and versionendexcluding != ''">
+                and versionendexcluding = #{versionendexcluding}
+            </if>
+            <if test="versionendincluding != null and versionendincluding != ''">
+                and versionendincluding = #{versionendincluding}
+            </if>
+            <if test="versionstartexcluding != null and versionstartexcluding != ''">
+                and versionstartexcluding = #{versionstartexcluding}
+            </if>
+            <if test="versionstartincluding != null and versionstartincluding != ''">
+                and versionstartincluding = #{versionstartincluding}
+            </if>
+            <if test="vulnerable != null and vulnerable != ''">
+                and vulnerable = #{vulnerable}
+            </if>
+        </where>
+    </select>
+
+    <!--新增数据-->
+    <insert id="insert" keyProperty="id" useGeneratedKeys="true">
+        insert into vulnerable_software(id,cpe22,cpe23,edition,language,other,part,product,purl,purl_name,purl_namespace,purl_qualifiers,purl_subpath,purl_type,purl_version,swedition,targethw,targetsw,update,uuid,vendor,version,versionendexcluding,versionendincluding,versionstartexcluding,versionstartincluding,vulnerable)
+        values (#{id},#{cpe22},#{cpe23},#{edition},#{language},#{other},#{part},#{product},#{purl},#{purlName},#{purlNamespace},#{purlQualifiers},#{purlSubpath},#{purlType},#{purlVersion},#{swedition},#{targethw},#{targetsw},#{update},#{uuid},#{vendor},#{version},#{versionendexcluding},#{versionendincluding},#{versionstartexcluding},#{versionstartincluding},#{vulnerable})
+    </insert>
+
+    <!-- 批量新增数据 -->
+    <insert id="insertBatch" keyProperty="id" useGeneratedKeys="true">
+        insert into vulnerable_software(id,cpe22,cpe23,edition,language,other,part,product,purl,purl_name,purl_namespace,purl_qualifiers,purl_subpath,purl_type,purl_version,swedition,targethw,targetsw,update,uuid,vendor,version,versionendexcluding,versionendincluding,versionstartexcluding,versionstartincluding,vulnerable)
+        values
+        <foreach collection="entities" item="entity" separator=",">
+            (#{entity.id},#{entity.cpe22},#{entity.cpe23},#{entity.edition},#{entity.language},#{entity.other},#{entity.part},#{entity.product},#{entity.purl},#{entity.purlName},#{entity.purlNamespace},#{entity.purlQualifiers},#{entity.purlSubpath},#{entity.purlType},#{entity.purlVersion},#{entity.swedition},#{entity.targethw},#{entity.targetsw},#{entity.update},#{entity.uuid},#{entity.vendor},#{entity.version},#{entity.versionendexcluding},#{entity.versionendincluding},#{entity.versionstartexcluding},#{entity.versionstartincluding},#{entity.vulnerable})
+        </foreach>
+    </insert>
+
+    <!-- 批量新增或按主键更新数据 -->
+    <insert id="insertOrUpdateBatch"  useGeneratedKeys="true">
+        insert into vulnerable_software(cpe22,cpe23,edition,language,other,part,product,purl,purl_name,purl_namespace,purl_qualifiers,purl_subpath,purl_type,purl_version,swedition,targethw,targetsw,`update`,uuid,vendor,version,versionendexcluding,versionendincluding,versionstartexcluding,versionstartincluding,vulnerable)
+        values
+        <foreach collection="entities" item="entity" separator=",">
+            (#{entity.cpe22},#{entity.cpe23},#{entity.edition},#{entity.language},#{entity.other},#{entity.part},#{entity.product},#{entity.purl},#{entity.purlName},#{entity.purlNamespace},#{entity.purlQualifiers},#{entity.purlSubpath},#{entity.purlType},#{entity.purlVersion},#{entity.swedition},#{entity.targethw},#{entity.targetsw},#{entity.update},#{entity.uuid},#{entity.vendor},#{entity.version},#{entity.versionEndExcluding},#{entity.versionEndIncluding},#{entity.versionStartExcluding},#{entity.versionStartIncluding},#{entity.vulnerable})
+        </foreach>
+        on duplicate key update
+        cpe22=values(cpe22),
+        cpe23=values(cpe23),
+        edition=values(edition),
+        `language`=values(`language`),
+        other=values(other),
+        part=values(part),
+        product=values(product),
+        purl=values(purl),
+        purl_name=values(purl_name),
+        purl_namespace=values(purl_namespace),
+        purl_qualifiers=values(purl_qualifiers),
+        purl_subpath=values(purl_subpath),
+        purl_type=values(purl_type),
+        purl_version=values(purl_version),
+        swedition=values(swedition),
+        targethw=values(targethw),
+        targetsw=values(targetsw),
+        `update`=values(`update`),
+        uuid=values(uuid),
+        vendor=values(vendor),
+        version=values(version),
+        versionendexcluding=values(versionendexcluding),
+        versionendincluding=values(versionendincluding),
+        versionstartexcluding=values(versionstartexcluding),
+        versionstartincluding=values(versionstartincluding),
+        vulnerable=values(vulnerable)
+    </insert>
+
+    <!-- 更新数据 -->
+    <update id="update">
+        update vulnerable_software
+        <set>
+            <if test="id != null and id != ''">
+                id = #{id},
+            </if>
+            <if test="cpe22 != null and cpe22 != ''">
+                cpe22 = #{cpe22},
+            </if>
+            <if test="cpe23 != null and cpe23 != ''">
+                cpe23 = #{cpe23},
+            </if>
+            <if test="edition != null and edition != ''">
+                edition = #{edition},
+            </if>
+            <if test="language != null and language != ''">
+                language = #{language},
+            </if>
+            <if test="other != null and other != ''">
+                other = #{other},
+            </if>
+            <if test="part != null and part != ''">
+                part = #{part},
+            </if>
+            <if test="product != null and product != ''">
+                product = #{product},
+            </if>
+            <if test="purl != null and purl != ''">
+                purl = #{purl},
+            </if>
+            <if test="purlName != null and purlName != ''">
+                purl_name = #{purlName},
+            </if>
+            <if test="purlNamespace != null and purlNamespace != ''">
+                purl_namespace = #{purlNamespace},
+            </if>
+            <if test="purlQualifiers != null and purlQualifiers != ''">
+                purl_qualifiers = #{purlQualifiers},
+            </if>
+            <if test="purlSubpath != null and purlSubpath != ''">
+                purl_subpath = #{purlSubpath},
+            </if>
+            <if test="purlType != null and purlType != ''">
+                purl_type = #{purlType},
+            </if>
+            <if test="purlVersion != null and purlVersion != ''">
+                purl_version = #{purlVersion},
+            </if>
+            <if test="swedition != null and swedition != ''">
+                swedition = #{swedition},
+            </if>
+            <if test="targethw != null and targethw != ''">
+                targethw = #{targethw},
+            </if>
+            <if test="targetsw != null and targetsw != ''">
+                targetsw = #{targetsw},
+            </if>
+            <if test="update != null and update != ''">
+                update = #{update},
+            </if>
+            <if test="uuid != null and uuid != ''">
+                uuid = #{uuid},
+            </if>
+            <if test="vendor != null and vendor != ''">
+                vendor = #{vendor},
+            </if>
+            <if test="version != null and version != ''">
+                version = #{version},
+            </if>
+            <if test="versionendexcluding != null and versionendexcluding != ''">
+                versionendexcluding = #{versionendexcluding},
+            </if>
+            <if test="versionendincluding != null and versionendincluding != ''">
+                versionendincluding = #{versionendincluding},
+            </if>
+            <if test="versionstartexcluding != null and versionstartexcluding != ''">
+                versionstartexcluding = #{versionstartexcluding},
+            </if>
+            <if test="versionstartincluding != null and versionstartincluding != ''">
+                versionstartincluding = #{versionstartincluding},
+            </if>
+            <if test="vulnerable != null and vulnerable != ''">
+                vulnerable = #{vulnerable},
+            </if>
+        </set>
+        where id = #{id}
+    </update>
+
+    <!--通过主键删除-->
+    <delete id="deleteById">
+        delete from vulnerable_software where id = #{id}
+    </delete>
+</mapper>

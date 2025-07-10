@@ -1,0 +1,552 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+    <modelVersion>4.0.0</modelVersion>
+
+ <parent>
+        <groupId>com.folib</groupId>
+        <artifactId>folib-parent</artifactId>
+        <version>3.0-SNAPSHOT</version>
+        <relativePath/>
+    </parent>
+
+    <artifactId>folib-build</artifactId>
+    <packaging>pom</packaging>
+
+    <name>Folib: Build</name>
+    <description>The folib distribution.</description>
+    <inceptionYear>2019</inceptionYear>
+    <licenses>
+        <license>
+             <name>GNU General Public License, Version 3</name>
+             <url>https://www.gnu.org/licenses/gpl-3.0.html</url>
+            <distribution>repo</distribution>
+            <comments>GPL v3 is a strong copyleft license that requires derived works to also be open source under the GPL.</comments>
+        </license>
+    </licenses>
+    <properties>
+        <dir.assembly>${project.build.directory}/assembly</dir.assembly>
+        <dir.folib.standalone>${dir.assembly}/folib-${project.version}</dir.folib.standalone>
+        <dir.jetty.etc>${dir.folib.standalone}/etc/jetty</dir.jetty.etc>
+        <dir.folib.vault>${dir.assembly}/folib-data</dir.folib.vault>
+
+        <!-- Spring Boot properties -->
+        <java.version>17</java.version>
+        <jetty.version>${version.jetty}</jetty.version>
+        <servlet-api.version>${version.servlet.api}</servlet-api.version>
+    </properties>
+
+    <build>
+        <resources>
+            <resource>
+                <directory>${basedir}/src/main/resources</directory>
+            </resource>
+            <resource>
+                <directory>${basedir}/src/main/resources/bin</directory>
+                <targetPath>${project.build.directory}/assembly/folib-${project.version}/bin</targetPath>
+                <includes>
+                    <include>**/**</include>
+                </includes>
+                <filtering>true</filtering>
+            </resource>
+        </resources>
+
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-resources-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <phase>process-resources</phase>
+                        <goals>
+                            <goal>resources</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-source-plugin</artifactId>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+
+                <executions>
+                    <execution>
+                        <id>unpack-resources-logging</id>
+                        <phase>process-resources</phase>
+                        <goals>
+                            <goal>unpack</goal>
+                        </goals>
+                        <configuration>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>${project.groupId}</groupId>
+                                    <artifactId>folib-commons-resources</artifactId>
+                                    <version>${project.version}</version>
+                                    <type>jar</type>
+
+                                    <overWrite>true</overWrite>
+                                    <outputDirectory>${dir.folib.standalone}/etc</outputDirectory>
+                                    <includes>logback*xml</includes>
+                                </artifactItem>
+                            </artifactItems>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>unpack-resources-etc</id>
+                        <phase>process-resources</phase>
+                        <goals>
+                            <goal>unpack</goal>
+                        </goals>
+                        <configuration>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>${project.groupId}</groupId>
+                                    <artifactId>folib-commons-resources</artifactId>
+                                    <version>${project.version}</version>
+                                    <type>jar</type>
+
+                                    <overWrite>true</overWrite>
+                                    <outputDirectory>${dir.folib.standalone}</outputDirectory>
+                                    <includes>etc/**</includes>
+                                </artifactItem>
+                            </artifactItems>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>unpack-storage-resources</id>
+                        <phase>process-resources</phase>
+                        <goals>
+                            <goal>unpack</goal>
+                        </goals>
+                        <configuration>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>${project.groupId}</groupId>
+                                    <artifactId>folib-commons-resources</artifactId>
+                                    <version>${project.version}</version>
+                                    <type>jar</type>
+
+                                    <overWrite>true</overWrite>
+                                    <outputDirectory>${dir.folib.standalone}/etc</outputDirectory>
+                                    <includes>logback*xml</includes>
+                                </artifactItem>
+                                <artifactItem>
+                                    <groupId>${project.groupId}</groupId>
+                                    <artifactId>folib-storage-api-resources</artifactId>
+                                    <version>3.0-SNAPSHOT</version>
+                                    <type>jar</type>
+
+                                    <overWrite>true</overWrite>
+                                    <outputDirectory>${dir.folib.standalone}</outputDirectory>
+                                    <includes>etc/conf/folib.yaml,META-INF/spring/**</includes>
+                                </artifactItem>
+                                <artifactItem>
+                                    <groupId>com.folib</groupId>
+                                    <artifactId>folib-db-server</artifactId>
+                                    <version>3.0-SNAPSHOT</version>
+                                    <type>jar</type>
+                                    <overWrite>true</overWrite>
+                                    <outputDirectory>${dir.folib.standalone}</outputDirectory>
+                                    <includes>etc/conf/cassandra.yaml,etc/conf/janusgraph-cassandra.properties,etc/conf/janusgraph-inmemory.properties</includes>
+                                </artifactItem>
+
+                                <artifactItem>
+                                    <groupId>${project.groupId}</groupId>
+                                    <artifactId>folib-gremlin-service</artifactId>
+                                    <version>${project.version}</version>
+                                    <type>jar</type>
+                                    <overWrite>true</overWrite>
+                                    <outputDirectory>${dir.folib.standalone}</outputDirectory>
+                                    <includes>etc/conf/db_EMBEDDED.yaml,etc/conf/db_MEMORY.yaml,etc/conf/db_REMOTE.yaml</includes>
+                                </artifactItem>
+                            </artifactItems>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>unpack-user-management-resources</id>
+                        <phase>process-resources</phase>
+                        <goals>
+                            <goal>unpack</goal>
+                        </goals>
+                        <configuration>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>${project.groupId}</groupId>
+                                    <artifactId>folib-user-management</artifactId>
+                                    <version>${project.version}</version>
+                                    <type>jar</type>
+
+                                    <overWrite>true</overWrite>
+                                    <outputDirectory>${dir.folib.standalone}</outputDirectory>
+                                    <includes>etc/**</includes>
+                                </artifactItem>
+                            </artifactItems>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>copy-required-artifacts-to-assembly-lib</id>
+                        <phase>process-resources</phase>
+                        <goals>
+                            <goal>copy</goal>
+                        </goals>
+                        <configuration>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>${project.groupId}</groupId>
+                                    <artifactId>folib-web-core</artifactId>
+                                    <classifier>spring-boot</classifier>
+                                    <type>jar</type>
+                                </artifactItem>
+                            </artifactItems>
+
+                            <outputDirectory>${dir.folib.standalone}/lib</outputDirectory>
+                            <overWriteReleases>true</overWriteReleases>
+                            <overWriteSnapshots>true</overWriteSnapshots>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>config</id>
+                        <phase>prepare-package</phase>
+                        <configuration>
+                            <tasks>
+                                <mkdir dir="${dir.folib.vault}/"/>
+                                <mkdir dir="${dir.folib.standalone}/tmp"/>
+                                <mkdir dir="${dir.folib.vault}/logs"/>
+                            </tasks>
+                        </configuration>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <descriptors>
+                        <descriptor>src/main/assembly/build.xml</descriptor>
+                    </descriptors>
+                    <appendAssemblyId>false</appendAssemblyId>
+                    <!-- Do not, under any circumstances change this,
+                         as it truncates long file names inside the tar.gz! -->
+                    <tarLongFileMode>gnu</tarLongFileMode>
+                </configuration>
+            </plugin>
+
+<!--            <plugin>-->
+<!--                <artifactId>jdeb</artifactId>-->
+<!--                <groupId>org.vafer</groupId>-->
+<!--                <executions>-->
+<!--                    <execution>-->
+<!--                        <phase>package</phase>-->
+<!--                        <goals>-->
+<!--                            <goal>jdeb</goal>-->
+<!--                        </goals>-->
+<!--                        <configuration>-->
+<!--                            <deb>${basedir}/target/folib-distribution-${project.version}.deb</deb>-->
+<!--                            <controlDir>${basedir}/src/main/resources/deb</controlDir>-->
+<!--                            <skipPOMs>false</skipPOMs>-->
+<!--                            <dataSet>-->
+
+<!--                                <data>-->
+<!--                                    <src>${basedir}/target/assembly/folib-${project.version}/bin</src>-->
+<!--                                    <type>directory</type>-->
+<!--                                    <mapper>-->
+<!--                                        <type>perm</type>-->
+<!--                                        <prefix>/opt/folib/bin</prefix>-->
+<!--                                        <user>folib</user>-->
+<!--                                        <group>folib</group>-->
+<!--                                        <filemode>770</filemode>-->
+<!--                                        <dirmode>770</dirmode>-->
+<!--                                    </mapper>-->
+<!--                                </data>-->
+
+<!--                                <data>-->
+<!--                                    <src>${basedir}/target/assembly/folib-${project.version}/lib</src>-->
+<!--                                    <type>directory</type>-->
+<!--                                    <mapper>-->
+<!--                                        <type>perm</type>-->
+<!--                                        <prefix>/opt/folib/lib</prefix>-->
+<!--                                        <user>folib</user>-->
+<!--                                        <group>folib</group>-->
+<!--                                        <filemode>770</filemode>-->
+<!--                                        <dirmode>770</dirmode>-->
+<!--                                    </mapper>-->
+<!--                                </data>-->
+
+<!--                                <data>-->
+<!--                                    <src>${basedir}/target/assembly/folib-data/logs</src>-->
+<!--                                    <type>directory</type>-->
+<!--                                    <mapper>-->
+<!--                                    <type>perm</type>-->
+<!--                                        <prefix>/opt/folib/logs</prefix>-->
+<!--                                        <user>folib</user>-->
+<!--                                        <group>folib</group>-->
+<!--                                        <filemode>770</filemode>-->
+<!--                                        <dirmode>770</dirmode>-->
+<!--                                    </mapper>-->
+<!--                                </data>-->
+
+<!--                                <data>-->
+<!--                                    <src>${basedir}/target/assembly/folib-${project.version}/tmp</src>-->
+<!--                                    <type>directory</type>-->
+<!--                                    <mapper>-->
+<!--                                        <type>perm</type>-->
+<!--                                        <prefix>/opt/folib/tmp</prefix>-->
+<!--                                        <user>folib</user>-->
+<!--                                        <group>folib</group>-->
+<!--                                        <filemode>770</filemode>-->
+<!--                                        <dirmode>770</dirmode>-->
+<!--                                     </mapper>-->
+<!--                                </data>-->
+
+<!--                                <data>-->
+<!--                                    <src>${basedir}/target/assembly/folib-${project.version}/etc</src>-->
+<!--                                    <type>directory</type>-->
+<!--                                    <conffile>true</conffile>-->
+<!--                                    <mapper>-->
+<!--                                         <type>perm</type>-->
+<!--                                         <prefix>/opt/folib/etc</prefix>-->
+<!--                                         <user>folib</user>-->
+<!--                                         <group>folib</group>-->
+<!--                                         <filemode>770</filemode>-->
+<!--                                         <dirmode>770</dirmode>-->
+<!--                                    </mapper>-->
+<!--                                </data>-->
+
+<!--                                <data>-->
+<!--                                    <src>${basedir}/src/main/resources/folib.service</src>-->
+<!--                                    <type>file</type>-->
+<!--                                    <mapper>-->
+<!--                                    <type>perm</type>-->
+<!--                                        <prefix>/opt/folib</prefix>-->
+<!--                                        <user>folib</user>-->
+<!--                                        <group>folib</group>-->
+<!--                                        <filemode>775</filemode>-->
+<!--                                        <dirmode>775</dirmode>-->
+<!--                                    </mapper>-->
+<!--                                </data>-->
+
+<!--                                <data>-->
+<!--                                    <linkName>/etc/systemd/system/folib.service</linkName>-->
+<!--                                        <linkTarget>/opt/folib/folib.service</linkTarget>-->
+<!--                                    <type>link</type>-->
+<!--                                </data>-->
+
+<!--                            </dataSet>-->
+<!--                        </configuration>-->
+<!--                    </execution>-->
+<!--                </executions>-->
+<!--            </plugin>-->
+
+        </plugins>
+    </build>
+
+    <dependencies>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>folib-web-core</artifactId>
+            <version>${project.version}</version>
+            <classifier>spring-boot</classifier>
+        </dependency>
+    </dependencies>
+
+    <profiles>
+        <profile>
+            <id>log-file-default</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+
+            <properties>
+                <folib.log.file>logback-spring.xml</folib.log.file>
+            </properties>
+        </profile>
+        <profile>
+            <id>log-file-debug</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+
+            <properties>
+                <folib.log.file>logback-spring-debug.xml</folib.log.file>
+            </properties>
+        </profile>
+
+        <profile>
+            <id>build-rpm</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>rpm-maven-plugin</artifactId>
+
+                        <executions>
+                            <execution>
+                                <goals>
+                                    <goal>attached-rpm</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                        <configuration>
+                                <group>Folib</group>
+                            <description>folib build version ${project.version}.</description>
+                            <copyTo>target/folib-build-${project.version}.rpm</copyTo>
+                            <license>Apache 2.0</license>
+                            <url>https://folib.github.io/</url>
+                            <description>The Folib artifact repository manager.</description>
+                            <needarch>x86_64</needarch>
+                            <defineStatements>
+                                <defineStatement>_binaries_in_noarch_packages_terminate_build 0</defineStatement>
+                            </defineStatements>
+                            <requires>jre &gt;= 1.8.0</requires>
+                            <mappings>
+                                <mapping>
+                                    <filemode>0755</filemode>
+                                    <directory>/opt/folib/bin</directory>
+                                    <sources>
+                                        <source>
+                                            <location>${project.build.directory}/assembly/folib-${project.version}/bin</location>
+                                        </source>
+                                    </sources>
+                                </mapping>
+                                <mapping>
+                                    <directory>/opt/folib/etc</directory>
+                                    <sources>
+                                        <source>
+                                            <location>${project.build.directory}/assembly/folib-${project.version}/etc</location>
+                                        </source>
+                                    </sources>
+                                </mapping>
+                                <mapping>
+                                    <directory>/opt/folib/lib</directory>
+                                    <sources>
+                                        <source>
+                                            <location>${project.build.directory}/assembly/folib-${project.version}/lib</location>
+                                        </source>
+                                    </sources>
+                                </mapping>
+                                <mapping>
+                                    <directory>/opt/folib/logs</directory>
+                                    <sources>
+                                        <source>
+                                            <location>${project.build.directory}/assembly/folib-data/logs</location>
+                                        </source>
+                                    </sources>
+                                </mapping>
+                                <mapping>
+                                    <directory>/opt/folib/tmp</directory>
+                                    <sources>
+                                        <source>
+                                            <location>${project.build.directory}/assembly/folib-${project.version}/tmp</location>
+                                        </source>
+                                    </sources>
+                                </mapping>
+                                <mapping>
+                                    <directory>/usr/bin</directory>
+                                    <sources>
+                                        <softlinkSource>
+                                            <location>/opt/folib/bin/folib</location>
+                                        </softlinkSource>
+                                    </sources>
+                                </mapping>
+                                <mapping>
+                                    <directory>/etc/systemd/system</directory>
+                                    <directoryIncluded>false</directoryIncluded>
+                                    <sources>
+                                        <source>
+                                            <location>${project.basedir}/src/main/resources/folib.service</location>
+                                        </source>
+                                    </sources>
+                                </mapping>
+                            </mappings>
+                            <postinstallScriptlet>
+                                <scriptFile>src/main/resources/postinstall</scriptFile>
+                                <fileEncoding>utf-8</fileEncoding>
+                                <filter>true</filter>
+                            </postinstallScriptlet>
+                        </configuration>
+                    </plugin>
+
+                </plugins>
+            </build>
+        </profile>
+
+        <profile>
+            <id>deploy-release-artifact-to-github</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>de.jutzig</groupId>
+                        <artifactId>github-release-plugin</artifactId>
+
+                        <configuration>
+                            <description>folib build version ${project.version}.</description>
+                            <releaseName>${project.version}</releaseName>
+                            <tag>${project.version}</tag>
+
+                            <overwriteArtifact>true</overwriteArtifact>
+                            <repositoryId>folib/folib</repositoryId>
+                            <serverId>github</serverId>
+                            <deleteRelease>true</deleteRelease>
+
+                            <fileSets>
+                                <fileSet>
+                                    <directory>${project.build.directory}</directory>
+                                    <includes>
+                                        <include>${project.artifactId}*.tar.gz</include>
+                                        <include>${project.artifactId}*.zip</include>
+                                        <include>${project.artifactId}*.rpm</include>
+<!--                                        <include>${project.artifactId}*.deb</include>-->
+                                    </includes>
+                                </fileSet>
+                            </fileSets>
+                        </configuration>
+
+                        <executions>
+                            <execution>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>release</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+
+</project>

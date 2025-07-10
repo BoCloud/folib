@@ -1,0 +1,1 @@
+org.springframework.context.ApplicationContextInitializer=com.folib.booters.ResourcesBooter

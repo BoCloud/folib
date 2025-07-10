@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.folib.mapper.AffectedVersionAttributionMapper">
+<!--    <resultMap type=" com.veadan.folib.entity.AffectedVersionAttributionEntity" id="AffectedVersionAttributionEntityMap">-->
+<!--        <result property="id" column="id" />-->
+<!--        <result property="firstSeen" column="first_seen"/>-->
+<!--        <result property="lastSeen" column="last_seen" />-->
+<!--        <result property="source" column="source"/>-->
+<!--        <result property="uuid" column="uuid" />-->
+<!--        <result property="vulnerability" column="vulnerability" />-->
+<!--        <result property="vulnerableSoftware" column="vulnerable_software"/>-->
+<!--    </resultMap>-->
+
+<!--    <resultMap type="com.veadan.folib.domain.vulnerability.model.AffectedVersionAttribution" id="AffectedVersionAttributionMap">-->
+<!--        <result property="id" column="id" />-->
+<!--        <result property="firstSeen" column="first_seen"/>-->
+<!--        <result property="lastSeen" column="last_seen" />-->
+<!--        <result property="source" column="source"/>-->
+<!--        <result property="uuid" column="uuid" />-->
+<!--        <collection-->
+<!--                property="vulnerability"-->
+<!--                column="vulnerability"-->
+<!--                select="selectVulnerability"-->
+<!--        />-->
+<!--        <collection-->
+<!--                property="vulnerability"-->
+<!--                column="vulnerability"-->
+<!--                select="selectVulnerableSoftware"-->
+<!--        />-->
+<!--    </resultMap>-->
+
+
+
+    <!--统计总行数-->
+    <select id="count" resultType="java.lang.Long">
+        select count(1)
+        from affected_version_attribution
+        <where>
+            <if test="id != null and id != ''">
+                and id = #{id}
+            </if>
+            <if test="firstSeen != null and firstSeen != ''">
+                and first_seen = #{firstSeen}
+            </if>
+            <if test="lastSeen != null and lastSeen != ''">
+                and last_seen = #{lastSeen}
+            </if>
+            <if test="source != null and source != ''">
+                and source = #{source}
+            </if>
+            <if test="uuid != null and uuid != ''">
+                and uuid = #{uuid}
+            </if>
+            <if test="vulnerability != null and vulnerability != ''">
+                and vulnerability = #{vulnerability}
+            </if>
+            <if test="vulnerableSoftware != null and vulnerableSoftware != ''">
+                and vulnerable_software = #{vulnerableSoftware}
+            </if>
+        </where>
+    </select>
+
+    <!--新增数据-->
+    <insert id="createAffectedVersionAttribution" keyProperty="id" useGeneratedKeys="true">
+        insert into affected_version_attribution(id,first_seen,last_seen,source,uuid,vulnerability,vulnerable_software)
+        values (#{id},#{firstSeen},#{lastSeen},#{source},#{uuid},#{vulnerability},#{vulnerableSoftware})
+    </insert>
+
+    <!-- 批量新增数据 -->
+    <insert id="insertBatch" keyProperty="id" useGeneratedKeys="true">
+        insert into affected_version_attribution(id,first_seen,last_seen,source,uuid,vulnerability,vulnerable_software)
+        values
+        <foreach collection="entities" item="entity" separator=",">
+            (#{entity.id},#{entity.firstSeen},#{entity.lastSeen},#{entity.source},#{entity.uuid},#{entity.vulnerability},#{entity.vulnerableSoftware})
+        </foreach>
+    </insert>
+
+    <!-- 批量新增或按主键更新数据 -->
+    <insert id="insertOrUpdateBatch" keyProperty="id" useGeneratedKeys="true">
+        insert into affected_version_attribution(id,first_seen,last_seen,source,uuid,vulnerability,vulnerable_software)
+        values
+        <foreach collection="entities" item="entity" separator=",">
+            (#{entity.id},#{entity.firstSeen},#{entity.lastSeen},#{entity.source},#{entity.uuid},#{entity.vulnerability},#{entity.vulnerableSoftware})
+        </foreach>
+        on duplicate key update
+        id=values(id),
+        first_seen=values(first_seen),
+        last_seen=values(last_seen),
+        source=values(source),
+        uuid=values(uuid),
+        vulnerability=values(vulnerability),
+        vulnerable_software=values(vulnerable_software)
+    </insert>
+
+    <!-- 更新数据 -->
+    <update id="updateAffectedVersionAttribution">
+        update affected_version_attribution
+        <set>
+            <if test="id != null and id != ''">
+                id = #{id},
+            </if>
+            <if test="firstSeen != null and firstSeen != ''">
+                first_seen = #{firstSeen},
+            </if>
+            <if test="lastSeen != null and lastSeen != ''">
+                last_seen = #{lastSeen},
+            </if>
+            <if test="source != null and source != ''">
+                source = #{source},
+            </if>
+            <if test="uuid != null and uuid != ''">
+                uuid = #{uuid},
+            </if>
+            <if test="vulnerability != null and vulnerability != ''">
+                vulnerability = #{vulnerability},
+            </if>
+            <if test="vulnerableSoftware != null and vulnerableSoftware != ''">
+                vulnerable_software = #{vulnerableSoftware},
+            </if>
+        </set>
+        where id = #{id}
+    </update>
+
+    <!--通过主键删除-->
+    <delete id="deleteById">
+        delete from affected_version_attribution where id = #{id}
+    </delete>
+
+
+    <!-- todo 返回值 -->
+    <select id="selectVulnerability" >
+        select * from vulnerability where vulnerability.vulnid=#{vulnerability}
+    </select>
+    <select id="selectVulnerableSoftware" >
+        select * from vulnerable_software where vulnerable_software.cpe22=#{vulnerableSoftware}
+    </select>
+</mapper>

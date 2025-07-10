@@ -1,0 +1,339 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.folib.mapper.RoleResourceRefMapper">
+    <resultMap type="com.folib.entity.RoleResourceRef" id="RoleResourceRefMap">
+        <result property="id" column="id"/>
+        <result property="roleId" column="role_id"/>
+        <result property="entityId" column="entity_id"/>
+        <result property="refType" column="ref_type" />
+        <result property="resourceId" column="resource_id"/>
+        <result property="resourceType" column="resource_type"/>
+        <result property="storagePrivilege" column="storage_privilege"/>
+        <result property="repositoryPrivilege" column="repository_privilege"/>
+        <result property="pathPrivilege" column="path_privilege"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+    </resultMap>
+
+    <!-- 通过ID查询单条数据 -->
+    <select id="queryById" resultMap="RoleResourceRefMap">
+        select
+            id,role_id,entity_id,ref_type,resource_id,storage_privilege,repository_privilege,path_privilege,create_by,create_time
+        from role_resource_ref
+        where id = #{id}
+    </select>
+
+    <!--分页查询指定行数据-->
+    <select id="queryAllByLimit" resultMap="RoleResourceRefMap">
+        select
+        id,role_id,entity_id,ref_type,resource_id,storage_privilege,repository_privilege,path_privilege,create_by,create_time
+        from role_resource_ref
+        <where>
+            <if test="id != null and id != ''">
+                and id = #{id}
+            </if>
+            <if test="roleId != null and roleId != ''">
+                and role_id = #{roleId}
+            </if>
+            <if test="entityId != null and entityId != ''">
+                and entity_id = #{entityId}
+            </if>
+            <if test="refType != null and refType != ''">
+                and ref_type = #{refType}
+            </if>
+            <if test="resourceId != null and resourceId != ''">
+                and resource_id = #{resourceId}
+            </if>
+            <if test="storagePrivilege != null and storagePrivilege != ''">
+                and storage_privilege = #{storagePrivilege}
+            </if>
+            <if test="repositoryPrivilege != null and repositoryPrivilege != ''">
+                and repository_privilege = #{repositoryPrivilege}
+            </if>
+            <if test="pathPrivilege != null and pathPrivilege != ''">
+                and path_privilege = #{pathPrivilege}
+            </if>
+            <if test="createBy != null and createBy != ''">
+                and create_by = #{createBy}
+            </if>
+            <if test="createTime != null and createTime != ''">
+                and create_time = #{createTime}
+            </if>
+        </where>
+        limit #{pageable.offset}, #{pageable.pageSize}
+    </select>
+
+    <!--统计总行数-->
+    <select id="count" resultType="java.lang.Long">
+        select count(1)
+        from role_resource_ref
+        <where>
+            <if test="id != null and id != ''">
+                and id = #{id}
+            </if>
+            <if test="roleId != null and roleId != ''">
+                and role_id = #{roleId}
+            </if>
+            <if test="entityId != null and entityId != ''">
+                and entity_id = #{entityId}
+            </if>
+            <if test="refType != null and refType != ''">
+                and ref_type = #{refType}
+            </if>
+            <if test="resourceId != null and resourceId != ''">
+                and resource_id = #{resourceId}
+            </if>
+            <if test="storagePrivilege != null and storagePrivilege != ''">
+                and storage_privilege = #{storagePrivilege}
+            </if>
+            <if test="repositoryPrivilege != null and repositoryPrivilege != ''">
+                and repository_privilege = #{repositoryPrivilege}
+            </if>
+            <if test="pathPrivilege != null and pathPrivilege != ''">
+                and path_privilege = #{pathPrivilege}
+            </if>
+            <if test="createBy != null and createBy != ''">
+                and create_by = #{createBy}
+            </if>
+            <if test="createTime != null and createTime != ''">
+                and create_time = #{createTime}
+            </if>
+        </where>
+    </select>
+    <select id="queryAllByRoleId" resultMap="RoleResourceRefMap">
+        select
+        id,role_id,entity_id,ref_type,resource_id,storage_privilege,repository_privilege,path_privilege,create_by,create_time,resource_type
+        from role_resource_ref
+        where role_id in
+        <foreach collection="roleIds" item="roleId" open="(" separator="," close=")">
+            #{roleId}
+        </foreach>
+    </select>
+    <select id="getUserByRoleId" resultType="com.folib.dto.RoleDTO">
+        select
+            fr.id as name,
+            fr.description as description,
+            group_concat(distinct CASE WHEN rrr.ref_type = 1 THEN rrr.entity_id END) as userIds,
+            group_concat(distinct CASE WHEN rrr.ref_type = 2 THEN rrr.entity_id END) as userGroupIds
+        from
+            folib_role fr
+                left join role_resource_ref rrr on
+                fr.id = rrr.role_id
+        where
+            fr.deleted = "0" and fr.id = #{roleId}
+        group by
+            fr.id;
+    </select>
+    <select id="queryPermissions" resultType="com.folib.dto.PermissionsDTO">
+        select
+            rrr.*,fr.id as roleId, fr.description,
+            r.api_authoritie,
+            r.storage_id ,
+            r.repository_id ,
+            r.`path`
+        from
+            folib_role fr
+                left join role_resource_ref rrr on
+                fr.id = rrr.role_id
+                left join
+            resource r on
+                rrr.resource_id = r.id
+        where
+            fr.deleted = 0
+        <if test="roleId != null and roleId != ''">
+            and fr.id = #{roleId}
+        </if>
+        <if test="storageId != null and storageId != ''">
+            and r.storage_id = #{storageId}
+        </if>
+        <if test="repositoryId != null and repositoryId != ''">
+            and r.repository_id = #{repositoryId}
+        </if>
+        <if test="resourceIds != null and resourceIds.size() > 0">
+            and rrr.resource_id in
+            <foreach collection="resourceIds"  item="resourceId" open="(" separator="," close=")">
+                #{resourceId}
+            </foreach>
+        </if>
+        <if test="storageIds != null and storageIds.size() > 0">
+            and r.storage_id in
+            <foreach collection="storageIds"  item="storageId" open="(" separator="," close=")">
+                #{storageId}
+            </foreach>
+        </if>
+        <if test="username != null and username != ''">
+            and rrr.entity_id in (
+                select id from folib_user fu where fu.id = #{username}
+                union all
+                select ugr.user_group_id  as id from user_group_ref ugr where ugr.user_id = #{username})
+        </if>  and rrr.id is not null
+        <if test="resourceEmpty">
+            or  rrr.resource_id is null and rrr.id is not null
+        </if>
+    </select>
+    <select id="queryRoleByUserId" resultType="com.folib.entity.RoleResourceRef">
+        select
+            *
+        from
+            role_resource_ref rrr
+         where  1=1 and
+        <if test="userId != null and userId != ''">
+            rrr.ref_type = 1 and rrr.entity_id = #{userId}
+        </if>
+        and rrr.role_id in
+        <foreach collection="roleIds" item="roleId" open="(" separator="," close=")" >
+            #{roleId}
+        </foreach>
+    </select>
+    <select id="queryApiAuthorities" resultType="com.folib.entity.RoleResourceRef">
+        select
+            rrr.role_id,
+            r.api_authoritie
+        from
+            role_resource_ref rrr
+                left join resource r on
+                rrr.resource_id = r.id
+        where
+            rrr.role_id in
+            <foreach collection="roleIds" item="roleId" open="(" separator="," close=")">
+                #{roleId}
+            </foreach>
+    </select>
+    <select id="queryByRoleIds" resultType="com.folib.entity.RoleResourceRef">
+        select * from role_resource_ref rrr where
+            rrr.role_id in
+            <foreach collection="roleIds" item="roleId" open="(" separator="," close=")">
+                #{roleId}
+            </foreach>
+    </select>
+    <select id="queryPrivileges" resultType="com.folib.dto.UserRoleDTO">
+        select
+            fr.*,
+            GROUP_CONCAT(distinct rrr.storage_privilege) as storagePrivilege,
+            GROUP_CONCAT(distinct rrr.repository_privilege) as repositoryPrivilege,
+            GROUP_CONCAT(distinct rrr.path_privilege) as pathPrivilege
+        from
+            folib_role fr
+                left join role_resource_ref rrr on
+                fr.id = rrr.role_id
+        where
+            fr.deleted = "0"
+          and rrr.role_id in
+        <foreach collection="roleIds" item="roleId" open="(" separator="," close=")">
+            #{roleId}
+        </foreach>
+        group by
+            fr.id
+    </select>
+    <select id="queryResourcesByRoleIds" resultType="com.folib.entity.RoleResourceRef">
+        select
+        rrr.*,fr.id as roleId, fr.description,
+        r.api_authoritie,
+        r.storage_id ,
+        r.repository_id ,
+        r.`path`
+        from
+        folib_role fr
+        right join role_resource_ref rrr on
+        fr.id = rrr.role_id
+        left join
+        resource r on
+        rrr.resource_id = r.id
+        where
+        fr.deleted = 0
+        <if test="roleIds != null and roleIds.size() > 0">
+            and rrr.role_id in
+            <foreach collection="roleIds"  item="roleId" open="(" separator="," close=")">
+                #{roleId}
+            </foreach>
+        </if>
+    </select>
+
+    <!--新增数据-->
+    <insert id="insert" keyProperty="id" useGeneratedKeys="true">
+        insert into role_resource_ref(id,role_id,entity_id,ref_type,resource_id,storage_privilege,repository_privilege,path_privilege,create_by)
+        values (#{id},#{roleId},#{entityId},#{refType},#{resourceId},#{storagePrivilege},#{repositoryPrivilege},#{pathPrivilege},#{createBy})
+    </insert>
+
+    <!-- 批量新增数据 -->
+    <insert id="insertBatch" keyProperty="id" useGeneratedKeys="true">
+        insert into role_resource_ref(role_id,entity_id,resource_type,ref_type,resource_id,storage_privilege,repository_privilege,path_privilege,create_by)
+        values
+        <foreach collection="entities" item="entity" separator=",">
+            (#{entity.roleId},#{entity.entityId},#{entity.resourceType},#{entity.refType},#{entity.resourceId},#{entity.storagePrivilege},#{entity.repositoryPrivilege},#{entity.pathPrivilege},#{entity.createBy})
+        </foreach>
+    </insert>
+
+    <!-- 批量新增或按主键更新数据 -->
+    <insert id="insertOrUpdateBatch" keyProperty="id" useGeneratedKeys="true">
+        insert into role_resource_ref(id,role_id,entity_id,ref_type,resource_id,storage_privilege,repository_privilege,path_privilege,create_by,create_time)
+        values
+        <foreach collection="entities" item="entity" separator=",">
+            (#{entity.id},#{entity.roleId},#{entity.entityId},#{entity.refType},#{entity.resourceId},#{entity.storagePrivilege},#{entity.repositoryPrivilege},#{entity.pathPrivilege},#{entity.createBy},#{entity.createTime})
+        </foreach>
+        on duplicate key update
+        id=values(id),
+        role_id=values(role_id),
+        entity_id=values(entity_id),
+        ref_type=values(ref_type),
+        resource_id=values(resource_id),
+        storage_privilege=values(storage_privilege),
+        repository_privilege=values(repository_privilege),
+        path_privilege=values(path_privilege),
+        create_by=values(create_by),
+        create_time=values(create_time)
+    </insert>
+
+    <!-- 更新数据 -->
+    <update id="update">
+        update role_resource_ref
+        <set>
+            <if test="id != null and id != ''">
+                id = #{id},
+            </if>
+            <if test="roleId != null and roleId != ''">
+                role_id = #{roleId},
+            </if>
+            <if test="entityId != null and entityId != ''">
+                entity_id = #{entityId},
+            </if>
+            <if test="refType != null and refType != ''">
+                ref_type = #{refType},
+            </if>
+            <if test="resourceId != null and resourceId != ''">
+                resource_id = #{resourceId},
+            </if>
+            <if test="storagePrivilege != null and storagePrivilege != ''">
+                storage_privilege = #{storagePrivilege},
+            </if>
+            <if test="repositoryPrivilege != null and repositoryPrivilege != ''">
+                repository_privilege = #{repositoryPrivilege},
+            </if>
+            <if test="pathPrivilege != null and pathPrivilege != ''">
+                path_privilege = #{pathPrivilege},
+            </if>
+            <if test="createBy != null and createBy != ''">
+                create_by = #{createBy},
+            </if>
+            <if test="createTime != null and createTime != ''">
+                create_time = #{createTime},
+            </if>
+        </set>
+        where id = #{id}
+    </update>
+
+    <!--通过主键删除-->
+    <delete id="deleteById">
+        delete from role_resource_ref where id = #{id}
+    </delete>
+    <!--通过主键批量删除-->
+    <delete id="deleteByRefIds">
+        delete from role_resource_ref where id in
+        <foreach collection="refIds" item="refId" open="(" separator="," close=")">
+            #{refId}
+        </foreach>
+    </delete>
+    <delete id="deleteByRoleId">
+        delete from role_resource_ref where role_id = #{roleId} /*and entity_id is not null*/
+    </delete>
+</mapper>

@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE configuration>
+<configuration scan="true" scanPeriod="30 seconds" debug="false">
+
+    <contextListener class="ch.qos.logback.classic.jul.LevelChangePropagator">
+        <!-- reset all previous level configurations of all j.u.l. loggers -->
+        <resetJUL>true</resetJUL>
+    </contextListener>
+
+    <springProperty scope="context" name="loggingDir" source="logging.dir" defaultValue="folib-data/logs"/>
+    <springProperty scope="context" name="debug" source="logging.debug" defaultValue="false"/>
+
+    <springProperty scope="context" name="console" source="logging.console.enabled" defaultValue="true"/>
+
+    <springProperty scope="context" name="file" source="logging.file.enabled" defaultValue="true"/>
+    <springProperty scope="context" name="loggingFile" source="logging.file.name" defaultValue="folib-data/logs/folib.log"/>
+    <springProperty scope="context" name="fileSizeSingle" source="logging.file.size.single" defaultValue="128MB"/>
+    <springProperty scope="context" name="fileSizeTotal" source="logging.file.size.total" defaultValue="1GB"/>
+    <springProperty scope="context" name="fileHistory" source="logging.file.history" defaultValue="31"/>
+
+    <if condition="${console:-true}">
+        <then>
+            <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+                <filter class="com.folib.log.CronTaskContextDeclineFilter"/>
+                <filter class="com.folib.log.JaninoClassLoaderLogDeclineFilter"/>
+
+                <encoder>
+                    <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} | %.-1level | %-20.20t{20} | %-37.37logger{37} | %-30.30M{30} | %-4.4L | %m%n</pattern>
+                </encoder>
+            </appender>
+            <root>
+                <appender-ref ref="CONSOLE"/>
+            </root>
+        </then>
+    </if>
+
+    <if condition="${file:-true}">
+        <then>
+            <appender name="FILE"
+                      class="ch.qos.logback.core.rolling.RollingFileAppender">
+                <filter class="com.folib.log.CronTaskContextDeclineFilter"/>
+                <filter class="com.folib.log.JaninoClassLoaderLogDeclineFilter"/>
+
+                <file>${loggingFile}</file>
+                <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+                    <fileNamePattern>${loggingDir}/folib-%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
+                    <maxFileSize>${fileSizeSingle}</maxFileSize>
+                    <maxHistory>${fileHistory}</maxHistory>
+                    <totalSizeCap>${fileSizeTotal}</totalSizeCap>
+                    <cleanHistoryOnStart>true</cleanHistoryOnStart>
+                </rollingPolicy>
+
+                <encoder>
+                    <charset>UTF-8</charset>
+                    <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} | %.-1level | %-20.20t{20} | %-37.37logger{37} | %-30.30M{30} | %-4.4L | %m%n</pattern>
+                </encoder>
+            </appender>
+
+            <appender name="CRON-JOB-FILE" class="ch.qos.logback.classic.sift.SiftingAppender">
+
+                <discriminator
+                        class="ch.qos.logback.classic.sift.MDCBasedDiscriminator">
+                    <key>folib-cron-context-name</key>
+                    <defaultValue>folib-empty-cron-job</defaultValue>
+                </discriminator>
+                <sift>
+                    <appender name="CRON-JOB-CONTEXT-SIFT-FILE-APPENDER"
+                              class="ch.qos.logback.core.rolling.RollingFileAppender">
+                        <filter class="com.folib.log.CronTaskContextAcceptFilter"/>
+                        <filter class="com.folib.log.JaninoClassLoaderLogDeclineFilter"/>
+
+                        <file>${loggingDir}/${folib-cron-context-name}/${folib-cron-context-name}.log</file>
+                        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+                            <fileNamePattern>${loggingDir}/${folib-cron-context-name}/${folib-cron-context-name}-%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
+                            <maxFileSize>${fileSizeSingle}</maxFileSize>
+                            <maxHistory>${fileHistory}</maxHistory>
+                            <totalSizeCap>${fileSizeTotal}</totalSizeCap>
+                            <cleanHistoryOnStart>true</cleanHistoryOnStart>
+                        </rollingPolicy>
+
+                        <encoder>
+                            <charset>UTF-8</charset>
+                            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} | %.-1level | %-20.20t{20} | %-37.37logger{37} | %-30.30M{30} | %-4.4L | %m%n</pattern>
+                        </encoder>
+                    </appender>
+                </sift>
+            </appender>
+            <root>
+                <appender-ref ref="FILE"/>
+                <appender-ref ref="CRON-JOB-FILE"/>
+            </root>
+        </then>
+    </if>
+
+    <if condition="${debug:-false}">
+        <then>
+            <logger name="org.neo4j.ogm" level="INFO"/>
+            <logger name="org.janusgraph" level="INFO" />
+            <logger name="springfox" level="INFO" />
+
+            <!-- Folib packages -->
+            <logger name="com.folib" level="DEBUG"/>
+            <logger name="com.folib.security.authentication" level="DEBUG"/>
+            <logger name="com.folib.security.vote" level="DEBUG"/>
+            <logger name="com.folib.data" level="WARN"/>
+            <logger name="com.folib.data.tx" level="WARN"/>
+            <logger name="com.folib.data.criteria" level="DEBUG"/>
+            <logger name="com.folib.data.server" level="DEBUG"/>
+            <!-- Folib packages -->
+
+            <!-- Third-party packages -->
+            <logger name="ch.qos.logback" level="ERROR"/>
+
+            <logger name="org.apache.commons.beanutils" level="ERROR"/>
+            <logger name="org.apache.http" level="ERROR"/>
+
+            <logger name="org.glassfish.jersey" level="ERROR"/>
+
+            <logger name="org.quartz" level="INFO"/>
+
+            <logger name="org.reflections" level="ERROR"/>
+
+            <logger name="org.springframework" level="ERROR"/>
+            <logger name="org.springframework.web" level="DEBUG"/>
+
+            <logger name="com.hazelcast" level="INFO"/>
+
+            <logger name="org.springframework.cache" level="TRACE"/>
+
+            <logger name ="org.eclipse.jetty" level="INFO" />
+            <logger name ="jndi"  level="INFO" />
+
+            <logger name ="liquibase.parser.core.xml"  level="INFO" />
+            <logger name ="javax.xml.bind" level="INFO" />
+            <logger name="org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping" level="DEBUG" />
+            <!-- Third-party packages -->
+
+            <root level="DEBUG"/>
+        </then>
+        <else>
+            <!-- Folib packages -->
+            <logger name="com.folib" level="INFO"/>
+            <logger name="com.folib.security.authentication" level="INFO"/>
+            <logger name="com.folib.security.vote" level="INFO"/>
+            <logger name="com.folib.data" level="WARN"/>
+            <logger name="com.folib.data.tx" level="INFO"/>
+            <logger name="com.folib.data.criteria" level="INFO"/>
+            <logger name="com.folib.data.server" level="INFO"/>
+            <!-- Folib packages -->
+
+            <!-- Third-party packages -->
+            <logger name="liquibase" level="WARN"/>
+
+            <logger name="ch.qos.logback" level="ERROR"/>
+
+            <logger name="org.apache.commons.beanutils" level="ERROR"/>
+            <logger name="org.apache.http" level="ERROR"/>
+
+            <logger name="org.glassfish.jersey" level="ERROR"/>
+
+            <logger name="org.quartz" level="INFO"/>
+
+            <logger name="org.reflections" level="ERROR"/>
+
+            <logger name="org.springframework" level="ERROR"/>
+            <logger name="org.springframework.web" level="INFO"/>
+
+            <logger name ="org.eclipse.jetty" level="INFO" />
+            <logger name ="jndi"  level="INFO" />
+
+            <logger name ="liquibase.parser.core.xml"  level="INFO" />
+            <logger name ="javax.xml.bind" level="INFO" />
+            <logger name="org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping" level="INFO" />
+            <!-- Third-party packages -->
+
+            <root level="INFO"/>
+        </else>
+    </if>
+
+</configuration>

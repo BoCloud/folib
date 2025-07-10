@@ -1,0 +1,39 @@
+folib:
+  authentication:
+    ldapUserDetailsService:
+      enabled: true
+      order: 0
+    yamlUserDetailService:
+      enabled: true
+      order: 1
+    dataBaseUserDetailService:
+      enabled: true
+      order: 2
+    passwordAuthenticationProvider:
+      order: 0
+      enabled: true
+    jwtAuthenticationProvider:
+      order: 1
+      enabled: true
+    securityTokenAuthenticationProvider:
+      order: 2
+      enabled: true
+    ldap:
+      url: ldap://127.0.0.1:53389/dc=explame,dc=com
+      managerDn: cn=admin,dc=explame,dc=com
+      managerPassword: password
+      rolesMapping:
+        - externalRole: Admins
+          folibRole: ADMIN
+      userDnPatterns:
+        - uid={0},ou=Users
+      userSearchBase: ou=Users
+      userSearchFilter: (uid={0})
+      userPasswordEncoded: false
+      authorities:
+        groupSearchBase: ou=Groups
+        groupSearchFilter: (uniqueMember={0})
+        convertToUpperCase: false
+        groupRoleAttribute: cn
+        rolePrefix: ''
+        searchSubtree: true

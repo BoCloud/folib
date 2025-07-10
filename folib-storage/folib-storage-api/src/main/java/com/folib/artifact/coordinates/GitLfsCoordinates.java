@@ -1,0 +1,99 @@
+/*
+ * Folib - [新一代AI制品仓库]
+ * Copyright (C) 2025 bocloud.com.cn <folib@beyondcent.com>
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * 本程序是自由软件：您可依据GNU通用公共许可证（GPL-3.0+）条款重新发布和修改，
+ * 但禁止任何形式的商业售卖行为（包括但不限于：直接销售、捆绑销售、云服务商用）。
+ *
+ * This program is distributed WITHOUT ANY WARRANTY.
+ * Commercial sale of this software is expressly prohibited.
+ *
+ * For license details, see: https://www.gnu.org/licenses/gpl-3.0.html
+ * 商业授权咨询请联系：folib@beyondcent.com
+ */
+package com.folib.artifact.coordinates;
+
+
+import com.folib.db.schema.Vertices;
+import com.folib.domain.LayoutCoordinatesEntity;
+import jakarta.xml.bind.annotation.XmlAccessType;
+import jakarta.xml.bind.annotation.XmlAccessorType;
+import jakarta.xml.bind.annotation.XmlAttribute;
+import jakarta.xml.bind.annotation.XmlRootElement;
+import org.neo4j.ogm.annotation.NodeEntity;
+
+
+@NodeEntity(Vertices.GITLFS_COORDINATES)
+@XmlRootElement(name = "GitLfsCoordinates")
+@XmlAccessorType(XmlAccessType.NONE)
+@CoordinatesLayout(name = GitLfsCoordinates.LAYOUT_NAME, alias = GitLfsCoordinates.LAYOUT_ALIAS)
+public class GitLfsCoordinates extends LayoutCoordinatesEntity<GitLfsCoordinates, GitLfsCoordinates>
+{
+
+    public static final String LAYOUT_NAME = "GitLfs";
+    public static final String LAYOUT_ALIAS = LAYOUT_NAME;
+    private static final String PATH = "path";
+
+    public GitLfsCoordinates()
+    {
+        resetCoordinates(PATH);
+    }
+
+    public GitLfsCoordinates(String path)
+    {
+        setCoordinate(PATH, path);
+    }
+
+    @Override
+    public String getId()
+    {
+        return getCoordinate(PATH);
+    }
+
+    public void setId(String id)
+    {
+        setCoordinate(PATH, id);
+    }
+
+    @Override
+    @ArtifactLayoutCoordinate
+    @XmlAttribute(name = "path")
+    public String getPath()
+    {
+        return getId();
+    }
+
+    /**
+     * WARNING: Unsurprisingly, this is null.
+     * @return  null
+     */
+    @Override
+    public String getVersion()
+    {
+        return null;
+    }
+
+    @Override
+    public void setVersion(String version)
+    {
+    }
+
+    @Override
+    public GitLfsCoordinates getNativeVersion()
+    {
+        return this;
+    }
+
+    @Override
+    public String convertToPath(GitLfsCoordinates artifactCoordinates)
+    {
+
+        return artifactCoordinates.getId();
+    }
+
+}

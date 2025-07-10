@@ -1,0 +1,195 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.folib.mapper.FolibRoleMapper">
+    <resultMap type="com.folib.entity.FolibRole" id="FolibRoleMap">
+        <result property="id" column="id" />
+        <result property="cnName" column="cn_name" />
+        <result property="enName" column="en_name" />
+        <result property="description" column="description" />
+        <result property="deleted" column="deleted" />
+        <result property="isDefault" column="is_default"/>
+        <result property="createBy" column="create_by" />
+        <result property="createTime" column="create_time"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="updateTime" column="update_time"/>
+    </resultMap>
+
+    <!-- 通过ID查询单条数据 -->
+    <select id="queryById" resultMap="FolibRoleMap">
+        select
+            *
+        from folib_role
+        where id = #{id} and deleted = '0'
+    </select>
+
+    <!--分页查询指定行数据-->
+    <select id="queryAllByLimit" resultType="com.folib.dto.FolibRoleDTO" >
+         select
+            fr.id,
+            cn_name,
+            en_name,
+            fr.description,
+            fr.deleted,
+            fr.is_default,
+            group_concat(distinct case when rrr.ref_type = 1 then rrr.entity_id end) as users,
+            group_concat(distinct case when rrr.ref_type = 2 then ug.group_name end) as userGroups
+        from
+            folib_role fr left join role_resource_ref rrr on fr.id = rrr.role_id
+            left join user_group ug on rrr.entity_id = ug.id
+        <if test="(role.storageId != null and role.storageId != '') or (role.repositoryId != null and role.repositoryId != '') or (role.path != null and role.path != '')">
+            left join resource r on r.id = rrr.resource_id
+        </if>
+        where fr.deleted = '0'
+            <if test="role.id != null and role.id != ''">
+                and fr.id = #{role.id}
+            </if>
+            <if test="role.cnName != null and role.cnName != ''">
+                and cn_name like concat('%',#{role.cnName},'%')
+            </if>
+            <if test="role.enName != null and role.enName != ''">
+                and en_name = #{role.enName}
+            </if>
+            <if test="role.matchEnName != null and role.matchEnName != ''">
+                and en_name like concat('%',#{role.matchEnName},'%')
+            </if>
+            <if test="role.description != null and role.description != ''">
+                and description = #{role.description}
+            </if>
+            <if test="role.deleted != null and role.deleted != ''">
+                and fr.deleted = #{role.deleted}
+            </if>
+            <if test="role.isDefault != null and role.isDefault != ''">
+                and fr.is_default = #{role.isDefault}
+            </if>
+            <if test="role.createBy != null and role.createBy != ''">
+                and fr.create_by = #{role.createBy}
+            </if>
+            <if test="role.updateBy != null and role.updateBy != ''">
+                and fr.update_by = #{role.updateBy}
+            </if>
+            <if test="role.storageId != null and role.storageId != ''">
+                and r.storage_id = #{role.storageId}
+            </if>
+            <if test="role.repositoryId != null and role.repositoryId != ''">
+                and r.repository_id = #{role.repositoryId}
+            </if>
+            <if test="role.path != null and role.path != ''">
+                and r.path = concat('%',#{role.path},'%')
+            </if>
+        group by fr.id
+        order by fr.create_time
+    </select>
+
+
+    <!--统计总行数-->
+    <select id="count" resultType="java.lang.Long">
+        select count(1)
+        from folib_role where deleted = '0'
+            <if test="id != null and id != ''">
+                and id = #{id}
+            </if>
+            <if test="cnName != null and cnName != ''">
+                and cn_name = #{cnName}
+            </if>
+            <if test="enName != null and enName != ''">
+                and en_name = #{enName}
+            </if>
+            <if test="description != null and description != ''">
+                and description = #{description}
+            </if>
+            <if test="deleted != null and deleted != ''">
+                and deleted = #{deleted}
+            </if>
+            <if test="isDefault != null and isDefault != ''">
+                and is_default = #{isDefault}
+            </if>
+            <if test="createBy != null and createBy != ''">
+                and create_by = #{createBy}
+            </if>
+            <if test="createTime != null and createTime != ''">
+                and create_time = #{createTime}
+            </if>
+            <if test="updateBy != null and updateBy != ''">
+                and update_by = #{updateBy}
+            </if>
+            <if test="updateTime != null and updateTime != ''">
+                and update_time = #{updateTime}
+            </if>
+    </select>
+
+    <!--新增数据-->
+    <insert id="insert" keyProperty="id" useGeneratedKeys="true">
+        insert into folib_role(id,cn_name,en_name,description,deleted,is_default,create_by,update_by)
+        values (#{id},#{cnName},#{enName},#{description},#{deleted},#{isDefault},#{createBy},#{updateBy})
+    </insert>
+
+    <!-- 批量新增数据 -->
+    <insert id="insertBatch" keyProperty="id" useGeneratedKeys="true">
+        insert into folib_role(id,cn_name,en_name,description,deleted,is_default,create_by,create_time,update_by,update_time)
+        values
+        <foreach collection="entities" item="entity" separator=",">
+            (#{entity.id},#{entity.cnName},#{entity.enName},#{entity.description},#{entity.deleted},#{entity.isDefault},#{entity.createBy},#{entity.createTime},#{entity.updateBy},#{entity.updateTime})
+        </foreach>
+    </insert>
+
+    <!-- 批量新增或按主键更新数据 -->
+    <insert id="insertOrUpdateBatch" keyProperty="id" useGeneratedKeys="true">
+        insert into folib_role(id,cn_name,en_name,description,deleted,is_default,create_by,update_by)
+        values
+        <foreach collection="entities" item="entity" separator=",">
+            (#{entity.id},#{entity.cnName},#{entity.enName},#{entity.description},#{entity.deleted},#{entity.isDefault},#{entity.createBy},#{entity.updateBy})
+        </foreach>
+        on duplicate key update
+        id=values(id),
+        cn_name=values(cn_name),
+        en_name=values(en_name),
+        description=values(description),
+        deleted=values(deleted),
+        is_default=values(is_default),
+        create_by=values(create_by),
+        update_by=values(update_by)
+    </insert>
+
+    <!-- 更新数据 -->
+    <update id="update">
+        update folib_role
+        <set>
+            <if test="id != null and id != ''">
+                id = #{id},
+            </if>
+            <if test="cnName != null and cnName != ''">
+                cn_name = #{cnName},
+            </if>
+            <if test="enName != null and enName != ''">
+                en_name = #{enName},
+            </if>
+            <if test="description != null and description != ''">
+                description = #{description},
+            </if>
+            <if test="deleted != null and deleted != ''">
+                deleted = #{deleted},
+            </if>
+            <if test="isDefault != null and isDefault != ''">
+                is_default = #{isDefault},
+            </if>
+            <if test="createBy != null and createBy != ''">
+                create_by = #{createBy},
+            </if>
+            <if test="createTime != null">
+                create_time = #{createTime},
+            </if>
+            <if test="updateBy != null and updateBy != ''">
+                update_by = #{updateBy},
+            </if>
+            <if test="updateTime != null">
+                update_time = #{updateTime},
+            </if>
+        </set>
+        where id = #{id}
+    </update>
+
+    <!--通过主键删除-->
+    <delete id="deleteById">
+        delete from folib_role where id = #{id}
+    </delete>
+</mapper>

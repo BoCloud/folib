@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.folib.mapper.VulnerableSoftwareVulnerabilitiesMapper">
+
+
+
+    <!-- 批量新增或按主键更新数据 -->
+    <insert id="insertOrUpdateBatch"  useGeneratedKeys="true">
+        insert into vulnerable_software_vulnerabilities (vulnerability_id,vulnerablesoftware_id)
+        values
+        <foreach collection="entities" item="entity" separator=",">
+            (#{entity.vulnerabilityId},#{entity.vulnerablesoftwareId})
+        </foreach>
+        on duplicate key update
+        vulnerability_id=values(vulnerability_id),
+        vulnerablesoftware_id=values(vulnerablesoftware_id)
+    </insert>
+
+</mapper>

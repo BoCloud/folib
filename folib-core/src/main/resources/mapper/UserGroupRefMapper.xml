@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.folib.mapper.UserGroupRefMapper">
+    <resultMap type="com.folib.entity.UserGroupRef" id="UserGroupRefMap">
+        <result property="id" column="id"/>
+        <result property="userGroupId" column="user_group_id"/>
+        <result property="userGroupName" column="user_group_name"/>
+        <result property="userId" column="user_id"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+    </resultMap>
+
+    <!-- 通过ID查询单条数据 -->
+    <select id="queryById" resultMap="UserGroupRefMap">
+        select
+            id,user_group_id,user_group_name,user_id,create_by,create_time
+        from user_group_ref
+        where id = #{id}
+    </select>
+
+    <!--分页查询指定行数据-->
+    <select id="queryAllByLimit" resultMap="UserGroupRefMap">
+        select
+        id,user_group_id,user_group_name,user_id,create_by,create_time
+        from user_group_ref
+        <where>
+            <if test="id != null and id != ''">
+                and id = #{id}
+            </if>
+            <if test="userGroupId != null and userGroupId != ''">
+                and user_group_id = #{userGroupId}
+            </if>
+            <if test="userGroupName != null and userGroupName != ''">
+                and user_group_name = #{userGroupName}
+            </if>
+            <if test="userId != null and userId != ''">
+                and user_id = #{userId}
+            </if>
+            <if test="createBy != null and createBy != ''">
+                and create_by = #{createBy}
+            </if>
+            <if test="createTime != null and createTime != ''">
+                and create_time = #{createTime}
+            </if>
+        </where>
+    </select>
+
+    <!--统计总行数-->
+    <select id="count" resultType="java.lang.Long">
+        select count(1)
+        from user_group_ref
+        <where>
+            <if test="id != null and id != ''">
+                and id = #{id}
+            </if>
+            <if test="userGroupId != null and userGroupId != ''">
+                and user_group_id = #{userGroupId}
+            </if>
+            <if test="userGroupName != null and userGroupName != ''">
+                and user_group_name = #{userGroupName}
+            </if>
+            <if test="userId != null and userId != ''">
+                and user_id = #{userId}
+            </if>
+            <if test="createBy != null and createBy != ''">
+                and create_by = #{createBy}
+            </if>
+            <if test="createTime != null and createTime != ''">
+                and create_time = #{createTime}
+            </if>
+        </where>
+    </select>
+    <select id="queryPrivilegeByGroup" resultType="com.folib.dto.RoleResourceRefDTO">
+        select
+            rrr.role_id,
+            rrr.resource_type,
+            group_concat(distinct rrr.storage_privilege) as storagePrivileges,
+            group_concat(distinct rrr.repository_privilege) as repositoryPrivileges,
+            group_concat(distinct rrr.path_privilege) as pathPrivileges
+        from
+            role_resource_ref rrr
+        where
+            rrr.entity_id = #{entityId}
+          and rrr.ref_type = #{refType}
+          and rrr.role_id in
+              <foreach collection="roleIds" item="roleId" open="(" separator="," close=")" >
+                #{roleId}
+              </foreach>
+        group by role_id,resource_type;
+    </select>
+    <select id="queryByGroupIds" resultType="com.folib.entity.UserGroupRef">
+        select * from user_group_ref where
+        user_group_id in
+            <foreach collection="groupIds" item="groupId" open="(" separator="," close=")" >
+                #{groupId}
+            </foreach>
+    </select>
+
+    <!--新增数据-->
+    <insert id="insert" keyProperty="id" useGeneratedKeys="true">
+        insert into user_group_ref(id,user_group_id,user_group_name,user_id,create_by,create_time)
+        values (#{id},#{userGroupId},#{userGroupName},#{userId},#{createBy},#{createTime})
+    </insert>
+
+
+    <!-- 批量新增数据 -->
+    <insert id="insertBatch" keyProperty="id" useGeneratedKeys="true">
+        insert into user_group_ref(id,user_group_id,user_group_name,user_id,create_by)
+        values
+        <foreach collection="entities" item="entity" separator=",">
+            (#{entity.id},#{entity.userGroupId},#{entity.userGroupName},#{entity.userId},#{entity.createBy})
+        </foreach>
+    </insert>
+
+    <!-- 批量新增或按主键更新数据 -->
+    <insert id="insertOrUpdateBatch" keyProperty="id" useGeneratedKeys="true">
+        insert into user_group_ref(id,user_group_id,user_group_name,user_id,create_by)
+        values
+        <foreach collection="entities" item="entity" separator=",">
+            (#{entity.id},#{entity.userGroupId},#{entity.userGroupName},#{entity.userId},#{entity.createBy})
+        </foreach>
+        on duplicate key update
+        id=values(id),
+        user_group_id=values(user_group_id),
+        user_group_name=values(user_group_name),
+        user_id=values(user_id),
+        create_by=values(create_by),
+        create_time=values(create_time)
+    </insert>
+
+    <!-- 更新数据 -->
+    <update id="update">
+        update user_group_ref
+        <set>
+            <if test="id != null and id != ''">
+                id = #{id},
+            </if>
+            <if test="userGroupId != null and userGroupId != ''">
+                user_group_id = #{userGroupId},
+            </if>
+            <if test="userGroupName != null and userGroupName != ''">
+                and user_group_name = #{userGroupName}
+            </if>
+            <if test="userId != null and userId != ''">
+                user_id = #{userId},
+            </if>
+            <if test="createBy != null and createBy != ''">
+                create_by = #{createBy},
+            </if>
+            <if test="createTime != null and createTime != ''">
+                create_time = #{createTime},
+            </if>
+        </set>
+        where id = #{id}
+    </update>
+
+    <!--通过主键删除-->
+    <delete id="deleteById">
+        delete from user_group_ref where id = #{id}
+    </delete>
+</mapper>

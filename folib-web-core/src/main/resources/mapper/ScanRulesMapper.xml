@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.folib.scanner.mapper.ScanRulesMapper">
+
+	<!-- 可根据自己的需求，是否要使用 -->
+    <resultMap type="com.folib.scanner.entity.ScanRules" id="scanRulesMap">
+        <result property="id" column="id"/>
+        <result property="repository" column="repository"/>
+        <result property="storage" column="storage"/>
+        <result property="onScan" column="on_scan"/>
+        <result property="sbomOnScan" column="sbom_on_scan"/>
+        <result property="layout" column="layout"/>
+        <result property="scanRule" column="scan_rule"/>
+    </resultMap>
+
+    <select id="countProperties" resultType="int">
+        select count(*) total from properties
+    </select>
+
+</mapper>

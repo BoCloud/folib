@@ -1,0 +1,151 @@
+authorizationConfiguration:
+  roles:
+    # Custom roles definition
+    - name: CUSTOM_ROLE
+      description: 自定义角色类型
+      accessModel:
+        # TODO: there will be `uiAuthorities` as well
+        apiAuthorities:
+          - CONFIGURATION_VIEW
+        storageAuthorities:
+          - storageId: private-storage
+            repositoryPrivileges:
+              - repositoryId: private-releases
+                repositoryPrivileges:
+                  - ARTIFACTS_VIEW
+                  - ARTIFACTS_RESOLVE
+                pathPrivileges:
+                  - path: org/carlspring/*
+                    wildcard: true
+                    privileges:
+                      - ARTIFACTS_DEPLOY
+                      - ARTIFACTS_DELETE
+    # System roles definition (prevented to be changed with API, UI or Configuration files)
+    - name: ADMIN
+      # ADMIN role will have all privileges by default
+      description: 超级用户角色，拥有所有可能的特权
+      
+    - name: GLOBAL_CONFIGURATION_MANAGER
+      description: 具有所有全局配置相关特权的角色
+      accessModel:
+        apiAuthorities:
+          - CONFIGURATION_UPLOAD
+          - CONFIGURATION_VIEW
+          - CONFIGURATION_SET_INSTANCE_NAME
+          - CONFIGURATION_VIEW_INSTANCE_NAME
+          - CONFIGURATION_SET_BASE_URL
+          - CONFIGURATION_VIEW_BASE_URL
+          - CONFIGURATION_SET_PORT
+          - CONFIGURATION_VIEW_PORT
+          - CONFIGURATION_SET_GLOBAL_PROXY_CFG
+          - CONFIGURATION_VIEW_GLOBAL_PROXY_CFG
+          - CONFIGURATION_ADD_UPDATE_STORAGE
+          - CONFIGURATION_VIEW_STORAGE_CONFIGURATION
+          - CONFIGURATION_DELETE_STORAGE_CONFIGURATION
+          - CONFIGURATION_ADD_UPDATE_REPOSITORY
+          - CONFIGURATION_VIEW_REPOSITORY
+          - CONFIGURATION_DELETE_REPOSITORY
+          - CONFIGURATION_ADD_LOGGER
+          - CONFIGURATION_UPDATE_LOGGER
+          - CONFIGURATION_DELETE_LOGGER
+          - CONFIGURATION_RETRIEVE_LOG
+          - CONFIGURATION_RETRIEVE_LOGBACK_CFG
+          - CONFIGURATION_UPLOAD_LOGBACK_CFG
+          - CONFIGURATION_ADD_UPDATE_SECURITY_POLICY
+          - CONFIGURATION_VIEW_SECURITY_POLICY_CONFIGURATION
+          - CONFIGURATION_DELETE_SECURITY_POLICY_CONFIGURATION
+          - CONFIGURATION_ADD_UPDATE_METADATA
+          - CONFIGURATION_VIEW_METADATA_CONFIGURATION
+          - CONFIGURATION_DELETE_METADATA_CONFIGURATION
+    - name: REPOSITORY_MANAGER
+      description: 具有所有制品仓库相关权限的角色
+      accessModel:
+        apiAuthorities:
+          - ADMIN_CREATE_REPO
+          - ADMIN_UPDATE_REPO
+          - ADMIN_DELETE_REPO
+          - ADMIN_LIST_REPO
+    - name: ARTIFACTS_MANAGER
+      description: 具有制品上传、删除、移动、复制、晋级权限
+      accessModel:
+        apiAuthorities:
+          - SEARCH_ARTIFACTS
+          - ARTIFACTS_VIEW
+          - ARTIFACTS_RESOLVE
+          - VIEW_USER
+          - CONFIGURATION_VIEW_STORAGE_CONFIGURATION
+          - CONFIGURATION_VIEW_REPOSITORY
+          - CONFIGURATION_VIEW_BASE_URL
+          - CONFIGURATION_VIEW_METADATA_CONFIGURATION
+          - CONFIGURATION_ADD_UPDATE_METADATA
+          - CONFIGURATION_DELETE_METADATA_CONFIGURATION
+          - ARTIFACTS_DEPLOY
+          - ARTIFACTS_DELETE
+          - ARTIFACTS_MOVE
+          - ARTIFACTS_COPY
+          - ARTIFACTS_PROMOTION
+    - name: USER_MANAGER
+      description: 具有所有用户相关权限的角色
+      accessModel:
+        apiAuthorities:
+          - CREATE_USER
+          - UPDATE_USER
+          - VIEW_USER
+          - IMPERSONATE_USER
+          - DELETE_USER
+    - name: TOKEN_MANAGER
+      description: 具有所有令牌相关特权的角色
+      accessModel:
+        apiAuthorities:
+          - VIEW_OWN_TOKEN
+          - VIEW_ANY_TOKEN
+    - name: LOGS_MANAGER
+      description: 具有所有日志相关权限的角色
+      accessModel:
+        apiAuthorities:
+          - VIEW_LOGS
+          - CONFIGURE_LOGS
+          - RSS_FEED
+    - name: UI_MANAGER
+      description: 具有所有用户界面相关权限的角色
+      accessModel:
+        apiAuthorities:
+          - UI_LOGIN
+          - UI_BROWSE
+    - name: ANONYMOUS
+      description: 匿名用户角色
+      accessModel:
+        apiAuthorities:
+          - ARTIFACTS_RESOLVE
+          - SEARCH_ARTIFACTS
+          - ARTIFACTS_VIEW
+          - CONFIGURATION_VIEW_METADATA_CONFIGURATION
+    - name: GENERAL
+      description: 普通用户角色
+      accessModel:
+        apiAuthorities:
+          - SEARCH_ARTIFACTS
+          - ARTIFACTS_VIEW
+          - VIEW_USER
+          - CONFIGURATION_VIEW_STORAGE_CONFIGURATION
+          - CONFIGURATION_VIEW_REPOSITORY
+          - CONFIGURATION_VIEW_BASE_URL
+          - CONFIGURATION_VIEW_METADATA_CONFIGURATION
+          - CONFIGURATION_DELETE_METADATA_CONFIGURATION
+    - name: OPEN_SOURCE_MANAGE
+      description: 开源治理角色
+      accessModel:
+        apiAuthorities:
+          - SEARCH_ARTIFACTS
+          - ARTIFACTS_VIEW
+          - ARTIFACTS_RESOLVE
+          - VIEW_USER
+          - CONFIGURATION_VIEW_STORAGE_CONFIGURATION
+          - CONFIGURATION_VIEW_REPOSITORY
+          - CONFIGURATION_VIEW_BASE_URL
+          - CONFIGURATION_VIEW_METADATA_CONFIGURATION
+          - CONFIGURATION_ADD_UPDATE_METADATA
+          - CONFIGURATION_DELETE_METADATA_CONFIGURATION
+          - COMPONENTS_VIEW
+          - LICENSES_VIEW
+          - VULNERABILITIES_DATABASE_VIEW

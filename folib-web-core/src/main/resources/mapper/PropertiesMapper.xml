@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.folib.mapper.PropertiesMapper">
+
+
+    <!--统计总行数-->
+    <select id="count" resultType="java.lang.Long">
+        select count(1)
+        from properties
+        <where>
+            <if test="id != null and id != ''">
+                and id = #{id}
+            </if>
+        </where>
+    </select>
+
+    <!--新增数据-->
+    <insert id="insert" keyProperty="id" useGeneratedKeys="true">
+        insert into properties(id,value)
+        values (#{id},#{value})
+    </insert>
+
+    <!-- 批量新增数据 -->
+    <insert id="insertBatch" keyProperty="id" useGeneratedKeys="true">
+        insert into properties(id,value)
+        values
+        <foreach collection="entities" item="entity" separator=",">
+            (#{entity.id},#{entity.value})
+        </foreach>
+    </insert>
+
+    <!-- 批量新增或按主键更新数据 -->
+    <insert id="insertOrUpdateBatch" keyProperty="id" useGeneratedKeys="true">
+        insert into properties(id,value)
+        values
+        <foreach collection="entities" item="entity" separator=",">
+            (#{entity.id},#{entity.value})
+        </foreach>
+        on duplicate key update
+        id=values(id),
+        value=values(value)
+    </insert>
+
+    <!-- 更新数据 -->
+    <update id="update">
+        update properties
+        <set>
+            <if test="id != null and id != ''">
+                id = #{id},
+            </if>
+            <if test="value != null and value != ''">
+                value = #{value},
+            </if>
+        </set>
+        where id = #{id}
+    </update>
+
+    <!--通过主键删除-->
+    <delete id="deleteById">
+        delete from properties where id = #{id}
+    </delete>
+</mapper>

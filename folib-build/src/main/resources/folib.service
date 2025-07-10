@@ -1,0 +1,23 @@
+[Unit]
+Description=Folib Repository Manager
+Documentation=https://folib.com/
+After=network-online.target firewalld.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=Folib
+Environment=FOLIB_HOME=/opt/folib
+Environment=FOLIB_DATA=/opt/folib-data
+Environment=FOLIB_PORT=38080
+ExecStart=/opt/folib/bin/folib console
+ExecStop=/opt/folib/bin/folib stop
+ExecReload=/bin/kill -s HUP $MAINPID
+TimeoutSec=0
+RestartSec=2
+Restart=always
+StartLimitBurst=3
+StartLimitInterval=60s
+
+[Install]
+WantedBy=multi-user.target
