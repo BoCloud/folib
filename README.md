@@ -22,6 +22,10 @@ FOLib 是一个为Ai研发而生的、全语言软件供应链服务平台。
 
 ## 快速开始
 
+### 我们的代码地址
+- Gitcode: https://gitcode.com/folib/folib
+- Github:  https://github.com/BoCloud/folib
+
 ### 镜像部署
 
 Tips: MYSQL需要先准备好
