@@ -134,7 +134,7 @@ tail -f -n 100 folib-server.log
 
 FOLib 会平均每个季度一个版本。
 - v3.00：发布时间为 2025 年 8 月 1 日，持续更新中；
-- v3.1：接下来会发布一些AI mcp相关的功能；
+- v3.1：接下来会发布一些AI mcp相关的功能；以及新增[仓颉语言的 cjpm](https://gitcode.com/Cangjie/CangjieCommunity) 包管理工具支持。
 
 
 FOLib 产品版本分为社区版和企业版，详情请参见：[FOLib产品版本对比](https://folib.com/pricing)

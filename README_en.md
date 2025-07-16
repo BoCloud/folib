@@ -130,7 +130,7 @@ Welcome to join our technical exchange group, where there are also various irreg
 
 FOLib releases a version approximately every quarter.
 - v3.00: Release date is August 1, 2025, and it is continuously updated;
-- v3.1: Some AI mcp-related functions will be released next;
+- v3.1: Some AI mcp-related functions will be released next; add support for the [cjpm package management tool of Cangjie language](https://gitcode.com/Cangjie/CangjieCommunity)
 
 
 FOLib product versions are divided into community edition and enterprise edition. For details, please refer to: [FOLib Product Version Comparison](https://folib.com/pricing)
