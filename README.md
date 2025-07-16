@@ -15,7 +15,7 @@
 
 FOLib 是一个为Ai研发而生的、全语言软件供应链服务平台。
 
--   **语言支持范围**：23+种全语言仓库，涵盖npm、Maven、PyPi、Docker、Gradle、SBT、Cocoapods、Swift、RPM、Debian、OPKG、PHP、Go、Pub、Ivy、NuGet、Conda、Cargo、Conan、Yarn、GitLFS、Helm、OHPM等主流工具；
+-   **语言支持范围**：23+种全语言仓库，涵盖npm、Maven、Cangjie(cjpm)、Ohpm、PyPi、Docker、Gradle、SBT、Cocoapods、Swift、RPM、Debian、OPKG、PHP、Go、Pub、Ivy、NuGet、Conda、Cargo、Conan、Yarn、GitLFS、Helm等主流工具；
 -   **AI模型库与生态**：涵盖Huggingface、Ollama、ModelScope 等主流AI模型仓库的代理与同步， 并支持工具私有化上传与晋级分发；
 -   **AIAgent与MCP支持**：支持元数据需求-服务-制品-安全漏洞-依赖证书等多维图数据的查询与展示，并支持MCP上下文协议，可通过AIAgent实现制品库的智能查询与推荐、安全漏洞的智能修复、智能晋级同步等功能；
 -   **容器化与云原生支持**：支持Docker V1/V2/OCI镜像格式，支持nerdctl、crictl、ctr、podman等多客户端，支持分层传输，单层断点续传。 支持webdav为大文件提供云原生数据挂载能力。

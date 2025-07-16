@@ -15,7 +15,7 @@
 
 FOLib is a full-language software supply chain service platform built for AI R&D.
 
-- **Language Support**: Covers 23+ full-language repositories, including mainstream tools such as npm, Maven, PyPi, Docker, Gradle, SBT, Cocoapods, Swift, RPM, Debian, OPKG, PHP, Go, Pub, Ivy, NuGet, Conda, Cargo, Conan, Yarn, GitLFS, Helm, and OHPM;
+- **Language Support**: Covers 23+ full-language repositories, including mainstream tools such as npm, Maven,Cangjie(cjpm),Ohpm,PyPi, Docker, Gradle, SBT, Cocoapods, Swift, RPM, Debian, OPKG, PHP, Go, Pub, Ivy, NuGet, Conda, Cargo, Conan, Yarn, GitLFS, Helm
 - **AI Model Library & Ecosystem**: Supports proxy and synchronization of mainstream AI model repositories like Huggingface, Ollama, and ModelScope, as well as tool privatization upload and promotion distribution;
 - **AIAgent & MCP Support**: Enables query and display of multi-dimensional graph data including metadata requirements, services, artifacts, security vulnerabilities, and dependency certificates. It also supports the MCP context protocol, allowing AIAgent to realize functions such as intelligent query and recommendation of artifact libraries, intelligent repair of security vulnerabilities, and intelligent promotion synchronization;
 - **Containerization & Cloud-Native Support**: Supports Docker V1/V2/OCI image formats, multiple clients including nerdctl, crictl, ctr, and podman, layered transmission, and single-layer breakpoint resume. It supports webdav to provide cloud-native data mounting capabilities for large files.
