@@ -2,6 +2,7 @@
 <h3 align="center">A Full-Language Software Supply Chain Service Platform Built for AI R&D</h3>
 <p align="center">
 
+<img src="https://gitcode.com/folib/folib/star/badge.svg" alt="Gitcode Stars">
 <img src="https://img.shields.io/github/stars/BoCloud/folib" alt="Github Stars">
 <img src="https://img.shields.io/badge/release-v3.0.0-rgb(13,126,191)" alt="release">
 <img src="https://img.shields.io/badge/springboot-v3.2.12-rgb(13,126,19)?logo=springboot" alt="springboot">

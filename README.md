@@ -2,6 +2,7 @@
 <h3 align="center">一个为Ai研发而生的、全语言软件供应链服务平台</h3>
 <p align="center">
 
+<img src="https://gitcode.com/folib/folib/star/badge.svg" alt="Gitcode Stars">
 <img src="https://img.shields.io/github/stars/BoCloud/folib" alt="Github Stars">
 <img src="https://img.shields.io/badge/release-v3.0.0-rgb(13,126,191)" alt="release">
 <img src="https://img.shields.io/badge/springboot-v3.2.12-rgb(13,126,19)?logo=springboot" alt="springboot">
