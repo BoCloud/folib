@@ -139,8 +139,8 @@ FOLib 会平均每个季度一个版本。
 
 ## V3.1产品预告
 <p align="left"><a href="https://folib.com"><img src="img/lang.png" alt="Folib for AI" width="800" /></a></p>
-下个版本将支持Cangjie&ModelScope,另外
-FOLib 产品版本分为社区版和企业版，详情请参见：[FOLib产品版本对比](https://folib.com/pricing)
+
+#### 下个版本将支持Cangjie&ModelScope,另外FOLib 产品版本分为社区版和企业版，详情请参见：[FOLib产品版本对比](https://folib.com/pricing)
 
 ## 技术栈与架构
 

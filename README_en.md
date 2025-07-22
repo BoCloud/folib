@@ -136,8 +136,8 @@ FOLib releases a version approximately every quarter.
 
 ## V3.1 Product Preview
 <p align="left"><a href="https://folib.com"><img src="img/lang.png" alt="Folib for AI" width="800" /></a></p>
-The next version will support Cangjie & ModelScope. In addition,
-FOLib product versions are divided into Community Edition and Enterprise Edition. For details, please refer to: [FOLib Product Version Comparison](https://folib.com/pricing)
+
+#### The next version will support Cangjie & ModelScope. In addition,FOLib product versions are divided into Community Edition and Enterprise Edition. For details, please refer to: [FOLib Product Version Comparison](https://folib.com/pricing)
 
 ## Technology Stack and Architecture
 
