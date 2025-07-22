@@ -134,7 +134,10 @@ FOLib releases a version approximately every quarter.
 - v3.1: Some AI mcp-related functions will be released next; add support for the [cjpm package management tool of Cangjie language](https://gitcode.com/Cangjie/CangjieCommunity)
 
 
-FOLib product versions are divided into community edition and enterprise edition. For details, please refer to: [FOLib Product Version Comparison](https://folib.com/pricing)
+## V3.1 Product Preview
+<p align="left"><a href="https://folib.com"><img src="img/lang.png" alt="Folib for AI" width="800" /></a></p>
+The next version will support Cangjie & ModelScope. In addition,
+FOLib product versions are divided into Community Edition and Enterprise Edition. For details, please refer to: [FOLib Product Version Comparison](https://folib.com/pricing)
 
 ## Technology Stack and Architecture
 
