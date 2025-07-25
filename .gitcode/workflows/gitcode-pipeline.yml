@@ -16,4 +16,4 @@ jobs:
         java-version: '17'
 
     - name: Build with Maven
-      run: cd repo_workspace && sh folib-package.sh
+      run: sh folib-package.sh
