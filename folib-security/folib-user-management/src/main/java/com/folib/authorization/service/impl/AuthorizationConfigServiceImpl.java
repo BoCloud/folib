@@ -84,7 +84,11 @@ public class AuthorizationConfigServiceImpl
     {
         modifyInLock(config ->
                      {
-                         AuthorizationConfigServiceImpl.this.authorizationConfig = getAuthorizationConfigDto(null,null);
+                         AuthorizationConfigServiceImpl.this.authorizationConfig = newConfig;
+                         AuthorizationConfigDto dbAuthorizationConfigDto = getAuthorizationConfigDto(null,null);
+                         if (CollectionUtils.isNotEmpty(dbAuthorizationConfigDto.getRoles())) {
+                             AuthorizationConfigServiceImpl.this.authorizationConfig.getRoles().addAll(dbAuthorizationConfigDto.getRoles());
+                         }
                      },
                      false);
     }

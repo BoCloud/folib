@@ -1401,7 +1401,45 @@ go 1.20' :readonly="true">
             </a-timeline-item>
 
         </a-timeline>
-
+      <!--conda 使用说明 -->
+        <a-timeline v-if="folibRepository.layout === 'conda'">
+            <a-timeline-item color="primary">
+                Conda {{ $t('Store.GlobalConfiguration') }}
+                <p>{{ $t('Store.CondaGlobalConfiguration') }}</p>
+                <prism-editor
+                    class="my-editor height-300"
+                    :value="condaConfiguration()"
+                    :highlight="highlighterHandle"
+                    :line-numbers="false"
+                    :readonly="true"
+                >
+                </prism-editor>
+            </a-timeline-item>
+            <a-timeline-item color="primary" v-if="folibRepository.type === 'hosted'">
+                Conda {{ $t('Store.CondaDeploy') }}
+                <p>{{ $t('Store.CondaDeployConfig') }}</p>
+                <prism-editor
+                    class="my-editor height-300"
+                    :value="condaDeploy()"
+                    :highlight="highlighterHandle"
+                    :line-numbers="false"
+                    :readonly="true"
+                >
+                </prism-editor>
+            </a-timeline-item>
+            <a-timeline-item color="primary">
+                Conda {{ $t('Store.CondaInstall') }}
+                <p>{{ $t('Store.CondaInstallConfig') }}</p>
+                <prism-editor
+                    class="my-editor height-300"
+                    :value="condaInstall()"
+                    :highlight="highlighterHandle"
+                    :line-numbers="false"
+                    :readonly="true"
+                >
+                </prism-editor>
+            </a-timeline-item>
+        </a-timeline>
         <a-timeline>
         <a-timeline-item color="primary">
           {{ $t('Store.WarehouseAddress') }}
@@ -1571,6 +1609,17 @@ gpgcheck=0`
 yum makecache
 yum repolist
 yum install mysql`
+      },
+      condaConfiguration() {
+          return `channels:\n  - ${this.baseUrl}storages/${this.folibRepository.storageId}/${this.folibRepository.id}\nrepodata_use_zst: false\nrepodata_fns:\n  - repodata.json\n`
+      },
+      condaDeploy(){
+        return `curl -u '<USER_NAME>:<PASSWORD>' -X PUT \
+-F "package=@./six-1.14.0-py_1.tar.bz2" \
+${this.repositoryUrl}`
+      },
+      condaInstall(){
+        return `conda install <PACKAGE_NAME>`
       }
 
   },

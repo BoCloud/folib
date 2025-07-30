@@ -34,6 +34,7 @@
         <module>folib-cargo-layout-provider</module>
         <module>folib-cocoapods-layout-provider</module>
         <module>folib-conan-layout-provider</module>
+        <module>folib-conda-layout-provider</module>
         <module>folib-debian-layout-provider</module>
         <module>folib-docker-layout-provider</module>
         <module>folib-gitlfs-layout-provider</module>

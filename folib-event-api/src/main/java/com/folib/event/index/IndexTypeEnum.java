@@ -25,7 +25,11 @@ public enum IndexTypeEnum {
 
     RPM("rpm"),
 
-    debian("debian");
+    debian("debian"),
+
+    CONDA("conda"),
+
+    HELM("helm");
 
     private String type;
 
