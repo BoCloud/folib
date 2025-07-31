@@ -27,7 +27,7 @@ const typeList = [
         src:'images/folib/nuget.svg',
         type:'nuget',
         name:'NuGet',
-        disabled:true
+        disabled:false
     },
     {
         src:'images/folib/ivy.svg',

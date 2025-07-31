@@ -797,49 +797,106 @@
           ></prism-editor>
         </a-timeline-item>
       </a-timeline>
-      <a-timeline v-if="repositoryType === 'nuget'">
-        <a-timeline-item color="primary">
-          NuGet+Mono{{ $t('Store.Configuration') }}
-          <small>{{ $t('Store.URLRepository') }} URL</small>
-          <p>{{ $t('Store.SeeDocumentation') }}</p>
-          <prism-editor
-            class="my-editor height-300"
-            :value="
-              '$ mono --runtime=v4.0 nuget.exe config -set DefaultPushSource=' +
-              baseUrl +
-              'storages/' +
-              folibRepository.storageId +
-              '/' +
-              folibRepository.id +
-              ' -ConfigFile ./.nuget/NuGet.config'
-            "
-            :highlight="highlighterHandle"
-            :line-numbers="false"
-            :readonly="true"
-          ></prism-editor>
-        </a-timeline-item>
-        <a-timeline-item color="primary">
-          Nuget+Visual Studio{{ $t('Store.Configuration') }}
-          <small>{{ $t('Store.example') }}</small>
-          <p>{{ $t('Store.accessFolib') }}</p>
-          <prism-editor
-            class="my-editor height-300"
-            :value="
-              'nuget <command> -Source ' +
-              baseUrl +
-              'storages/' +
-              folibRepository.storageId +
-              '/' +
-              folibRepository.id +
-              ''
-            "
-            :highlight="highlighterHandle"
-            :line-numbers="false"
-            :readonly="true"
-          ></prism-editor>
-          <p>{{ $t('Store.VSConfig') }}</p>
-        </a-timeline-item>
-      </a-timeline>
+        <a-timeline v-if="repositoryType === 'nuget'">
+            <a-timeline-item color="primary" v-if="folibRepository.type === 'proxy'">
+                {{$t('Store.NuGetProxyTipsTitle')}}
+                <p>{{$t('Store.NuGetProxyTips')}}</p>
+                <p>{{$t('Store.NuGetProxyConfigUrlV3')}}</p>
+                <prism-editor
+                    class="my-editor height-300"
+                    :value="'https://api.nuget.org/v3/index.json'"
+                    :highlight="highlighterHandle"
+                    :line-numbers="false"
+                    :readonly="true"
+                ></prism-editor>
+                <p>{{$t('Store.NuGetProxyConfigUrlV2')}}</p>
+                <prism-editor
+                    class="my-editor height-300"
+                    :value="'https://www.nuget.org/api/v2'"
+                    :highlight="highlighterHandle"
+                    :line-numbers="false"
+                    :readonly="true"
+                ></prism-editor>
+                <p>{{$t('Store.NuGetProxyConfigUrlSymbol')}}</p>
+                <prism-editor
+                    class="my-editor height-300"
+                    :value="'https://symbols.nuget.org/download/symbols'"
+                    :highlight="highlighterHandle"
+                    :line-numbers="false"
+                    :readonly="true"
+                ></prism-editor>
+                <p></p>
+            </a-timeline-item>
+            <a-timeline-item color="primary" v-if="folibRepository.type === 'group'">
+                {{$t('Store.NuGetGroupTipsTitle')}}
+                <p>{{$t('Store.NuGetGroupTips')}}</p>
+            </a-timeline-item>
+            <a-timeline-item color="primary">
+                NuGet {{ $t('Store.Configuration') }}
+                <small>{{ $t('Store.URLRepository') }} URL</small>
+                <p>{{ $t('Store.NuGetSourceHost') }}</p>
+                <prism-editor
+                    class="my-editor height-300"
+                    :value="nugetDeployV3"
+                    :highlight="highlighterHandle"
+                    :line-numbers="false"
+                    :readonly="true"
+                ></prism-editor>
+                <prism-editor
+                    class="my-editor height-300"
+                    :value="nugetDeployV2"
+                    :highlight="highlighterHandle"
+                    :line-numbers="false"
+                    :readonly="true"
+                ></prism-editor>
+
+                <p>{{ $t('Store.NuGetApiKey') }}</p>
+                <prism-editor
+                    class="my-editor height-300"
+                    :value="nugetSetApiKeyV3"
+                    :highlight="highlighterHandle"
+                    :line-numbers="false"
+                    :readonly="true"
+                ></prism-editor>
+                <prism-editor
+                    class="my-editor height-300"
+                    :value="nugetSetApiKeyV2"
+                    :highlight="highlighterHandle"
+                    :line-numbers="false"
+                    :readonly="true"
+                ></prism-editor>
+            </a-timeline-item>
+
+            <a-timeline-item color="primary">
+                Nuget + Visual Studio{{ $t('Store.Configuration') }}
+                <small>{{ $t('Store.example') }}</small>
+                <p>{{ $t('Store.NuGetVisualStudioNuGetSource') }}</p>
+                <prism-editor
+                    class="my-editor height-300"
+                    :value="nugetV3Url"
+                    :highlight="highlighterHandle"
+                    :line-numbers="false"
+                    :readonly="true"
+                ></prism-editor>
+                <prism-editor
+                    class="my-editor height-300"
+                    :value="nugetV2Url"
+                    :highlight="highlighterHandle"
+                    :line-numbers="false"
+                    :readonly="true"
+                ></prism-editor>
+
+                <p>{{ $t('Store.NuGetVisualStudioSymbolSource') }}</p>
+                <prism-editor
+                    class="my-editor height-300"
+                    :value="nugetSymbolUrl"
+                    :highlight="highlighterHandle"
+                    :line-numbers="false"
+                    :readonly="true"
+                ></prism-editor>
+                <p>{{ $t('Store.VSConfig') }}</p>
+            </a-timeline-item>
+        </a-timeline>
       <a-timeline v-if="repositoryType === 'php'">
         <a-timeline-item color="primary">
           Composer{{ $t('Store.Authentication') }}
@@ -1542,7 +1599,28 @@ deb [trusted=yes]  ${this.baseUrl}storages/${this.folibRepository.storageId}/${t
       },
       ollamaInstall(){
         return `ollama pull  <MODEL>`+`\n`+`ollama run  <MODEL>`
-      }
+      },
+      nugetV3Url() {
+          return `${this.repositoryUrl}/api/v3/index.json`
+      },
+      nugetV2Url() {
+          return `${this.repositoryUrl}/api/v2`
+      },
+      nugetDeployV3(){
+          return `nuget source Add -Name folib_v3 -Source ${this.repositoryUrl}/api/v3/index.json`
+      },
+      nugetDeployV2() {
+          return `nuget source Add -Name folib_v2 -Source ${this.repositoryUrl}/api/v2`
+      },
+      nugetSymbolUrl() {
+          return `${this.repositoryUrl}/api/v3/symbols`
+      },
+      nugetSetApiKeyV3() {
+          return 'nuget setapikey <API-KEY> -Source folib_v3'
+      },
+      nugetSetApiKeyV2() {
+          return 'nuget setapikey <API-KEY> -Source folib_v2'
+      },
   },
   methods: {
     highlighterHandle(code) {
