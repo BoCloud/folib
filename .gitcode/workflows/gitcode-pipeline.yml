@@ -15,4 +15,4 @@ jobs:
       with:
         java-version: '17.0.2'
     - name: Build with Maven
-      run:  ls
+      run:  cd repo_workspace & ls
