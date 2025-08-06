@@ -15,4 +15,5 @@ jobs:
       with:
         java-version: '17.0.2'
     - name: Build with Maven
-      run: sh ./folib-package.sh
+      run: mvn clean package --settings folib-settings.xml -Dmaven.test.skip=true -Dmaven.wagon.http.ssl.insecure=true -Dmaven.wagon.http.ssl.allowall=true -Dmaven.wagon.http.ssl.ignore.validity.dates=true
+
