@@ -39,10 +39,6 @@
             <version>3.1.0</version>
             <configuration>
                 <filesets>
-                    <fileset>
-                        <!-- 前端资源目录，即：存放前端包目录-->
-                        <directory>src/main/resources/ui</directory>
-                    </fileset>
                 </filesets>
             </configuration>
             </plugin>
