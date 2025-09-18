@@ -23,12 +23,8 @@
               '   <name>' +
               folibRepository.id +
               '</name>\n' +
-              '   <url>' +
-              baseUrl +
-              'storages/' +
-              folibRepository.storageId +
-              '/' +
-              folibRepository.id +
+              '   <url>' + 
+              repositoryUrl +
               '</url>\n' +
               '   <mirrorOf>*</mirrorOf>\n' +
               '</mirror>'
@@ -69,11 +65,7 @@
               folibRepository.id +
               '</id>\n' +
               '      <url>' +
-              baseUrl +
-              'storages/' +
-              folibRepository.storageId +
-              '/' +
-              folibRepository.id +
+                repositoryUrl +
               '</url>\n' +
               '   </repository>\n' +
               '</repositories>\n' +
@@ -84,11 +76,7 @@
               folibRepository.id +
               '</id>\n' +
               '      <url>' +
-              baseUrl +
-              'storages/' +
-              folibRepository.storageId +
-              '/' +
-              folibRepository.id +
+                repositoryUrl +
               '</url>\n' +
               '   </repository>\n' +
               '</distributionManagement>'
@@ -108,7 +96,7 @@
 
           <prism-editor
             class="my-editor height-300"
-            :value="'mvn clean intall\n' + 'mvn clean deploy'"
+            :value="'mvn clean install\n' + 'mvn clean deploy'"
             :highlight="highlighterHandle"
             :line-numbers="false"
             :readonly="true"
@@ -128,11 +116,7 @@
               '  repositories {\n' +
               '    maven {\n' +
               '      url \'' +
-              baseUrl +
-              'storages/' +
-              folibRepository.storageId +
-              '/' +
-              folibRepository.id +
+              repositoryUrl +
               '\'\n' +
               '    }\n' +
               '    mavenLocal()\n' +
@@ -176,11 +160,7 @@
               '' +
               folibRepository.id +
               ': ' +
-              baseUrl +
-              'storages/' +
-              folibRepository.storageId +
-              '/' +
-              folibRepository.id +
+              repositoryUrl +
               ''
             "
             :highlight="highlighterHandle"
@@ -237,7 +217,7 @@
           {{ $t('Store.CommandOperation') }}
           <small>ant-ivy{{ $t('Store.UsuallyCommand') }}</small>
           <p>
-            {{ $t('Store.UsuallyUse') }}SBT{{ $t('Store.specificRefer') }}https://ant.apache.org/ivy/history/2.4.0/use/makepom.html
+            {{ $t('Store.UsuallyUse') }}ivy{{ $t('Store.specificRefer') }}https://ant.apache.org/ivy/history/2.4.0/use/makepom.html
           </p>
 
           <prism-editor
@@ -259,14 +239,11 @@
             class="my-editor height-300"
             :value="
               'npm config set registry ' +
-              baseUrl +
-              'storages/' +
-              folibRepository.storageId +
-              '/' +
-              folibRepository.id +
-              '\n' +
-              '\n' +
-              'npm config list #' + this.$t('Store.NpmConfig')
+              repositoryUrl +
+              '\n\n#' + this.$t('Store.NpmAuth') + '\n' +
+              'npm login\n\n' +
+              '#' +this.$t('Store.NpmConfig') + '\n' +
+              'npm config list'
             "
             :highlight="highlighterHandle"
             :line-numbers="false"
@@ -284,20 +261,13 @@
             class="my-editor height-300"
             :value="
               'registry=' +
-              baseUrl +
-              'storages/' +
-              folibRepository.storageId +
-              '/' +
-              folibRepository.id +
+              repositoryUrl +
               '\n' +
               'always-auth=true\n' +
-              'email=yours4@example.com\n' +
+              'email=youremail@email.com\n' +
               '_auth=YWRtaW46cGFzc3dvcmQ=\n' +
               '\n' +
-              '; `_auth` ' + this.$t('Store.IS') + ' base64 token'+ this.$t('Store.authDescription') + '\n' +
-              '; ' + this.$t('Store.NpmAuth') + ':\n' +
-              '; username=admin\n' +
-              '; _password=password'
+              '`_auth` ' + this.$t('Store.IS') + ' base64 token '+ this.$t('Store.authDescription')
             "
             :highlight="highlighterHandle"
             :line-numbers="false"
@@ -328,7 +298,7 @@
             {{ $t('Store.RPMOperation') }}
           </p>
 
-          <prism-editor
+           <prism-editor
             class="my-editor height-300"
             :value="rpmLocalHelp()"
             :highlight="highlighterHandle"
@@ -344,13 +314,14 @@
                 :readonly="true"
                 v-if="this.folibRepository.type === 'proxy'"
             ></prism-editor>
-          <p>{{ $t('Store.ForReference') }}<span>: https://developer.aliyun.com/mirror/centos</span></p>
+          <p>{{ $t('Store.ForReference') }}:
+            <a href="https://developer.aliyun.com/mirror/centos" target="_blank">Centos</a></p>
         </a-timeline-item>
         <a-timeline-item color="primary">
           {{ $t('Store.CommandOperation') }}
           <small>yum {{ $t('Store.UsuallyCommand') }}</small>
-          <p>{{ $t('Store.ForReference') }}</p>
-
+          <p>{{ $t('Store.ForReference') }}:
+             <a href="https://developer.aliyun.com/mirror/centos" target="_blank">Centos</a></p>
           <prism-editor
             class="my-editor height-300"
             :value="rmpCommand()"
@@ -368,20 +339,10 @@
           <prism-editor
             class="my-editor height-300"
             :value="
-              'helm  registry  login  ' +
-              baseUrl +'storages/'+
-              folibRepository.storageId +
-              '/' +
-              folibRepository.id +
-              '\n' +
-              '\n' +
               'helm  repo  add   ' +
               folibRepository.id +
               '   ' +
-              baseUrl +'storages/'+
-              folibRepository.storageId +
-              '/' +
-              folibRepository.id +
+              repositoryUrl + ' --username [NAME] --password [PASSWORD]'+
               '\n'
             "
             :highlight="highlighterHandle"
@@ -414,8 +375,7 @@
               folibRepository.id +
               '\n' +
               '\n' +
-              './helm-cm-push  /app/fluentd-4.5.2.tgz  ' +
-              folibRepository.id +
+              ' helm cm-push /app/fluentd-4.5.2.tgz '+folibRepository.id + ' --context-path '+extractedPath(repositoryUrl)+ ' --username [NAME] --password [PASSWORD]'+
               '\n' +
               '\n' +
               this.$t('Store.HelmUploadParamsExplain') +
@@ -462,11 +422,7 @@
               'conan remote add ' +
               folibRepository.id +
               ' ' +
-              baseUrl +
-              'storages/' +
-              folibRepository.storageId +
-              '/' +
-              folibRepository.id +
+              repositoryUrl +
               ' false\n' +
               '#' + this.$t('Store.ConanLogin') + ' \n' +
               'conan user -p [password] -r ' + folibRepository.id +' [username] \n\n' +
@@ -475,11 +431,7 @@
               'conan remote add ' +
               folibRepository.id +
               ' ' +
-              baseUrl +
-              'storages/' +
-              folibRepository.storageId +
-              '/' +
-              folibRepository.id +
+              repositoryUrl +
               ' --insecure -f\n ' +
               '#' + this.$t('Store.ConanLogin') + ' \n' +
               'conan remote login -p [password] ' + folibRepository.id + ' [username]'"
@@ -554,14 +506,9 @@
             class="my-editor height-300"
             :value="
               'yarn config set registry ' +
-              baseUrl +
-              'storages/' +
-              folibRepository.storageId +
-              '/' +
-              folibRepository.id +
-              '\n' +
-              '\n' +
-              'yarn config get registry #' + this.$t('Store.NpmConfig')
+              repositoryUrl +
+              '\n\n#' + this.$t('Store.NpmAuth') + '\n' +
+              'yarn login'
             "
             :highlight="highlighterHandle"
             :line-numbers="false"
@@ -572,26 +519,19 @@
         <a-timeline-item color="primary">
           {{ $t('Store.EngineerAllocation') }}
           <small>{{ $t('Store.validCurrent') }}</small>
-          <p>{{ $t('Store.npmrcCode') }}</p>
+          <p>{{ $t('Store.yarnrcCode') }}</p>
 
           <prism-editor
             class="my-editor height-300"
             :value="
               'registry=' +
-              baseUrl +
-              'storages/' +
-              folibRepository.storageId +
-              '/' +
-              folibRepository.id +
+              repositoryUrl +
               '\n' +
               'always-auth=true\n' +
-              'email=yours4@example.com\n' +
+              'email=youremail@email.com\n' +
               '_auth=YWRtaW46cGFzc3dvcmQ=\n' +
               '\n' +
-              '; `_auth` ' + this.$t('Store.IS') + ' base64 token'+ this.$t('Store.authDescription') + '\n' +
-              '; ' + this.$t('Store.NpmAuth') + ':\n' +
-              '; username=admin\n' +
-              '; _password=password'
+              '`_auth` ' + this.$t('Store.IS') + ' base64 token '+ this.$t('Store.authDescription')
             "
             :highlight="highlighterHandle"
             :line-numbers="false"
@@ -620,11 +560,7 @@
           <small>Pypi{{ $t('Store.Configuration') }}</small>
           <prism-editor
             class="my-editor height-300"
-            :value=" 'pip config set global.index-url ' + baseUrl +
-              'storages/' +
-              folibRepository.storageId +
-              '/' +
-              folibRepository.id +
+            :value=" 'pip config set global.index-url ' + repositoryUrl +
               '\npip config set install.trusted-host ' + baseUrl.replace('http://', '').replace('https://','').replace('/','')
             "
             :highlight="highlighterHandle"
@@ -646,11 +582,7 @@
               '\n' +
               '['+ folibRepository.id +']\n' +
               'repository:' +
-              baseUrl +
-              'storages/' +
-              folibRepository.storageId +
-              '/' +
-              folibRepository.id +
+              repositoryUrl +
               '\n' +
               'username:[username]\n' +
               'password:[password]\n'
@@ -763,10 +695,7 @@
             class="my-editor height-300"
             :value="
               'docker build -t ' +
-              baseUrl.replace('http://', '').replace('https://','') +
-              folibRepository.storageId +
-              '/' +
-              folibRepository.id +
+              repositoryUrl +
               '/demo:latest .'
             "
             :highlight="highlighterHandle"
@@ -785,10 +714,7 @@
               class="my-editor height-300"
               :value="
               'docker buildx build --platform linux/amd64,linux/arm/v6,linux/arm/v7,linux/arm64/v8 -t ' +
-              baseUrl.replace('http://', '').replace('https://','') +
-              folibRepository.storageId +
-              '/' +
-              folibRepository.id +
+              repositoryUrl +
               '/demo:latest . --push'
             "
               :highlight="highlighterHandle"
@@ -797,106 +723,106 @@
           ></prism-editor>
         </a-timeline-item>
       </a-timeline>
-        <a-timeline v-if="repositoryType === 'nuget'">
-            <a-timeline-item color="primary" v-if="folibRepository.type === 'proxy'">
-                {{$t('Store.NuGetProxyTipsTitle')}}
-                <p>{{$t('Store.NuGetProxyTips')}}</p>
-                <p>{{$t('Store.NuGetProxyConfigUrlV3')}}</p>
-                <prism-editor
-                    class="my-editor height-300"
-                    :value="'https://api.nuget.org/v3/index.json'"
-                    :highlight="highlighterHandle"
-                    :line-numbers="false"
-                    :readonly="true"
-                ></prism-editor>
-                <p>{{$t('Store.NuGetProxyConfigUrlV2')}}</p>
-                <prism-editor
-                    class="my-editor height-300"
-                    :value="'https://www.nuget.org/api/v2'"
-                    :highlight="highlighterHandle"
-                    :line-numbers="false"
-                    :readonly="true"
-                ></prism-editor>
-                <p>{{$t('Store.NuGetProxyConfigUrlSymbol')}}</p>
-                <prism-editor
-                    class="my-editor height-300"
-                    :value="'https://symbols.nuget.org/download/symbols'"
-                    :highlight="highlighterHandle"
-                    :line-numbers="false"
-                    :readonly="true"
-                ></prism-editor>
-                <p></p>
-            </a-timeline-item>
-            <a-timeline-item color="primary" v-if="folibRepository.type === 'group'">
-                {{$t('Store.NuGetGroupTipsTitle')}}
-                <p>{{$t('Store.NuGetGroupTips')}}</p>
-            </a-timeline-item>
-            <a-timeline-item color="primary">
-                NuGet {{ $t('Store.Configuration') }}
-                <small>{{ $t('Store.URLRepository') }} URL</small>
-                <p>{{ $t('Store.NuGetSourceHost') }}</p>
-                <prism-editor
-                    class="my-editor height-300"
-                    :value="nugetDeployV3"
-                    :highlight="highlighterHandle"
-                    :line-numbers="false"
-                    :readonly="true"
-                ></prism-editor>
-                <prism-editor
-                    class="my-editor height-300"
-                    :value="nugetDeployV2"
-                    :highlight="highlighterHandle"
-                    :line-numbers="false"
-                    :readonly="true"
-                ></prism-editor>
+      <a-timeline v-if="repositoryType === 'nuget'">
+        <a-timeline-item color="primary" v-if="folibRepository.type === 'proxy'">
+          {{$t('Store.NuGetProxyTipsTitle')}}
+          <p>{{$t('Store.NuGetProxyTips')}}</p>
+          <p>{{$t('Store.NuGetProxyConfigUrlV3')}}</p>
+          <prism-editor
+              class="my-editor height-300"
+              :value="'https://api.nuget.org/v3/index.json'"
+              :highlight="highlighterHandle"
+              :line-numbers="false"
+              :readonly="true"
+          ></prism-editor>
+          <p>{{$t('Store.NuGetProxyConfigUrlV2')}}</p>
+          <prism-editor
+              class="my-editor height-300"
+              :value="'https://www.nuget.org/api/v2'"
+              :highlight="highlighterHandle"
+              :line-numbers="false"
+              :readonly="true"
+          ></prism-editor>
+          <p>{{$t('Store.NuGetProxyConfigUrlSymbol')}}</p>
+          <prism-editor
+              class="my-editor height-300"
+              :value="'https://symbols.nuget.org/download/symbols'"
+              :highlight="highlighterHandle"
+              :line-numbers="false"
+              :readonly="true"
+          ></prism-editor>
+          <p></p>
+        </a-timeline-item>
+        <a-timeline-item color="primary" v-if="folibRepository.type === 'group'">
+          {{$t('Store.NuGetGroupTipsTitle')}}
+          <p>{{$t('Store.NuGetGroupTips')}}</p>
+        </a-timeline-item>
+        <a-timeline-item color="primary">
+          NuGet {{ $t('Store.Configuration') }}
+          <small>{{ $t('Store.URLRepository') }} URL</small>
+          <p>{{ $t('Store.NuGetSourceHost') }}</p>
+          <prism-editor
+            class="my-editor height-300"
+            :value="nugetDeployV3"
+            :highlight="highlighterHandle"
+            :line-numbers="false"
+            :readonly="true"
+          ></prism-editor>
+          <prism-editor
+              class="my-editor height-300"
+              :value="nugetDeployV2"
+              :highlight="highlighterHandle"
+              :line-numbers="false"
+              :readonly="true"
+          ></prism-editor>
 
-                <p>{{ $t('Store.NuGetApiKey') }}</p>
-                <prism-editor
-                    class="my-editor height-300"
-                    :value="nugetSetApiKeyV3"
-                    :highlight="highlighterHandle"
-                    :line-numbers="false"
-                    :readonly="true"
-                ></prism-editor>
-                <prism-editor
-                    class="my-editor height-300"
-                    :value="nugetSetApiKeyV2"
-                    :highlight="highlighterHandle"
-                    :line-numbers="false"
-                    :readonly="true"
-                ></prism-editor>
-            </a-timeline-item>
+          <p>{{ $t('Store.NuGetApiKey') }}</p>
+          <prism-editor
+              class="my-editor height-300"
+              :value="nugetSetApiKeyV3"
+              :highlight="highlighterHandle"
+              :line-numbers="false"
+              :readonly="true"
+          ></prism-editor>
+          <prism-editor
+              class="my-editor height-300"
+              :value="nugetSetApiKeyV2"
+              :highlight="highlighterHandle"
+              :line-numbers="false"
+              :readonly="true"
+          ></prism-editor>
+        </a-timeline-item>
 
-            <a-timeline-item color="primary">
-                Nuget + Visual Studio{{ $t('Store.Configuration') }}
-                <small>{{ $t('Store.example') }}</small>
-                <p>{{ $t('Store.NuGetVisualStudioNuGetSource') }}</p>
-                <prism-editor
-                    class="my-editor height-300"
-                    :value="nugetV3Url"
-                    :highlight="highlighterHandle"
-                    :line-numbers="false"
-                    :readonly="true"
-                ></prism-editor>
-                <prism-editor
-                    class="my-editor height-300"
-                    :value="nugetV2Url"
-                    :highlight="highlighterHandle"
-                    :line-numbers="false"
-                    :readonly="true"
-                ></prism-editor>
+        <a-timeline-item color="primary">
+          Nuget + Visual Studio{{ $t('Store.Configuration') }}
+          <small>{{ $t('Store.example') }}</small>
+          <p>{{ $t('Store.NuGetVisualStudioNuGetSource') }}</p>
+          <prism-editor
+            class="my-editor height-300"
+            :value="nugetV3Url"
+            :highlight="highlighterHandle"
+            :line-numbers="false"
+            :readonly="true"
+          ></prism-editor>
+          <prism-editor
+              class="my-editor height-300"
+              :value="nugetV2Url"
+              :highlight="highlighterHandle"
+              :line-numbers="false"
+              :readonly="true"
+          ></prism-editor>
 
-                <p>{{ $t('Store.NuGetVisualStudioSymbolSource') }}</p>
-                <prism-editor
-                    class="my-editor height-300"
-                    :value="nugetSymbolUrl"
-                    :highlight="highlighterHandle"
-                    :line-numbers="false"
-                    :readonly="true"
-                ></prism-editor>
-                <p>{{ $t('Store.VSConfig') }}</p>
-            </a-timeline-item>
-        </a-timeline>
+          <p>{{ $t('Store.NuGetVisualStudioSymbolSource') }}</p>
+          <prism-editor
+              class="my-editor height-300"
+              :value="nugetSymbolUrl"
+              :highlight="highlighterHandle"
+              :line-numbers="false"
+              :readonly="true"
+          ></prism-editor>
+          <p>{{ $t('Store.VSConfig') }}</p>
+        </a-timeline-item>
+      </a-timeline>
       <a-timeline v-if="repositoryType === 'php'">
         <a-timeline-item color="primary">
           Composer{{ $t('Store.Authentication') }}
@@ -908,6 +834,11 @@
           </p>
           <prism-editor class="my-editor height-300" :value="'composer config -g http-basic.' + baseUrl + ' admin folib@v587'"
           :highlight="highlighterHandle" :line-numbers="false" :readonly="true"></prism-editor>
+          <p>
+            {{ $t('Store.ProxyExecuteCommand') }}
+          </p>
+          <prism-editor class="my-editor height-300" value="composer config -g secure-http false"
+          :highlight="highlighterHandle" :line-numbers="false" :readonly="true"></prism-editor>
         </a-timeline-item>
         <a-timeline-item color="primary">
           Composer {{ $t('Store.Configuration') }}
@@ -917,7 +848,7 @@
           <p>
             {{ $t('Store.ExecuteCommand') }}
           </p>
-          <prism-editor class="my-editor height-300" :value="'composer config -g repo.packagist composer ' + baseUrl + 'storages/' + folibRepository.storageId + '/' + folibRepository.id"
+          <prism-editor class="my-editor height-300" :value="'composer config -g repo.packagist composer ' + repositoryUrl"
           :highlight="highlighterHandle" :line-numbers="false" :readonly="true"></prism-editor>
           <p>
             {{ $t('Store.Method2') }}
@@ -925,7 +856,7 @@
           <p>
             {{ $t('Store.ExecuteCommand') }}
           </p>
-          <prism-editor class="my-editor height-300" :value="'composer config repo.packagist composer ' + baseUrl + 'storages/' + folibRepository.storageId + '/' + folibRepository.id"
+          <prism-editor class="my-editor height-300" :value="'composer config repo.packagist composer ' + repositoryUrl"
           :highlight="highlighterHandle" :line-numbers="false" :readonly="true"></prism-editor>
         </a-timeline-item>
         <a-timeline-item color="primary">
@@ -963,7 +894,6 @@
           <p>
             {{ $t('Store.UsuallyUse') }}composer{{ $t('Store.specificRefer') }} <a target="_blank" rel="noopenner noreferrer" href="https://getcomposer.org/doc/03-cli.md">https://getcomposer.org/doc/03-cli.md</a>
           </p>
-
           <prism-editor class="my-editor height-300" :value="'composer init\n' +
           'composer install\n' +
           'composer -vvv require\n' +
@@ -991,7 +921,7 @@
             {{ $t('Store.addLibrary') }}
           </p>
           <prism-editor class="my-editor height-300"
-          :highlight="highlighterHandle" :line-numbers="false" :value='"pod repo-art add "+folibRepository.id+" \""+baseUrl+"storages/"+folibRepository.storageId+"/"+folibRepository.id + "\""' :readonly="true">
+          :highlight="highlighterHandle" :line-numbers="false" :value='"pod repo-art add "+folibRepository.id+" \""+repositoryUrl + "\""' :readonly="true">
           </prism-editor>
         </a-timeline-item>
         <a-timeline-item color="primary">
@@ -1000,7 +930,7 @@
             {{ $t('Store.podDeployment') }}
             {{ $t('Store.podDeployExample') }}
           </p>
-          <prism-editor class="my-editor height-300" :value='"curl -u<USERNAME>:<PASSWORD> -XPUT "+baseUrl+"storages/"+folibRepository.storageId+"/"+folibRepository.id+"/<TARGET_FILE_PATH> -T <PATH_TO_FILE>"'
+          <prism-editor class="my-editor height-300" :value='"curl -u<USERNAME>:<PASSWORD> -XPUT "+repositoryUrl+"/<TARGET_FILE_PATH> -T <PATH_TO_FILE>"'
           :highlight="highlighterHandle" :line-numbers="false" :readonly="true">
           </prism-editor>
         </a-timeline-item>
@@ -1128,11 +1058,11 @@ go 1.20' :readonly="true">
               'ohpm config set publish_id {your_publish_id}  \n'+
               '#'+this.$t('Store.PublishIdTip')+'\n'+
               '#'+this.$t('Store.SetPublishingIdPlus')+'\n'+
-              ''+baseUrl.replace('http:','').replace('https:','')+'storages/'+folibRepository.storageId+'/'+folibRepository.id+'/:_auth={token}\n'+
+              ''+repositoryUrl.replace('http:','').replace('https:','')+'/:_auth={token}\n'+
               '#'+this.$t('Store.SetRepository')+'\n'+
-              'ohpm config set registry '+baseUrl+'storages/'+folibRepository.storageId+'/'+folibRepository.id+'\n'+
+              'ohpm config set registry '+ repositoryUrl +'\n'+
               '#'+this.$t('Store.SetPublishingRepository')+'\n'+
-              'ohpm config set publish_registry '+baseUrl+'storages/'+folibRepository.storageId+'/'+folibRepository.id+'\n'+
+              'ohpm config set publish_registry '+ repositoryUrl+'\n'+
               '#'+this.$t('Store.SslCheck')+'\n'+
               'ohpm config set strict_ssl false \n'+
               '\n' +
@@ -1175,7 +1105,7 @@ go 1.20' :readonly="true">
             '#'+this.$t('Store.LfsAddFile')+'\n'+
             'git  lfs  track  *.psd  \n'+
             '#'+this.$t('Store.SetLfs')+'\n'+
-            'git  config  lfs.url  '+baseUrl+'storages/'+folibRepository.storageId+'/'+folibRepository.id+'\n'+
+            'git  config  lfs.url  '+ repositoryUrl +'\n'+
             '\n' +
             '#' +this.$t('Store.ShowLfs')+'\n'+
             'git  config  --list '
@@ -1194,7 +1124,7 @@ go 1.20' :readonly="true">
               <prism-editor
                       class="my-editor height-300"
                       :value="
-            '#'+ this.$t('Store.LfsClone')+ '\n git  clone  --config  lfs.url='+baseUrl+'storages/'+folibRepository.storageId+'/'+folibRepository.id+'  [repository-url]  \n'+
+            '#'+ this.$t('Store.LfsClone')+ '\n git  clone  --config  lfs.url='+ repositoryUrl +'  [repository-url]  \n'+
             '#' + this.$t('Store.LfsPull')+'\n'+ 'git  lfs  pull \n'+
             '#' + this.$t('Store.LfsPush')+'\n'+ 'git  lfs  push  origin  master\n'+
             '#' + this.$t('Store.LfsAddLock')+'\n'+ 'git  lfs  lock  [' + this.$t('Store.LfsFilename') + '] \n'+
@@ -1215,7 +1145,7 @@ go 1.20' :readonly="true">
                       class="my-editor height-300"
                       :value="
             'export HF_HUB_ETAG_TIMEOUT=1500000000 \n'+
-            'export HF_ENDPOINT='+baseUrl+'storages/'+folibRepository.storageId+'/'+folibRepository.id+'\n'"
+            'export HF_ENDPOINT='+ repositoryUrl +'\n'"
                       :highlight="highlighterHandle"
                       :line-numbers="false"
                       :readonly="true"
@@ -1341,28 +1271,19 @@ go 1.20' :readonly="true">
             :line-numbers="false"
             :readonly="true"
           ></prism-editor>
-
-            <p>{{ $t('Store.DebianPermissionConfiguration') }}</p>
-            <prism-editor
-                class="my-editor height-300"
-                :value="debianPermissonConfiguration"
-                :highlight="highlighterHandle"
-                :line-numbers="false"
-                :readonly="true"
-            ></prism-editor>
-            <p>{{ $t('Store.DebianExampleTitle') }}</p>
-            <prism-editor
-                class="my-editor height-300"
-                :value="debianProxyHelp"
-                :highlight="highlighterHandle"
-                :line-numbers="false"
-                :readonly="true"
-            >
-            </prism-editor>
-            <p v-if="this.folibRepository.type === 'proxy' ">{{ $t('Store.ForReference') }}:
-                <a href="https://developer.aliyun.com/mirror/ubuntu">Ubuntu</a>&
-                <a href="https://developer.aliyun.com/mirror/debian">Debian</a>
-            </p>
+          <p>{{ $t('Store.DebianExampleTitle') }}</p>
+          <prism-editor
+              class="my-editor height-300"
+              :value="debianProxyHelp"
+              :highlight="highlighterHandle"
+              :line-numbers="false"
+              :readonly="true"
+          >
+          </prism-editor>
+          <p v-if="this.folibRepository.type === 'proxy' ">{{ $t('Store.ForReference') }}:
+            <a href="https://developer.aliyun.com/mirror/ubuntu" target="_blank">Ubuntu</a>&
+            <a href="https://developer.aliyun.com/mirror/debian" target="_blank">Debian</a>
+        </p>
         </a-timeline-item>
         <a-timeline-item color="primary">
           {{ $t('Store.CommandOperation') }}
@@ -1431,10 +1352,16 @@ go 1.20' :readonly="true">
                 ollama {{ $t('Store.GlobalConfiguration') }}
                 <p>{{ $t('Store.OllamaGlobalConfiguration') }}</p>
             </a-timeline-item>
-
             <a-timeline-item color="primary" v-if="folibRepository.type !== 'proxy'">
                 ollama {{ $t('Store.CargoDeploy') }}
                 <p>{{ $t('Store.OllamaDeployConfig') }}</p>
+                <prism-editor
+                    class="my-editor height-300"
+                    :value="ollamaTags"
+                    :highlight="highlighterHandle"
+                    :line-numbers="false"
+                    :readonly="true"
+                ></prism-editor>
                 <prism-editor
                     class="my-editor height-300"
                     :value="ollamaDeploy"
@@ -1456,9 +1383,98 @@ go 1.20' :readonly="true">
                 >
                 </prism-editor>
             </a-timeline-item>
-
         </a-timeline>
+
       <!--conda 使用说明 -->
+      <a-timeline v-if="folibRepository.layout === 'conda'">
+        <a-timeline-item color="primary">
+          Conda {{ $t('Store.GlobalConfiguration') }}
+          <p>{{ $t('Store.CondaGlobalConfiguration') }}</p>
+          <prism-editor
+              class="my-editor height-300"
+              :value="condaConfiguration"
+              :highlight="highlighterHandle"
+              :line-numbers="false"
+              :readonly="true"
+          >
+          </prism-editor>
+        </a-timeline-item>
+        <a-timeline-item color="primary" v-if="folibRepository.type === 'hosted'">
+          Conda {{ $t('Store.CondaDeploy') }}
+          <p>{{ $t('Store.CondaDeployConfig') }}</p>
+          <prism-editor
+              class="my-editor height-300"
+              :value="condaDeploy"
+              :highlight="highlighterHandle"
+              :line-numbers="false"
+              :readonly="true"
+          >
+          </prism-editor>
+        </a-timeline-item>
+        <a-timeline-item color="primary">
+          Conda {{ $t('Store.CondaInstall') }}
+          <p>{{ $t('Store.CondaInstallConfig') }}</p>
+          <prism-editor
+              class="my-editor height-300"
+              :value="condaInstall"
+              :highlight="highlighterHandle"
+              :line-numbers="false"
+              :readonly="true"
+          >
+          </prism-editor>
+        </a-timeline-item>
+      </a-timeline>
+      <!--cjpm 使用说明-->
+      <a-timeline v-if="folibRepository.layout === 'cjpm'">
+        <a-timeline-item color="primary">
+          {{ $t('Store.CjpmInstallCommand') }}
+          <p>{{ $t('Store.CjpmInstallCommandDetail') }}</p>
+          <prism-editor
+              class="my-editor height-300"
+              :value="cjpmInstallCommand"
+              :highlight="highlighterHandle"
+              :line-numbers="false"
+              :readonly="true"
+          >
+          </prism-editor>
+        </a-timeline-item>
+        <a-timeline-item color="primary">
+          {{ $t('Store.CjpmConfiguration') }}
+          <p>{{ $t('Store.CjpmConfigurationDetail') }}</p>
+          <prism-editor
+              class="my-editor height-300"
+              :value="cjpmConfigutation"
+              :highlight="highlighterHandle"
+              :line-numbers="false"
+              :readonly="true"
+          >
+          </prism-editor>
+        </a-timeline-item>
+        <a-timeline-item color="primary">
+          {{ $t('Store.CjpmPublish') }}
+          <p>{{ $t('Store.CjpmPublishDetail') }}</p>
+          <prism-editor
+              class="my-editor height-300"
+              :value="cjpmConfigutation"
+              :highlight="highlighterHandle"
+              :line-numbers="false"
+              :readonly="true"
+          >
+          </prism-editor>
+        </a-timeline-item>
+        <a-timeline-item color="primary">
+          {{ $t('Store.CjpmImport') }}
+          <p>{{ $t('Store.CjpmImportDetail') }}</p>
+          <prism-editor
+              class="my-editor height-300"
+              :value="cjpmImport"
+              :highlight="highlighterHandle"
+              :line-numbers="false"
+              :readonly="true"
+          >
+          </prism-editor>
+        </a-timeline-item>
+      </a-timeline>
         <a-timeline v-if="folibRepository.layout === 'conda'">
             <a-timeline-item color="primary">
                 Conda {{ $t('Store.GlobalConfiguration') }}
@@ -1514,6 +1530,9 @@ go 1.20' :readonly="true">
   </div>
 </template>
 <script>
+import {
+  getLayoutRepoPrefix,
+} from '@/utils/layoutUtil'
 import { PrismEditor } from "vue-prism-editor";
 import "vue-prism-editor/dist/prismeditor.min.css"; // import the styles somewhere
 // import highlighting library (you can use any library you want just return html string)
@@ -1547,11 +1566,7 @@ export default {
       // console.log("repositoryType",this.repositoryType )
       // console.log("folibRepository",this.folibRepository )
     if (this.baseUrl) {
-      this.repositoryUrl = this.baseUrl + 'storages/' + this.folibRepository.storageId + '/' + this.folibRepository.id
-      if (this.repositoryType && this.repositoryType === 'docker') {
-        let baseUrlArr = this.baseUrl.split('://')
-        this.repositoryUrl = baseUrlArr[1] + this.folibRepository.storageId + '/' + this.folibRepository.id
-      }
+      this.repositoryUrl = this.getRepositoryUrl()
         this.baseDomain = this.baseUrl.endsWith('/') ? this.baseUrl.slice(0,this.baseUrl.length - 1):this.baseUrl
     }
   },
@@ -1560,66 +1575,79 @@ export default {
   },
   computed: {
     debianConfiguration() {
-      return  `sudo sh -c " echo  'deb [trusted=yes] ${this.baseUrl}storages/${this.folibRepository.storageId}/${this.folibRepository.id} <DISTRIBUTION> <COMPONENT> ' >> /etc/apt/sources.list "`
+      return  `sudo sh -c " echo 'deb [trusted=yes] ${this.repositoryUrl} <DISTRIBUTION> <COMPONENT> ' >> /etc/apt/sources.list "`
     },
     debianPermissonConfiguration() {
       const name = this.$store.getters.name;
-      const url = this.baseUrl.replace('http://','').replace('https://','');
+      const url = this.repositoryUrl.replace('http://','').replace('https://','');
       const protocol = this.baseUrl.startsWith('http://') ? 'http://' : 'https://';
-      return  `sudo sh -c " echo  'deb [trusted=yes] ${protocol}${name}:<PASSWORD>@${url}storages/${this.folibRepository.storageId}/${this.folibRepository.id} <DISTRIBUTION> <COMPONENT> ' >> /etc/apt/sources.list "`
+      return  `sudo sh -c " echo 'deb [trusted=yes] ${protocol}${name}:<PASSWORD>@${url} <DISTRIBUTION> <COMPONENT> ' >> /etc/apt/sources.list "`
     },
-
-   debianProxyHelp() {
-        return`deb [trusted=yes]  ${this.baseUrl}storages/${this.folibRepository.storageId}/${this.folibRepository.id} focal main restricted universe multiverse
-deb [trusted=yes]  ${this.baseUrl}storages/${this.folibRepository.storageId}/${this.folibRepository.id} focal-updates main restricted universe multiverse
-deb [trusted=yes]  ${this.baseUrl}storages/${this.folibRepository.storageId}/${this.folibRepository.id} focal-backports main restricted universe multiverse
-deb [trusted=yes]  ${this.baseUrl}storages/${this.folibRepository.storageId}/${this.folibRepository.id} focal-security main restricted universe multiverse`
-   },
+    debianProxyHelp() {
+        return`deb [trusted=yes]  ${this.repositoryUrl} focal main restricted universe multiverse
+deb [trusted=yes]  ${this.repositoryUrl} focal-updates main restricted universe multiverse
+deb [trusted=yes]  ${this.repositoryUrl} focal-backports main restricted universe multiverse
+deb [trusted=yes]  ${this.repositoryUrl} focal-security main restricted universe multiverse`
+    },
     debianCommand(){
-      return ` sudo apt update  \n apt-get install <DEBIAN_PACKAGE_NAME>`
+      return ` apt update --allow-insecure-repositories \n apt-get install <DEBIAN_PACKAGE_NAME>`
     },
       cargoConfiguration() {
         if(this.folibRepository.type === "hosted"){
-            return `[registry]\ndefault = "folib"\n\n[registries.folib]\nindex = "sparse+${this.baseDomain}/storages/${this.folibRepository.storageId}/${this.folibRepository.id}/index/"`
-        }else {
-            return `[source.crates-io]\nreplace-with = 'folib-remote'\n[source.folib-remote]\nregistry = "sparse+${this.baseDomain}/storages/${this.folibRepository.storageId}/${this.folibRepository.id}/index/"`
+            return `[registry]\ndefault = "` + this.getCargoName() +`"\n\n[registries.` + this.getCargoName() +`]\nindex = "sparse+${this.repositoryUrl}/index/"`
+        } if(this.folibRepository.type === "proxy"){
+            return `[source.crates-io]\nreplace-with = '` + this.getCargoName() +`'\n[source.` + this.getCargoName() +`]\nregistry = "sparse+${this.repositoryUrl}/index/"`
+        } else {
+            return `[source.crates-io]\nreplace-with = '` + this.getCargoName() +`'\n[source.` + this.getCargoName() +`]\nregistry = "sparse+${this.repositoryUrl}/index/"`
         }
       },
       cargoConfigurationToken() {
-        return `[registry.folib]\ntoken = "Bearer <TOKEN>"\n#token = "Basic <BASE64>"`
+        return `[registry.` + this.getCargoName() +`]\ntoken = "Bearer <TOKEN>"\n#token = "Basic <BASE64>"`
       },
       cargoDeploy(){
-        return `cargo login "Bearer <TOKEN>"\ncargo publish --registry folib`
+        return `cargo login "Bearer <TOKEN>"\ncargo publish --registry ` + this.getCargoName() +``
       },
       cargoInstall(){
           return `cargo login "Bearer <TOKEN>"\ncargo install <PACKAGE_NAME>`
       },
+      condaConfiguration() {
+        return `channels:\n  - ${this.repositoryUrl}\nrepodata_use_zst: false\nrepodata_fns:\n  - repodata.json\n`
+      },
+      condaDeploy() {
+        return `curl -u '<username>:<password>' -X PUT \\\n  -F "package=@<localPackagePath>" \\\n  ${this.repositoryUrl}\n`
+      },
+      condaInstall() {
+        return `conda install <packageName>\nconda install <packageName> -c ${this.repositoryUrl}\n`
+      },
+      ollamaTags(){
+          return `ollama cp <MODEL>  `+this.baseUrl.replace('http://','').replace('https://','')+this.folibRepository.id+`/<MODEL>`
+      },
       ollamaDeploy(){
-        return `ollama push  <MODEL> `
+          return `ollama push  `+this.baseUrl.replace('http://','').replace('https://','')+this.folibRepository.id+`/<MODEL>`
       },
       ollamaInstall(){
-        return `ollama pull  <MODEL>`+`\n`+`ollama run  <MODEL>`
+          return `ollama pull  `+this.baseUrl.replace('http://','').replace('https://','')+this.folibRepository.id+`/<MODEL>`+`\n`+`ollama run   `+this.baseUrl.replace('http://','').replace('https://','')+this.folibRepository.id+`/<MODEL>`
       },
       nugetV3Url() {
-          return `${this.repositoryUrl}/api/v3/index.json`
+        return `${this.repositoryUrl}/api/v3/index.json`
       },
       nugetV2Url() {
-          return `${this.repositoryUrl}/api/v2`
+        return `${this.repositoryUrl}/api/v2`
       },
       nugetDeployV3(){
-          return `nuget source Add -Name folib_v3 -Source ${this.repositoryUrl}/api/v3/index.json`
+        return `nuget source Add -Name folib_v3 -Source ${this.repositoryUrl}/api/v3/index.json`
       },
       nugetDeployV2() {
-          return `nuget source Add -Name folib_v2 -Source ${this.repositoryUrl}/api/v2`
+        return `nuget source Add -Name folib_v2 -Source ${this.repositoryUrl}/api/v2`
       },
       nugetSymbolUrl() {
-          return `${this.repositoryUrl}/api/v3/symbols`
+        return `${this.repositoryUrl}/api/v3/symbols`
       },
       nugetSetApiKeyV3() {
-          return 'nuget setapikey <API-KEY> -Source folib_v3'
+        return 'nuget setapikey <API-KEY> -Source folib_v3'
       },
       nugetSetApiKeyV2() {
-          return 'nuget setapikey <API-KEY> -Source folib_v2'
+        return 'nuget setapikey <API-KEY> -Source folib_v2'
       },
   },
   methods: {
@@ -1655,49 +1683,68 @@ deb [trusted=yes]  ${this.baseUrl}storages/${this.folibRepository.storageId}/${t
         this.copy(res)
       }).finally(() => {})
     },
-      rpmProxyHelp(){
-          return `[base]
+    getRepositoryUrl() {
+      let repositoryUrl = ''
+      if (this.baseUrl) {
+        repositoryUrl =
+          this.baseUrl +
+          getLayoutRepoPrefix(this.folibRepository) + this.folibRepository.id
+        if (this.repositoryType && this.repositoryType === 'docker') {
+          repositoryUrl = repositoryUrl.replace('http://','').replace('https://','')
+        }
+      }
+      return repositoryUrl
+    },
+    getCargoName() {
+      if(this.folibRepository.type === "hosted"){
+          return 'local'
+      } if(this.folibRepository.type === "proxy"){
+          return 'remote'
+      } else {
+          return 'group'
+      }
+    },
+    rpmProxyHelp(){
+      return `[base]
 name=CentOS-$releasever - Base
-baseurl=${this.baseUrl}storages/${this.folibRepository.storageId}/${this.folibRepository.id}/$releasever/BaseOS/$basearch/os/
+baseurl=${this.repositoryUrl}/$releasever/BaseOS/$basearch/os/
 gpgcheck=0
 enabled=1
 
 [extras]
 name=CentOS-$releasever - Extras
-baseurl=${this.baseUrl}storages/${this.folibRepository.storageId}/${this.folibRepository.id}/$releasever/extras/$basearch/os/
+baseurl=${this.repositoryUrl}/$releasever/extras/$basearch/os/
 gpgcheck=0
 enabled=1
 
 [AppStream]
 name=CentOS-$releasever - AppStream
-baseurl=${this.baseUrl}storages/${this.folibRepository.storageId}/${this.folibRepository.id}/$releasever/AppStream/$basearch/os/
+baseurl=${this.repositoryUrl}/$releasever/AppStream/$basearch/os/
 gpgcheck=0
 enabled=1`
-      },
-      rpmLocalHelp(){
-       return `
+    },
+    rpmLocalHelp(){
+      return `
 [folib]
 name=CentOS-$releasever - folib
-baseurl=${this.baseUrl}storages/${this.folibRepository.storageId}/${this.folibRepository.id}/
+baseurl=${this.repositoryUrl}/
 enabled=1
 gpgcheck=0`
-      },
-      rmpCommand(){
-        return `yum clean all
+    },
+    rmpCommand(){
+      return `yum clean all
 yum makecache
 yum repolist
 yum install mysql`
-      },
-      condaConfiguration() {
-          return `channels:\n  - ${this.baseUrl}storages/${this.folibRepository.storageId}/${this.folibRepository.id}\nrepodata_use_zst: false\nrepodata_fns:\n  - repodata.json\n`
-      },
-      condaDeploy(){
-        return `curl -u '<USER_NAME>:<PASSWORD>' -X PUT \
--F "package=@./six-1.14.0-py_1.tar.bz2" \
-${this.repositoryUrl}`
-      },
-      condaInstall(){
-        return `conda install <PACKAGE_NAME>`
+    },
+    extractedPath(fullUrl) {
+          try {
+              const url = new URL(fullUrl);
+              return url.pathname;
+          } catch (e) {
+              // 降级处理：正则表达式
+              return fullUrl.replace(/^https?:\/\/[^/]+/, '');
+          }
       }
 
   },

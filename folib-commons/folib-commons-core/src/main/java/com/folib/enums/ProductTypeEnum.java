@@ -115,7 +115,12 @@ public enum ProductTypeEnum {
     /**
      * Cargo
      */
-    Cargo(22, "cargo", "cargo", "cargo", "CargoArtifactCoordinates");
+    Cargo(22, "cargo", "cargo", "cargo", "CargoArtifactCoordinates"),
+
+    /**
+     * CJPM
+     */
+    Cjpm(25, "cjpm", "Cjpm", "cjpm", "CjpmArtifactCoordinates");
 
     private Integer value;
     private String name;

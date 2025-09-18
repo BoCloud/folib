@@ -50,6 +50,7 @@
         <module>folib-pypi-layout-provider</module>
         <module>folib-raw-layout-provider</module>
         <module>folib-rpm-layout-provider</module>
+        <module>folib-cjpm-layout-provider</module>
     </modules>
 
     <dependencies>
