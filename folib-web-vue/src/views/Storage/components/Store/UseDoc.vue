@@ -1497,6 +1497,95 @@ go 1.20' :readonly="true">
                 </prism-editor>
             </a-timeline-item>
         </a-timeline>
+      <a-timeline v-if="folibRepository.layout === 'conda'">
+        <a-timeline-item color="primary">
+          Conda {{ $t('Store.GlobalConfiguration') }}
+          <p>{{ $t('Store.CondaGlobalConfiguration') }}</p>
+          <prism-editor
+              class="my-editor height-300"
+              :value="condaConfiguration"
+              :highlight="highlighterHandle"
+              :line-numbers="false"
+              :readonly="true"
+          >
+          </prism-editor>
+        </a-timeline-item>
+        <a-timeline-item color="primary" v-if="folibRepository.type === 'hosted'">
+          Conda {{ $t('Store.CondaDeploy') }}
+          <p>{{ $t('Store.CondaDeployConfig') }}</p>
+          <prism-editor
+              class="my-editor height-300"
+              :value="condaDeploy"
+              :highlight="highlighterHandle"
+              :line-numbers="false"
+              :readonly="true"
+          >
+          </prism-editor>
+        </a-timeline-item>
+        <a-timeline-item color="primary">
+          Conda {{ $t('Store.CondaInstall') }}
+          <p>{{ $t('Store.CondaInstallConfig') }}</p>
+          <prism-editor
+              class="my-editor height-300"
+              :value="condaInstall"
+              :highlight="highlighterHandle"
+              :line-numbers="false"
+              :readonly="true"
+          >
+          </prism-editor>
+        </a-timeline-item>
+      </a-timeline>
+      <!--cjpm 使用说明-->
+      <a-timeline v-if="folibRepository.layout === 'cjpm'">
+        <a-timeline-item color="primary">
+          {{ $t('Store.CjpmInstallCommand') }}
+          <p>{{ $t('Store.CjpmInstallCommandDetail') }}</p>
+          <prism-editor
+              class="my-editor height-300"
+              :value="cjpmInstallCommand"
+              :highlight="highlighterHandle"
+              :line-numbers="false"
+              :readonly="true"
+          >
+          </prism-editor>
+        </a-timeline-item>
+        <a-timeline-item color="primary">
+          {{ $t('Store.CjpmConfiguration') }}
+          <p>{{ $t('Store.CjpmConfigurationDetail') }}</p>
+          <prism-editor
+              class="my-editor height-300"
+              :value="cjpmConfigutation"
+              :highlight="highlighterHandle"
+              :line-numbers="false"
+              :readonly="true"
+          >
+          </prism-editor>
+        </a-timeline-item>
+        <a-timeline-item color="primary">
+          {{ $t('Store.CjpmPublish') }}
+          <p>{{ $t('Store.CjpmPublishDetail') }}</p>
+          <prism-editor
+              class="my-editor height-300"
+              :value="cjpmConfigutation"
+              :highlight="highlighterHandle"
+              :line-numbers="false"
+              :readonly="true"
+          >
+          </prism-editor>
+        </a-timeline-item>
+        <a-timeline-item color="primary">
+          {{ $t('Store.CjpmImport') }}
+          <p>{{ $t('Store.CjpmImportDetail') }}</p>
+          <prism-editor
+              class="my-editor height-300"
+              :value="cjpmImport"
+              :highlight="highlighterHandle"
+              :line-numbers="false"
+              :readonly="true"
+          >
+          </prism-editor>
+        </a-timeline-item>
+      </a-timeline>
         <a-timeline>
         <a-timeline-item color="primary">
           {{ $t('Store.WarehouseAddress') }}
@@ -1620,6 +1709,15 @@ deb [trusted=yes]  ${this.baseUrl}storages/${this.folibRepository.storageId}/${t
       },
       nugetSetApiKeyV2() {
           return 'nuget setapikey <API-KEY> -Source folib_v2'
+      },
+      cjpmInstallCommand() {
+        return 'cjpm install --git "https://gitcode.com/folib/cjpmp.git"'
+      },
+      cjpmConfigutation() {
+        return `CJPMP_REGISTER = "${this.repositoryUrl}" \nCJPMP_TOKEN = <TOKEN>`
+      },
+      cjpmImport() {
+        return `[dependencies] \n \<PACKAGE_NAME\> = \{version = "<VERSION>"\}`
       },
   },
   methods: {

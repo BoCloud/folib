@@ -155,6 +155,18 @@ const typeList = [
         name:'Swift',
         disabled:true,
     },
+    {
+        src:'images/folib/cjpm.svg',
+        type:'cjpm',
+        name:'Cjpm',
+        disabled: false,
+    },
+    {
+        src:'images/folib/modelscope.svg',
+        type:'modelscope',
+        name:'ModelScope',
+        disabled:true,
+    },
 ]
 
 export default typeList
