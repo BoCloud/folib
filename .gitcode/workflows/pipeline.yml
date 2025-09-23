@@ -14,6 +14,4 @@ jobs:
       uses: setup-java@0.0.1
       with:
         java-version: '17.0.2'
-
-    - name: Build with Maven
-      run: cd repo_workspace && mvn  clean package -X --settings folib-settings.xml -DskipTests -Dmaven.wagon.http.ssl.insecure=true -Dmaven.wagon.http.ssl.allowall=true -Dmaven.wagon.http.ssl.ignore.validity.dates=true
+      run: cd repo_workspace && java -version && mvn  clean package -X --settings folib-settings.xml -DskipTests -Dmaven.wagon.http.ssl.insecure=true -Dmaven.wagon.http.ssl.allowall=true -Dmaven.wagon.http.ssl.ignore.validity.dates=true
