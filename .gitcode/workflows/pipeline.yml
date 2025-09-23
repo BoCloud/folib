@@ -13,6 +13,6 @@ jobs:
     - name: Set up JDK
       uses: setup-java@0.0.1
       with:
-        java-version: '17.0.2'
+        java-version: '11.0.18'
       run: cd repo_workspace && JAVA_HOME=/opt/tools/jdk/17.0.2/jdk-17.0.2 && java  -version
 
