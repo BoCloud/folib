@@ -12,7 +12,7 @@ jobs:
     - uses: checkout-action@0.0.1
     - name: Set up JDK
       uses: setup-java@0.0.1
-      run: cd repo_workspace && export JAVA_HOME=/opt/tools/jdk/17.0.2/jdk-17.0.2 && export && java  -version
+      run: cd repo_workspace && export JAVA_HOME=/opt/tools/jdk/17.0.2/jdk-17.0.2 && export PATH=$JAVA_HOME/bin:$PATH  && export && java  -version
       with:
         java-version: '17.0.2'
 
