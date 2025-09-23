@@ -14,4 +14,4 @@ jobs:
       uses: setup-java@0.0.1
       with:
         java-version: '17'
-      run: cd repo_workspace && java17 && export && ls /opt/tools/jdk
+      run: cd repo_workspace && java17 && export && ls /opt/tools/jdk && java -version
