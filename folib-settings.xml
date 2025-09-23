@@ -46,5 +46,13 @@
         <activeProfile>jdk-17</activeProfile>
     </activeProfiles>
 
+    <servers>
+        <server>
+            <id>folib-oss-local</id>
+            <username>folib</username>
+            <password>folib@v587</password>
+        </server>
+    </servers>
+
 
 </settings>

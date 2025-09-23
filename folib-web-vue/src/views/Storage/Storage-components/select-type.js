@@ -132,6 +132,12 @@ const typeList = [
         disabled:false,
     },
     {
+        src:'images/folib/cjpm.svg',
+        type:'cjpm',
+        name:'Cjpm',
+        disabled: false,
+    },
+    {
         src:'images/folib/gems.svg',
         type:'gems',
         name:'Gems',
@@ -155,12 +161,7 @@ const typeList = [
         name:'Swift',
         disabled:true,
     },
-    {
-        src:'images/folib/cjpm.svg',
-        type:'cjpm',
-        name:'Cjpm',
-        disabled: false,
-    },
+
     {
         src:'images/folib/modelscope.svg',
         type:'modelscope',
