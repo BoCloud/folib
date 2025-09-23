@@ -19,10 +19,10 @@
 package com.folib.dependency;
 
 import com.folib.artifact.coordinates.ArtifactCoordinates;
+import com.folib.artifact.coordinates.NugetCoordinates;
 import com.folib.dependency.snippet.CompatibleDependencyFormatRegistry;
 import com.folib.dependency.snippet.DependencySynonymFormatter;
 import com.folib.providers.layout.AbstractLayoutProvider;
-import com.folib.artifact.coordinates.NugetCoordinates;
 import com.folib.providers.NugetLayoutProvider;
 
 import javax.annotation.PostConstruct;

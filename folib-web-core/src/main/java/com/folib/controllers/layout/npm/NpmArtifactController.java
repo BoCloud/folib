@@ -20,6 +20,7 @@ package com.folib.controllers.layout.npm;
 
 import com.alibaba.fastjson.JSONObject;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.folib.model.response.NpmLoginRes;
 import com.folib.providers.*;
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
@@ -532,9 +533,22 @@ public class NpmArtifactController
                     "Unsupported authentication principal " + Optional.ofNullable(principal).orElse(null));
         }
 
+        NpmLoginRes npmLoginRes = new NpmLoginRes();
+
+        try {
+            npmLoginRes.setUsername(authentication.getName());
+            npmLoginRes.setOk(true);
+            String token = userService.generateSecurityToken(authentication.getName(), 60*60*24*30);
+            npmLoginRes.setToken(token);
+        }catch (Exception e){
+            return toResponseEntityError(
+                    "Unsupported authentication principal " + Optional.ofNullable(principal).orElse(null));
+        }
         return ResponseEntity
                 .status(HttpStatus.CREATED)
-                .body("{\"ok\":\"user '" + authentication.getName() + "' created\"}");
+                .body(npmLoginRes);
+
+
     }
 
     @DeleteMapping(path = "{storageId}/{repositoryId}/{packageScope}/{packageName}/-rev/{rev}")

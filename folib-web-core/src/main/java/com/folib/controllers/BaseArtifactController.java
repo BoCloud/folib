@@ -20,6 +20,8 @@ package com.folib.controllers;
 
 
 import com.folib.artifact.ArtifactNotFoundException;
+import com.folib.config.PathSpecificBasicAuthenticationEntryPoint;
+import com.folib.domain.DirectoryListing;
 import com.folib.providers.io.RepositoryFiles;
 import com.folib.providers.io.RepositoryPath;
 import com.folib.components.artifact.ArtifactComponent;
@@ -27,11 +29,19 @@ import com.folib.domain.Artifact;
 import com.folib.domain.CacheSettings;
 import com.folib.event.artifact.ArtifactEventListenerRegistry;
 import com.folib.providers.layout.DockerLayoutProvider;
+import com.folib.security.enums.ResolvePathTypeEnum;
+import com.folib.security.resolvepath.ResolvePathProvider;
+import com.folib.security.resolvepath.ResolvePathProviderRegistry;
 import com.folib.services.ArtifactManagementService;
+import com.folib.services.DirectoryListingService;
 import com.folib.storage.metadata.MetadataHelper;
 import com.folib.storage.repository.Repository;
+import com.folib.storage.repository.RepositoryTypeEnum;
+import com.folib.users.domain.Privileges;
 import com.folib.util.UriUtils;
 import com.folib.utils.ArtifactControllerHelper;
+import com.folib.providers.io.LayoutFileSystem;
+import com.google.common.collect.Lists;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.collections4.CollectionUtils;
@@ -42,10 +52,14 @@ import com.folib.commons.http.range.ByteRange;
 import com.folib.commons.http.range.ByteRangeHeaderParser;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.http.*;
+import org.springframework.ui.ModelMap;
 import org.springframework.util.AntPathMatcher;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.servlet.HandlerMapping;
+import org.springframework.web.servlet.ModelAndView;
 
 import javax.inject.Inject;
 import java.io.*;
@@ -58,6 +72,9 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.util.*;
+
+
+
 
 public abstract class BaseArtifactController
         extends BaseController {
@@ -73,6 +90,14 @@ public abstract class BaseArtifactController
 
     @Autowired
     private ArtifactComponent artifactComponent;
+    @Inject
+    @Qualifier("browseRepositoryDirectoryListingService")
+    @Lazy
+    private volatile DirectoryListingService directoryListingService;
+
+    @Autowired
+    @Lazy
+    private ResolvePathProviderRegistry resolvePathProviderRegistry;
 
     protected boolean provideArtifactDownloadResponse(HttpServletRequest request,
                                                       HttpServletResponse response,
@@ -346,6 +371,91 @@ public abstract class BaseArtifactController
 
     protected Path unwrap(Path path) {
         return path instanceof RepositoryPath ? ((RepositoryPath) path).getTarget() : path;
+    }
+
+    protected boolean probeForDirectoryListing(final RepositoryPath repositoryPath)
+            throws IOException {
+        return Files.exists(repositoryPath) &&
+                repositoryPath.getRepository().getLayout().equals("helm") && repositoryPath.getTarget().toString().endsWith("index.yaml") || Files.isDirectory(repositoryPath) &&
+                isPermittedForDirectoryListing(repositoryPath);
+    }
+
+    protected boolean isPermittedForDirectoryListing(final RepositoryPath repositoryPath)
+            throws IOException {
+        //TODO: RepositoryFiles.isIndex(repositoryPath) || (
+        return (!Files.isHidden(repositoryPath)
+                // 支持Cocoapods索引目录的显示
+                || repositoryPath.toString().contains(".specs") || repositoryPath.toString().contains(LayoutFileSystem.TRASH))
+                && !RepositoryFiles.isTemp(repositoryPath);
+    }
+    public Object browseRepository(HttpServletRequest request, HttpHeaders httpHeaders, HttpServletResponse response, ModelMap model, Repository repository, String path) {
+        final String storageId = repository.getStorage().getId();
+        final String repositoryId = repository.getId();
+        logger.info("Requested browsing repository content at {}/{}/{} ", storageId, repositoryId, path);
+        String acceptHeader = request.getHeader(HttpHeaders.ACCEPT);
+        try {
+            RepositoryPath repositoryPath = repositoryPathResolver.resolve(repository, path);
+            RepositoryPath repositoryResolvePath = artifactResolutionService.resolvePath(repositoryPath);
+            if (Objects.isNull(repositoryResolvePath) && StringUtils.isNotBlank(RepositoryFiles.relativizePath(repositoryPath))) {
+                response.setStatus(HttpStatus.NOT_FOUND.value());
+                return null;
+            }
+            if (Objects.nonNull(repositoryResolvePath) && !Files.isSameFile(repositoryResolvePath, repositoryResolvePath.getRoot()) && !StringUtils.endsWith(path, "/")) {
+                vulnerabilityBlock(repositoryResolvePath);
+                provideArtifactDownloadResponse(request, response, httpHeaders, repositoryResolvePath);
+                return null;
+            }
+            DirectoryListing directoryListing = null;
+            if (RepositoryTypeEnum.GROUP.getType().equals(repository.getType())) {
+                directoryListing = directoryListingService.fromGroupRepositoryPath(repository, repositoryPath);
+            } else {
+                if (repositoryPath == null || !Files.exists(repositoryPath)) {
+                    return getNotFoundResponseEntity("The requested repository path was not found.", acceptHeader);
+                }
+                if (!repository.isInService()) {
+                    return getServiceUnavailableResponseEntity("Repository is not in service...", acceptHeader);
+                }
+                if (!repository.isAllowsDirectoryBrowsing() || !probeForDirectoryListing(repositoryPath)) {
+                    return getNotFoundResponseEntity("Requested repository doesn't allow browsing.", acceptHeader);
+                }
+                directoryListing = directoryListingService.fromRepositoryPath(repositoryPath);
+            }
+            if (acceptHeader != null && acceptHeader.contains(MediaType.APPLICATION_JSON_VALUE)) {
+                return ResponseEntity.ok(objectMapper.writer().writeValueAsString(directoryListing));
+            }
+            String currentUrl = org.apache.commons.lang.StringUtils.chomp(request.getRequestURI(), "/");
+            model.addAttribute("currentUrl", currentUrl);
+            model.addAttribute("directories", directoryListing.getDirectories());
+            model.addAttribute("files", directoryListing.getFiles());
+            return new ModelAndView("directoryListing", model);
+        } catch (Exception e) {
+            String message = "Failed to generate repository directory listing.";
+            return getExceptionResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR, message, e, acceptHeader);
+        }
+    }
+    public Object download(Repository repository, HttpHeaders httpHeaders, String path, HttpServletRequest request, HttpServletResponse response, ModelMap model)
+            throws Exception {
+        final String storageId = repository.getStorage().getId();
+        final String repositoryId = repository.getId();
+        logger.info("Requested /{}/{}/{}.", storageId, repositoryId, path);
+        RepositoryPath repositoryPath = repositoryPathResolver.resolve(repository, path);
+        String resolvePathType = ResolvePathTypeEnum.getResolvePathSpecial(repository.getLayout());
+        if (StringUtils.isNotBlank(resolvePathType)) {
+            ResolvePathProvider resolvePathProvider = resolvePathProviderRegistry.getProvider(resolvePathType);
+            if (Objects.nonNull(resolvePathProvider)) {
+                String tempPath = resolvePathProvider.resolvePath(repository, path);
+                if (StringUtils.isNotBlank(tempPath)) {
+                    path = tempPath;
+                    repositoryPath = repositoryPathResolver.resolve(repository, tempPath);
+                }
+            }
+        }
+        if (StringUtils.isNotBlank(RepositoryFiles.relativizePath(repositoryPath)) && !validatePathPrivileges(repository, Lists.newArrayList(path), Privileges.ARTIFACTS_RESOLVE.getAuthority())) {
+            response.setStatus(HttpStatus.UNAUTHORIZED.value());
+            PathSpecificBasicAuthenticationEntryPoint.handler401(request, response, null);
+            return null;
+        }
+        return browseRepository(request, httpHeaders, response, model, repository, path);
     }
 
 }

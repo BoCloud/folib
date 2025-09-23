@@ -288,6 +288,13 @@
             <artifactId>folib-debian-layout-provider</artifactId>
             <version>${project.version}</version>
         </dependency>
+
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>folib-cjpm-layout-provider</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>folib-client</artifactId>
@@ -779,6 +786,11 @@
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>folib-cargo-layout-provider</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>folib-conda-layout-provider</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>

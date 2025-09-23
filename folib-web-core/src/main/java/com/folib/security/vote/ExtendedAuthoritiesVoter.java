@@ -1,33 +1,15 @@
-/*
- * Folib - [新一代AI制品仓库]
- * Copyright (C) 2025 bocloud.com.cn <folib@beyondcent.com>
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * 本程序是自由软件：您可依据GNU通用公共许可证（GPL-3.0+）条款重新发布和修改，
- * 但禁止任何形式的商业售卖行为（包括但不限于：直接销售、捆绑销售、云服务商用）。
- *
- * This program is distributed WITHOUT ANY WARRANTY.
- * Commercial sale of this software is expressly prohibited.
- *
- * For license details, see: https://www.gnu.org/licenses/gpl-3.0.html
- * 商业授权咨询请联系：folib@beyondcent.com
- */
 package com.folib.security.vote;
 
 import cn.hutool.extra.spring.SpringUtil;
+import com.folib.util.UriUtils;
 import com.google.common.collect.Lists;
 import com.folib.authorization.dto.Role;
+
 import com.folib.components.DistributedCacheComponent;
 import com.folib.configuration.ConfigurationManager;
 import com.folib.configuration.ConfigurationUtils;
 import com.folib.controllers.BrowseController;
 import com.folib.enums.RepositoryScopeEnum;
-import com.folib.providers.io.RepositoryPathResolver;
-import com.folib.repositories.ArtifactRepository;
 import com.folib.security.enums.ResolvePathTypeEnum;
 import com.folib.security.resolvepath.ResolvePathProvider;
 import com.folib.security.resolvepath.ResolvePathProviderRegistry;
@@ -42,7 +24,6 @@ import com.folib.users.security.AnonymousAccessModel;
 import com.folib.users.security.AuthoritiesProvider;
 import com.folib.users.userdetails.SpringSecurityUser;
 import com.folib.util.CacheUtil;
-import com.folib.util.UriUtils;
 import com.folib.utils.UrlUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import org.aopalliance.intercept.MethodInvocation;
@@ -69,9 +50,7 @@ import java.util.stream.Collectors;
 
 import static com.folib.web.Constants.*;
 
-/**
- * @author veadan
- */
+
 @Component
 public class ExtendedAuthoritiesVoter extends PreInvocationAuthorizationAdviceVoter {
 
@@ -91,15 +70,7 @@ public class ExtendedAuthoritiesVoter extends PreInvocationAuthorizationAdviceVo
 
     @Autowired
     @Lazy
-    private ArtifactRepository artifactRepository;
-
-    @Autowired
-    @Lazy
     private ResolvePathProviderRegistry resolvePathProviderRegistry;
-
-    @Autowired
-    @Lazy
-    private RepositoryPathResolver repositoryPathResolver;
 
 
     public ExtendedAuthoritiesVoter() {
@@ -414,5 +385,5 @@ public class ExtendedAuthoritiesVoter extends PreInvocationAuthorizationAdviceVo
         }
         return restrictedRepositoryList;
     }
-    
+
 }

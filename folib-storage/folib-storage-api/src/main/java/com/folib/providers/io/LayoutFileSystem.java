@@ -18,6 +18,7 @@
  */
 package com.folib.providers.io;
 
+
 import cn.hutool.extra.spring.SpringUtil;
 import com.folib.booters.PropertiesBooter;
 import com.folib.constant.GlobalConstants;
@@ -43,19 +44,21 @@ import java.util.Set;
  * Root folder is the {@link Repository} base directory.
  *
  * @author @author veadan
- * 
+ *
  * @see Repository
  * @see LayoutProvider
  */
 public abstract class LayoutFileSystem
         extends StorageFileSystem
 {
+
+    public static final String TRASH = ".trash";
     public static final String TEMP = ".temp";
 
     private final Repository repository;
     private final LayoutFileSystemProvider provider;
     private final RootRepositoryPath rootRepositoryPath;
-    
+
     public LayoutFileSystem(PropertiesBooter propertiesBooter,
                             Repository repository,
                             FileSystem storageFileSystem,
@@ -83,16 +86,16 @@ public abstract class LayoutFileSystem
         Path rootPath = resolveRootPath();
         Files.createDirectories(rootPath);
     }
-    
+
     public void cleanupRootDirectory()
-        throws IOException
+            throws IOException
     {
         Path storageRootPath = super.getRootDirectory();
         if (!Files.exists(storageRootPath) || !Files.isDirectory(storageRootPath))
         {
             return;
         }
-        
+
         try (DirectoryStream<Path> dirStream = Files.newDirectoryStream(storageRootPath))
         {
             if (dirStream.iterator().hasNext())
@@ -102,7 +105,7 @@ public abstract class LayoutFileSystem
         }
         Files.delete(storageRootPath);
     }
-    
+
     @Override
     public RootRepositoryPath getRootDirectory()
     {
@@ -121,12 +124,17 @@ public abstract class LayoutFileSystem
             }
         }
         Path rootPath = Optional.ofNullable(basedir)
-                                .filter(p -> !p.trim().isEmpty())
-                                .map(p -> getTarget().getPath(p).toAbsolutePath().normalize())
-                                .orElseGet(() -> super.getRootDirectory().resolve(repository.getId()))
-                                .toAbsolutePath()
-                                .normalize();
+                .filter(p -> !p.trim().isEmpty())
+                .map(p -> getTarget().getPath(p).toAbsolutePath().normalize())
+                .orElseGet(() -> super.getRootDirectory().resolve(repository.getId()))
+                .toAbsolutePath()
+                .normalize();
         return rootPath;
+    }
+
+    public RepositoryPath getTrashPath()
+    {
+        return getRootDirectory().resolve(TRASH).toAbsolutePath();
     }
 
     public RepositoryPath getTempPath()

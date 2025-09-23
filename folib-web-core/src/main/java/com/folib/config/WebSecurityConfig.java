@@ -29,18 +29,23 @@ import com.folib.security.authentication.suppliers.AuthenticationSuppliers;
 import com.folib.security.vote.ExtendedAuthoritiesVoter;
 import com.folib.security.vote.ExtendedAuthorizationManager;
 
+import com.folib.security.vote.MethodAccessDecisionManager;
 import com.folib.services.ConfigurationManagementService;
 import com.folib.users.domain.SystemRole;
 import com.folib.users.security.AuthoritiesProvider;
 import org.apache.commons.lang.BooleanUtils;
 import org.springframework.beans.factory.InitializingBean;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.actuate.autoconfigure.security.servlet.EndpointRequest;
 import org.springframework.context.annotation.*;
+import org.springframework.security.access.AccessDecisionManager;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationTrustResolver;
 import org.springframework.security.authentication.AuthenticationTrustResolverImpl;
 import org.springframework.security.authorization.method.AuthorizationManagerBeforeMethodInterceptor;
+import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
+import org.springframework.security.config.annotation.method.configuration.GlobalMethodSecurityConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
@@ -73,7 +78,7 @@ import static org.springframework.security.config.Customizer.withDefaults;
         UsersConfig.class,
         AuthenticationConfig.class})
 @EnableWebSecurity
-@EnableMethodSecurity(prePostEnabled = true)
+@EnableGlobalMethodSecurity(prePostEnabled = true, securedEnabled = true, proxyTargetClass = false)
 public class WebSecurityConfig {
 
     @Inject
@@ -164,7 +169,7 @@ public class WebSecurityConfig {
 
     @Bean
     FolibAuthenticationFilter folibAuthenticationFilter() {
-        return new FolibAuthenticationFilter(new AuthenticationSuppliers(suppliers), authenticationManager,customBasicAuthenticationEntryPoint(), configurationManager,customEntryPoint);
+        return new FolibAuthenticationFilter(new AuthenticationSuppliers(suppliers), authenticationManager,customBasicAuthenticationEntryPoint());
     }
 
 
@@ -179,24 +184,19 @@ public class WebSecurityConfig {
                 authorities);
     }
 
-    //@Configuration
-    //public static class MethodSecurityConfig {
-    //
-    //    @Inject
-    //    MethodAccessDecisionManager methodAccessDecisionManager;
-    //
-    //    @Bean
-    //    public MethodSecurityExpressionHandler methodSecurityExpressionHandler() {
-    //        DefaultMethodSecurityExpressionHandler handler = new DefaultMethodSecurityExpressionHandler();
-    //        // 根据需要配置表达式处理
-    //        return handler;
-    //    }
-    //
-    //    @Bean
-    //    public AccessDecisionManager accessDecisionManager() {
-    //        return methodAccessDecisionManager;
-    //    }
-    //}
+    @Configuration
+    @EnableGlobalMethodSecurity(prePostEnabled = true, securedEnabled = true, proxyTargetClass = true)
+    public static class MethodSecurityConfig
+            extends GlobalMethodSecurityConfiguration {
+
+        @Autowired
+        private MethodAccessDecisionManager methodAccessDecisionManager;
+
+        @Override
+        protected AccessDecisionManager accessDecisionManager() {
+            return methodAccessDecisionManager;
+        }
+    }
 
     @Configuration
     public static class SharedObjectsConfig {
