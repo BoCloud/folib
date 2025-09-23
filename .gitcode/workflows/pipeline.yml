@@ -12,7 +12,7 @@ jobs:
     - uses: checkout-action@0.0.1
     - name: Set up JDK
       uses: setup-java@0.0.1
-      run: cd repo_workspace && java  -version
+      run: cd repo_workspace && /opt/tools/jdk/17.0.2/jdk-17.0.2/bin/java  -version
       with:
         java-version: '17.0.2'
 
