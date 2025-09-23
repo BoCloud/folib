@@ -1,19 +1,18 @@
 name: Maven build
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "dev" ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ "dev" ]
 
 jobs:
   build:
     runs-on: euleros-2.10.1
     steps:
     - uses: checkout-action@0.0.1
-    - name: Set up JDK 
+    - name: Set up JDK
       uses: setup-java@0.0.1
+      run: cd repo_workspace && export JAVA_HOME=/opt/tools/jdk/17.0.2/jdk-17.0.2 && export PATH=$JAVA_HOME/bin:$PATH  && export && java -version && mvn  clean package --settings folib-settings.xml -DskipTests -Dmaven.wagon.http.ssl.insecure=true -Dmaven.wagon.http.ssl.allowall=true -Dmaven.wagon.http.ssl.ignore.validity.dates=true
       with:
         java-version: '17.0.2'
 
-    - name: Build with Maven
-      run: cd repo_workspace && mvn clean package --settings folib-settings.xml -Dmaven.test.skip=true -Dmaven.wagon.http.ssl.insecure=true -Dmaven.wagon.http.ssl.allowall=true -Dmaven.wagon.http.ssl.ignore.validity.dates=true
