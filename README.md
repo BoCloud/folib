@@ -29,7 +29,7 @@ FOLib 是一个为Ai研发而生的、全语言软件供应链服务平台。
 
 ### 镜像部署
 
-Tips: MYSQL需要先准备好
+Tips: MYSQL需要先准备好,并且准备好docker-ce环境
 ```
 1、创建目录，以/data/folib为例
 mkdir -p /data/folib/folib-data/logs
@@ -133,14 +133,13 @@ tail -f -n 100 folib-server.log
 
 ## 版本说明
 
-FOLib 会平均每个季度一个版本。
-- v3.00：发布时间为 2025 年 8 月 1 日，持续更新中；
-- v3.1：接下来会发布一些AI mcp相关的功能；以及新增[仓颉语言的 cjpm](https://gitcode.com/Cangjie/CangjieCommunity) 包管理工具支持。
+FOLib 会平均每个季度一个版本。版本更新列表请看[Change-Log](./changelog.md)，
+### 当前最新版本为V3.10。支持[仓颉语言的 cjpm](https://gitcode.com/Cangjie/CangjieCommunity) ，我们在此基础上，开源了一个cjpmp，工具详情请见[folib-cjpmp](https://gitcode.com/folib/cjpmp)。
 
-## V3.1产品预告
-<p align="left"><a href="https://folib.com"><img src="img/lang.png" alt="Folib for AI" width="800" /></a></p>
 
-#### 下个版本将支持Cangjie&ModelScope,另外FOLib 产品版本分为社区版和企业版，详情请参见：[FOLib产品版本对比](https://folib.com/pricing)
+## V3.20产品预告
+
+#### 下个版本将支持ModelScope/Swift,另外FOLib 产品版本分为社区版和企业版，详情请参见：[FOLib产品版本对比](https://folib.com/pricing)
 
 ## 技术栈与架构
 
@@ -158,7 +157,7 @@ FOLib 会平均每个季度一个版本。
 ## 开发编译说明
 ### 环境准备
 -   安装 [OPENJDK 17](URL_ADDRESS-   安装 [OPENJDK 17](https://www.oracle.com/java/technologies
--   安装maven 3.8.6 
+-   安装maven 3.8.6
 -   安装node 14.21.3
 ### 编译执行
 在代码根路径下找到folib-package.sh文件并进行执行

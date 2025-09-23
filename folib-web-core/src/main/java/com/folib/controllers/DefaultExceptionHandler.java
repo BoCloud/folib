@@ -18,6 +18,7 @@
  */
 package com.folib.controllers;
 
+import com.folib.config.PathSpecificBasicAuthenticationEntryPoint;
 import com.folib.controllers.support.ErrorResponseEntityBody;
 import com.folib.controllers.support.ResponseEntityBody;
 import com.folib.data.criteria.QueryParserException;
@@ -29,6 +30,7 @@ import com.folib.scanner.common.exception.BusinessException;
 import com.folib.validation.RequestBodyValidationError;
 import com.folib.validation.RequestBodyValidationException;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -70,13 +72,11 @@ public class DefaultExceptionHandler extends ResponseEntityExceptionHandler
 
     @ExceptionHandler(AccessDeniedException.class)
     @ResponseStatus(HttpStatus.FORBIDDEN)
-    protected ResponseEntity<?> handleAccessDeniedException(AccessDeniedException ex,
+    protected void handleAccessDeniedException(AccessDeniedException ex,
                                                             WebRequest request,
                                                             HttpServletRequest httpRequest,
-                                                            HttpServletResponse httpResponse)
-    {
-       // throw ex;
-        return ResponseEntity.status(HttpStatus.FORBIDDEN.value()).body(ex.getMessage());
+                                                            HttpServletResponse httpResponse) throws IOException {
+        PathSpecificBasicAuthenticationEntryPoint.handler401(httpRequest, httpResponse, null);
     }
 
     @ExceptionHandler(RequestBodyValidationException.class)

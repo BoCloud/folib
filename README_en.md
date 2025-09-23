@@ -14,20 +14,24 @@
 
 [简体中文](./README.md) | English
 
-FOLib is a full-language software supply chain service platform built for AI R&D.
+FOLib is a full-language software supply chain service platform developed specifically for AI research and development.
 
-- **Language Support**: Covers 23+ full-language repositories, including mainstream tools such as npm, Maven,Cangjie(cjpm),Ohpm,PyPi, Docker, Gradle, SBT, Cocoapods, Swift, RPM, Debian, OPKG, PHP, Go, Pub, Ivy, NuGet, Conda, Cargo, Conan, Yarn, GitLFS, Helm
-- **AI Model Library & Ecosystem**: Supports proxy and synchronization of mainstream AI model repositories like Huggingface, Ollama, and ModelScope, as well as tool privatization upload and promotion distribution;
-- **AIAgent & MCP Support**: Enables query and display of multi-dimensional graph data including metadata requirements, services, artifacts, security vulnerabilities, and dependency certificates. It also supports the MCP context protocol, allowing AIAgent to realize functions such as intelligent query and recommendation of artifact libraries, intelligent repair of security vulnerabilities, and intelligent promotion synchronization;
-- **Containerization & Cloud-Native Support**: Supports Docker V1/V2/OCI image formats, multiple clients including nerdctl, crictl, ctr, and podman, layered transmission, and single-layer breakpoint resume. It supports webdav to provide cloud-native data mounting capabilities for large files.
+-   **Language Support Scope**: Over 23 full-language repositories, covering mainstream tools such as npm, Maven, Cangjie (cjpm), Ohpm, PyPi, Docker, Gradle, SBT, Cocoapods, Swift, RPM, Debian, OPKG, PHP, Go, Pub, Ivy, NuGet, Conda, Cargo, Conan, Yarn, GitLFS, and Helm;
+-   **AI Model Repository & Ecosystem**: Provides proxy and synchronization capabilities for mainstream AI model repositories including Huggingface, Ollama, and ModelScope. It also supports private upload and hierarchical distribution of tools;
+-   **AIAgent & MCP Support**: Enables querying and visualization of multi-dimensional graph data such as metadata requirements, services, artifacts, security vulnerabilities, and dependency certificates. It supports the MCP context protocol, allowing AIAgent to implement intelligent query and recommendation of artifact repositories, intelligent repair of security vulnerabilities, and intelligent hierarchical synchronization;
+-   **Containerization & Cloud-Native Support**: Supports Docker V1/V2/OCI image formats, multiple clients including nerdctl, crictl, ctr, and podman. It enables layered transmission and single-layer resumable upload. Additionally, it supports WebDAV to provide cloud-native data mounting capabilities for large files.
 
 ## Quick Start
 
-### Image Deployment
+### Our Code Repositories
+- Gitcode: https://gitcode.com/folib/folib
+- Github:  https://github.com/BoCloud/folib
 
-Tips: MYSQL needs to be prepared in advance
+### Deployment via Docker Image
+
+Tips: MySQL and a docker-ce environment must be prepared in advance.
 ```
-1. Create a directory, take /data/folib as an example
+1. Create a directory (taking /data/folib as an example)
 mkdir -p /data/folib/folib-data/logs
 
 2. Start the container
@@ -52,7 +56,7 @@ public.folib.com/oss/docker/folib-server:latest
 3. View logs
 docker logs -f --tail 100 folib-server
 
-4. Restart
+4. Restart the container
 docker restart folib-server
 
 docker logs -f --tail 100 folib-server
@@ -61,27 +65,27 @@ docker logs -f --tail 100 folib-server
 # Password: folib@v587
 ```
 
-### Virtual Machine Startup
+### Deployment on Virtual Machine
 
-Tips: JAVA environment needs to be prepared in advance
+Tips: A JAVA environment must be prepared in advance.
 
-1. Extract /target/folib-build-3.0-SNAPSHOT.tar.gz or /target/folib-build-3.0-SNAPSHOT.zip under the folib-build module
+1. Extract the file folib-build-3.0-SNAPSHOT.tar.gz or folib-build-3.0-SNAPSHOT.zip from the /target directory under the folib-build module.
 
-2. Copy folib-3.0-SNAPSHOT and folib-data under the extracted folib-build-3.0-SNAPSHOT directory to the /opt/folib directory of the deployment machine
+2. Copy the folib-3.0-SNAPSHOT and folib-data directories (from the extracted folib-build-3.0-SNAPSHOT folder) to the /opt/folib directory on the deployment machine.
 
 3. Prepare the startup script
 ```
 #!/bin/bash
 
 # Configure environment variables
-export FOLIB_PORT=38080                 # Service external access port
+export FOLIB_PORT=38080                 # Port for external service access
 export FOLIB_JVM_XMX=8192m  
 export FOLIB_JVM_XMS=8192m
 export FOLIB_JVM_XSS=512k
-export FOLIB_MYSQL_HOST=127.0.0.1       # Database IP
+export FOLIB_MYSQL_HOST=127.0.0.1       # Database IP address
 export FOLIB_MYSQL_PORT=3306            # Database port
 export FOLIB_MYSQL_DB=folib             # Database name
-export FOLIB_MYSQL_USER=root            # Database account
+export FOLIB_MYSQL_USER=root            # Database username
 export FOLIB_MYSQL_PASSWORD=folib@v587  # Database password
 export FOLIB_ARTIFACT_UPLOAD_RESTRICTIONS=true
 
@@ -89,9 +93,9 @@ export FOLIB_ARTIFACT_UPLOAD_RESTRICTIONS=true
 nohup /opt/folib/folib-3.0-SNAPSHOT/bin/folib console > folib-server.log 2>&1 &
 
 
-4. Save step 3 to folib-server-start.sh
+4. Save the content from Step 3 into a file named folib-server-start.sh
 
-5. Authorize
+5. Grant execution permission
 chmod u+x folib-server-start.sh
 
 6. Start folib-server
@@ -100,7 +104,7 @@ sh folib-server-start.sh
 7. View logs
 tail -f -n 100 folib-server.log
 
-8. After startup is complete, restart
+8. After the initial startup, to restart the service:
 /opt/folib/folib-3.0-SNAPSHOT/bin/folib stop
 
 sh folib-server-start.sh
@@ -110,18 +114,18 @@ tail -f -n 100 folib-server.log
 > Username: admin  Password: folib@v587
 
 
-You can also quickly deploy Folib through [HelmChat](https://artifacthub.io/packages/helm/folib/folib).
+You can also quickly deploy Folib via [HelmChat](https://artifacthub.io/packages/helm/folib/folib).
 
-For intranet environments, it is recommended to use the [offline installation package method](https://folib.com/deployDoc) for installation and deployment.
+For intranet environments, it is recommended to use the [offline installation package](https://folib.com/deployDoc) for deployment.
 
 If you have more questions, you can communicate with us through the forum and technical exchange group.
 
--   [Product Introduction and Cases](https://folib.com/customers)
+-   [Product Introduction & Cases](https://folib.com/customers)
 
 -   [Demo Environment](https://demo.folib.com)
 
 ### Technical Exchange Group
-Welcome to join our technical exchange group, where there are also various irregular activities.
+Welcome to join our technical exchange group, where we also hold regular events.
 <p align="left"><a href="https://folib.com"><img src="img/wecom.jpg" alt="Folib for AI" width="300" /></a></p>
 
 
@@ -129,36 +133,34 @@ Welcome to join our technical exchange group, where there are also various irreg
 
 ## Version Description
 
-FOLib releases a version approximately every quarter.
-- v3.00: Release date is August 1, 2025, and it is continuously updated;
-- v3.1: Some AI mcp-related functions will be released next; add support for the [cjpm package management tool of Cangjie language](https://gitcode.com/Cangjie/CangjieCommunity)
+FOLib releases a new version approximately every quarter. For the list of version updates, please refer to the [Change-Log](./changelog.md).
+### The latest version currently is V3.10. It supports **cjpm for the Cangjie programming language** (https://gitcode.com/Cangjie/CangjieCommunity). Based on this, we have open-sourced cjpmp; for details about the tool, please visit [folib-cjpmp](https://gitcode.com/folib/cjpmp).
 
 
-## V3.1 Product Preview
-<p align="left"><a href="https://folib.com"><img src="img/lang.png" alt="Folib for AI" width="800" /></a></p>
+## V3.20 Product Preview
 
-#### The next version will support Cangjie & ModelScope. In addition,FOLib product versions are divided into Community Edition and Enterprise Edition. For details, please refer to: [FOLib Product Version Comparison](https://folib.com/pricing)
+#### The next version will support ModelScope/Swift. In addition, Folib will be available in two editions: Community Edition and Enterprise Edition. For details, please refer to: [Folib Product Edition Comparison](https://folib.com/pricing)
 
-## Technology Stack and Architecture
+## Technology Stack & Architecture
 
 -   Backend: [Spring Boot3.x](https://spring.io/projects/spring-boot)
 -   Frontend: [Vue.js](https://vuejs.org/)
--   Relational database: Most databases are supported
+-   Relational Database: Supports most mainstream databases
 -   Infrastructure: [Docker](https://www.docker.com/)
--   File storage: Both NFS/S3 protocols are supported
-> After the frontend is packaged into static resource files, it is packaged together with the backend.
+-   File Storage: Supports both NFS and S3 protocols
+>After the frontend is packaged into static resource files, it is bundled with the backend for packaging.
 <p align=""><a href="https://folib.com"><img src="img/folib-arch.png" alt="Folib for AI" width="800" /></a></p>
 
 
 
 
-## Development and Compilation Instructions
+## Development & Compilation Instructions
 ### Environment Preparation
--   Install [OPENJDK 17](https://www.oracle.com/java/technologies
--   Install maven 3.8.6
--   Install node 14.21.3
-### Compilation Execution
-Find the folib-package.sh file in the root path of the code and execute it
+-   Install [OPENJDK 17](https://www.oracle.com/java/technologies/downloads/#java17)
+-   Install Maven 3.8.6
+-   Install Node 14.21.3
+### Compilation & Execution
+Locate the folib-package.sh file in the root directory of the code and execute it:
 ```shell
   sh folib-package.sh
 ```
@@ -167,7 +169,7 @@ Find the folib-package.sh file in the root path of the code and execute it
 
 ## License & Copyright
 
-Folib - [New Generation AI Artifact Repository]
+Folib - [Next-Generation AI Artifact Repository]
 Copyright (C) 2025 bocloud.com.cn <folib@beyondcent.com>
 
 This program is free software: you can redistribute it and/or modify
@@ -175,10 +177,11 @@ it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-This program is free software: you can redistribute and/or modify it in accordance with the terms of the GNU General Public License (GPL-3.0+), but any form of commercial sales (including but not limited to: direct sales, bundled sales, commercial use of cloud services) is prohibited.
+This program is free software: you may redistribute and modify it in accordance with the terms of the GNU General Public License (GPL-3.0+),
+however, **any form of commercial sale is prohibited** (including but not limited to: direct sale, bundled sale, and commercial use in cloud services).
 
 This program is distributed WITHOUT ANY WARRANTY.
 Commercial sale of this software is expressly prohibited.
 
 For license details, see: https://www.gnu.org/licenses/gpl-3.0.html
-For commercial authorization consultation, please contact: folib@beyondcent.com
+For commercial authorization inquiries, please contact: folib@beyondcent.com

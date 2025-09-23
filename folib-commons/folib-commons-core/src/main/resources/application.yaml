@@ -10,6 +10,8 @@ server:
 http:
   port: 38081
 spring:
+  main:
+    allow-bean-definition-overriding: true
   datasource:
     type: com.alibaba.druid.pool.DruidDataSource
     driver-class-name: com.mysql.cj.jdbc.Driver

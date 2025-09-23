@@ -18,21 +18,7 @@
  */
 package com.folib.domain.adapter.jfrog;
 
-import com.folib.artifact.coordinates.CocoapodsCoordinates;
-import com.folib.artifact.coordinates.ConanCoordinates;
-import com.folib.artifact.coordinates.DockerCoordinates;
-import com.folib.artifact.coordinates.GitLfsCoordinates;
-import com.folib.artifact.coordinates.GoCoordinates;
-import com.folib.artifact.coordinates.HelmCoordinates;
-import com.folib.artifact.coordinates.HuggingFaceCoordinates;
-import com.folib.artifact.coordinates.MavenCoordinates;
-import com.folib.artifact.coordinates.NpmCoordinates;
-import com.folib.artifact.coordinates.NugetCoordinates;
-import com.folib.artifact.coordinates.PhpCoordinates;
-import com.folib.artifact.coordinates.PubCoordinates;
-import com.folib.artifact.coordinates.PypiCoordinates;
-import com.folib.artifact.coordinates.RawCoordinates;
-import com.folib.artifact.coordinates.RpmCoordinates;
+import com.folib.artifact.coordinates.*;
 import com.folib.constant.DebianConstant;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
