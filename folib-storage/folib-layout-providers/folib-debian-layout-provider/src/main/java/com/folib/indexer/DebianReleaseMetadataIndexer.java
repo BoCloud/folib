@@ -346,6 +346,9 @@ public class DebianReleaseMetadataIndexer {
         // 获取新的所有的package
         String path= Joiner.on("/").join("dists", distribution);
         RepositoryPath repositoryPath = resolver.resolve(this.repo, path);
+        if(!Files.exists(repositoryPath)) {
+            return;
+        }
         try(Stream<Path> paths = Files.walk(repositoryPath)){
             List<Path> packages = paths.map(p->(RepositoryPath)p).filter(p -> {
                 try {
