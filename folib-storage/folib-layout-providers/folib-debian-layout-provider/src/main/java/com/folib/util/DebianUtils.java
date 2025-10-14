@@ -203,7 +203,9 @@ public class DebianUtils {
 
     private static String getAndValidate(String name, List<String> lines, Map<String, DpkgPackageMetadataValidator> validators) throws MetadataValidationException {
         DpkgFieldValidationItem dpkgKeyValue = getDpkgKeyValue(name, lines);
-        Assert.notNull(dpkgKeyValue, String.format("找不到制品的%s信息", name));
+        if(dpkgKeyValue == null) {
+            return "";
+        }
         if (validators.containsKey(name)) {
             DpkgPackageMetadataValidator validator = validators.get(name);
             validator.validate(dpkgKeyValue.getDpkgKey(), dpkgKeyValue.getDpkgValue());
@@ -217,7 +219,9 @@ public class DebianUtils {
 
     private static List<String> getListAndValidate(String name, List<String> lines, String separator, Map<String, DpkgPackageMetadataValidator> validators) throws MetadataValidationException {
         DpkgFieldValidationItem dpkgKeyValue = getDpkgKeyValue(name, lines);
-        Assert.notNull(dpkgKeyValue, String.format("找不到制品的%s信息", name));
+        if(dpkgKeyValue == null) {
+            return Collections.emptyList();
+        }
         String[] values = null;
         if (dpkgKeyValue.getDpkgValue() != null && StringUtils.isNotBlank(dpkgKeyValue.getDpkgValue())) {
             values = dpkgKeyValue.getDpkgValue().split(separator, -1);
@@ -289,6 +293,10 @@ public class DebianUtils {
 
     public static String getArchitectureFromPath(Artifact artifact) {
         return artifact.getArtifactPath().replaceFirst(".*binary-", "").replace("/Packages", "");
+    }
+
+    public static String getArchitectureFromPath(Path path) {
+        return path.toString().replaceFirst(".*binary-", "").replace("/Packages", "");
     }
 
     public static DebianPackagesContext createDebianPackagesContext(String distribution, Map.Entry<String, List<DebianIndexEvent>> eventsEntry) {
