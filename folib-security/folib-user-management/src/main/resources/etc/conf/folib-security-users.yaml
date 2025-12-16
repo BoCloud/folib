@@ -1,6 +1,6 @@
 users:
   user:
-    - username: admin  #folib@v587
+    - username: admin  
       password: "{bcrypt}$2a$10$rbPjdKvkLV6rDCLIeBO0He.nfxHP40sZTQgrHqnNT1eT6YlYGC0.K"
       roles:
         - ADMIN
