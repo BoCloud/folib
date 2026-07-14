@@ -31,7 +31,7 @@ import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
 import com.fasterxml.jackson.databind.type.TypeFactory;
 import com.fasterxml.jackson.datatype.guava.GuavaModule;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.fasterxml.jackson.module.jaxb.JaxbAnnotationIntrospector;
+import com.fasterxml.jackson.module.jakarta.xmlbind.JakartaXmlBindAnnotationIntrospector;
 import com.folib.mapper.WebObjectMapperSubtypes;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -57,7 +57,7 @@ public class JacksonConfig {
         objectMapper.registerModule(new GuavaModule());
         objectMapper.registerModule(new JavaTimeModule());  // 支持 Java 8 日期时间
         // 配置 AnnotationIntrospector
-        AnnotationIntrospector jaxbIntrospector = new JaxbAnnotationIntrospector(TypeFactory.defaultInstance());
+        AnnotationIntrospector jaxbIntrospector = new JakartaXmlBindAnnotationIntrospector(TypeFactory.defaultInstance());
         AnnotationIntrospector jacksonIntrospector = new JacksonAnnotationIntrospector();
         objectMapper.setAnnotationIntrospector(AnnotationIntrospector.pair(jacksonIntrospector, jaxbIntrospector));
         // 将 Long 自动转为 String
