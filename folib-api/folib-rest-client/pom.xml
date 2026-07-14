@@ -83,12 +83,12 @@
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
-            <version>29.0-jre</version>
+            <version>33.4.0-jre</version>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
-            <version>3.7</version>
+            <version>3.17.0</version>
         </dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>
@@ -98,7 +98,7 @@
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
-            <version>2.15.4</version>
+            <version>2.17.2</version>
         </dependency>
         <dependency>
             <groupId>com.alibaba</groupId>
@@ -108,7 +108,7 @@
         <dependency>
             <groupId>org.glassfish.jersey.media</groupId>
             <artifactId>jersey-media-json-jackson</artifactId>
-            <version>2.32</version>
+            <version>2.42</version>
             <exclusions>
                 <exclusion>
                     <artifactId>jakarta.ws.rs-api</artifactId>
@@ -129,7 +129,7 @@
         <dependency>
             <groupId>io.rest-assured</groupId>
             <artifactId>spring-mock-mvc</artifactId>
-            <version>4.2.0</version>
+            <version>5.4.0</version>
         </dependency>
 
         <dependency>
@@ -140,7 +140,7 @@
         <dependency>
             <groupId>org.glassfish.jersey.media</groupId>
             <artifactId>jersey-media-multipart</artifactId>
-            <version>2.32</version>
+            <version>2.42</version>
         </dependency>
     </dependencies>
 

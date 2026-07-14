@@ -32,13 +32,11 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
-import org.springframework.data.neo4j.repository.config.EnableNeo4jRepositories;
-import org.springframework.data.neo4j.transaction.Neo4jTransactionManager;
+import com.folib.gremlin.tx.GremlinSessionTransactionManager;
 
 
 @Configuration
 @ComponentScan
-@EnableNeo4jRepositories
 public class RepositoriesConfig
 {
 
@@ -69,18 +67,18 @@ public class RepositoriesConfig
 
     @Bean
     @Primary
-    public Neo4jTransactionManager defaultTransactionManager(TransactionalIdBlockQueueSuppiler idBlockQueueSessionFactory)
+    public GremlinSessionTransactionManager defaultTransactionManager(TransactionalIdBlockQueueSuppiler idBlockQueueSessionFactory)
         throws Exception
     {
-        return new Neo4jTransactionManager(idBlockQueueSessionFactory.getSessionFactory("default"));
+        return new GremlinSessionTransactionManager(idBlockQueueSessionFactory.getSessionFactory("default"));
     }
 
     @Bean
     @Qualifier("cronJobTransactionManager")
-    public Neo4jTransactionManager cronJobTransactionManager(TransactionalIdBlockQueueSuppiler idBlockQueueSessionFactory)
+    public GremlinSessionTransactionManager cronJobTransactionManager(TransactionalIdBlockQueueSuppiler idBlockQueueSessionFactory)
         throws Exception
     {
-        return new Neo4jTransactionManager(idBlockQueueSessionFactory.getSessionFactory("cron-job"));
+        return new GremlinSessionTransactionManager(idBlockQueueSessionFactory.getSessionFactory("cron-job"));
     }
 
     @Bean

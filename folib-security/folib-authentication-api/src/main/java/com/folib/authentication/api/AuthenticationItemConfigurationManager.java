@@ -18,10 +18,11 @@
  */
 package com.folib.authentication.api;
 
+import org.springframework.context.ApplicationContext;
+
 import java.io.IOException;
 import java.util.function.Predicate;
 
-import org.springframework.context.ApplicationContext;
 
 public interface AuthenticationItemConfigurationManager
 {

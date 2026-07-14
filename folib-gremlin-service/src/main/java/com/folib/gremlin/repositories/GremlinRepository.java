@@ -151,6 +151,15 @@ public abstract class GremlinRepository<S extends Element, E extends DomainObjec
     }
 
     @Override
+    public void deleteAllById(Iterable<? extends String> ids)
+    {
+        for (String id : ids)
+        {
+            deleteById(id);
+        }
+    }
+
+    @Override
     public void deleteAll()
     {
         throw new UnsupportedOperationException("TODO implement");

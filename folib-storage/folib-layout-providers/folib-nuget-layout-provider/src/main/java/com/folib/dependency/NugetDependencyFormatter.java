@@ -25,7 +25,7 @@ import com.folib.dependency.snippet.DependencySynonymFormatter;
 import com.folib.providers.layout.AbstractLayoutProvider;
 import com.folib.providers.NugetLayoutProvider;
 
-import javax.annotation.PostConstruct;
+import jakarta.annotation.PostConstruct;
 import javax.inject.Inject;
 
 import org.slf4j.Logger;

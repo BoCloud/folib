@@ -20,7 +20,7 @@ package com.folib.providers.storage;
 
 import com.folib.providers.AbstractMappedProviderRegistry;
 
-import javax.annotation.PostConstruct;
+import jakarta.annotation.PostConstruct;
 import jakarta.inject.Inject;
 import java.util.List;
 

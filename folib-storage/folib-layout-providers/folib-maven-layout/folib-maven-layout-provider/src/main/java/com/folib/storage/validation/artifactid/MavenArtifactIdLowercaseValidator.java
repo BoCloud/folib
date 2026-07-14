@@ -28,7 +28,7 @@ import com.folib.storage.validation.artifact.LowercaseValidationException;
 import com.folib.storage.repository.Repository;
 import com.folib.storage.validation.MavenArtifactCoordinatesValidator;
 
-import javax.annotation.PostConstruct;
+import jakarta.annotation.PostConstruct;
 import jakarta.inject.Inject;
 import java.io.IOException;
 import java.nio.file.Files;

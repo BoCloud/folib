@@ -18,7 +18,7 @@
  */
 package com.folib.dependency;
 
-import javax.annotation.PostConstruct;
+import jakarta.annotation.PostConstruct;
 import javax.inject.Inject;
 
 import com.folib.artifact.coordinates.ArtifactCoordinates;

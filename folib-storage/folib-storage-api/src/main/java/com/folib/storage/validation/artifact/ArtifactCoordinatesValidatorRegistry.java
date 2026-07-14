@@ -21,7 +21,7 @@ package com.folib.storage.validation.artifact;
 import com.folib.storage.validation.ArtifactCoordinatesValidator;
 import com.folib.providers.AbstractMappedProviderRegistry;
 
-import javax.annotation.PostConstruct;
+import jakarta.annotation.PostConstruct;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;

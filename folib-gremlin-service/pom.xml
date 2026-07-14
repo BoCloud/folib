@@ -112,6 +112,11 @@
             <artifactId>folib-commons-resources</artifactId>
              <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>folib-storage-api-resources</artifactId>
+            <version>${project.version}</version>
+        </dependency>
 
 <!--        <dependency>-->
 <!--            <groupId>javax.inject</groupId>-->
@@ -216,18 +221,6 @@
         <dependency>
             <groupId>org.springframework.data</groupId>
             <artifactId>spring-data-commons</artifactId>
-            <version>2.4.15</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.springframework.data</groupId>
-            <artifactId>spring-data-neo4j</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.neo4j</groupId>
-                    <artifactId>neo4j-ogm-bolt-driver</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
 
 

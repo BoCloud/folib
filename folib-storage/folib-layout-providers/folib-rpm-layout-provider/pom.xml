@@ -46,6 +46,10 @@
             <artifactId>redline</artifactId>
             <scope>compile</scope>
         </dependency>
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcpg-jdk18on</artifactId>
+        </dependency>
     </dependencies>
     <build>
         <plugins>

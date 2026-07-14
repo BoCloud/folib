@@ -25,7 +25,7 @@ import com.folib.providers.ProviderImplementationException;
 import com.folib.storage.Storage;
 import com.folib.storage.repository.Repository;
 
-import javax.annotation.PostConstruct;
+import jakarta.annotation.PostConstruct;
 import jakarta.inject.Inject;
 import java.util.List;
 import java.util.Optional;
