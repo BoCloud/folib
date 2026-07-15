@@ -7,9 +7,9 @@
 
     <parent>
         <groupId>com.folib</groupId>
-        <artifactId>folib-parent</artifactId>
+        <artifactId>folib-maven-layout</artifactId>
         <version>3.0-SNAPSHOT</version>
-        <relativePath/>
+        <relativePath>../pom.xml</relativePath>
     </parent>
 
     <artifactId>folib-maven-layout-provider</artifactId>

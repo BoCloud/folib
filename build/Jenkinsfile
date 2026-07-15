@@ -29,7 +29,7 @@ pipeline {
         }
         stage('mvn install') {
                      steps {
-                         withEnv(['JAVA_HOME=/var/jenkins_home/buildEnv/jdk-11']) {
+                         withEnv(['JAVA_HOME=/var/jenkins_home/buildEnv/jdk-17']) {
                              withMaven(globalMavenSettingsConfig: "${params.maven_settings_id}") {
 
                                  sh '''
@@ -51,7 +51,7 @@ pipeline {
                                      cd ..
                                      mvn  package -U -T 8 --settings folib-settings.xml -DskipTests -Dmaven.wagon.http.ssl.insecure=true -Dmaven.wagon.http.ssl.allowall=true -Dmaven.wagon.http.ssl.ignore.validity.dates=true
                                      cd folib-distribution/target
-                                     tar -zxf folib-distribution-2.0-SNAPSHOT.tar.gz folib-distribution-2.0-SNAPSHOT
+                                     tar -zxf folib-distribution-3.0-RC2.tar.gz folib-distribution-3.0-RC2
                                  '''
                              }
                          }
@@ -60,7 +60,7 @@ pipeline {
         stage('docker build') {
             steps {
                 script {
-                    dir("folib-distribution/target/folib-distribution-2.0-SNAPSHOT") {
+                    dir("folib-distribution/target/folib-distribution-3.0-RC2") {
 
                         withEnv(["PATH+=/var/jenkins_home/buildEnv/cli-plugins"]) {
                             echo "${params.dockerUrl}  ${params.hub_certificate}"
