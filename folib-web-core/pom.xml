@@ -8,7 +8,7 @@
     <parent>
         <groupId>com.folib</groupId>
         <artifactId>folib-server</artifactId>
-        <version>3.0-SNAPSHOT</version>
+        <version>3.0-RC2</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 

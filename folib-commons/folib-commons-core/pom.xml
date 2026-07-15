@@ -8,7 +8,7 @@
     <parent>
         <groupId>com.folib</groupId>
         <artifactId>folib-commons</artifactId>
-        <version>3.0-SNAPSHOT</version>
+        <version>3.0-RC2</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -132,7 +132,7 @@
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>folib-commons-resources</artifactId>
-            <version>3.0-SNAPSHOT</version>
+            <version>3.0-RC2</version>
         </dependency>
 
         <dependency>
