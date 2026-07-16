@@ -281,7 +281,7 @@ public class NpmComponent {
             for (String fileName : files) {
                 File f = new File(file, fileName);
                 String entryName = currentPath + "/" + f.getName();
-                ArchiveEntry entry = tarOut.createArchiveEntry(f, entryName);
+                TarArchiveEntry entry = (TarArchiveEntry) tarOut.createArchiveEntry(f, entryName);
                 tarOut.putArchiveEntry(entry);
                 if (f.isDirectory()) {
                     tarOut.closeArchiveEntry();

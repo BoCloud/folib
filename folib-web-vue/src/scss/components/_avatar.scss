@@ -1,0 +1,51 @@
+// _avatar.scss
+// 
+// Template's avatar styles.
+// 
+
+.avatar-chips .ant-avatar-image {
+	border: 1px solid #ffffff;
+	&:hover {
+		z-index: 1;
+	}
+}
+
+.avatar-chips .ant-space-item {
+	&:hover {
+		z-index: 1;
+	}
+}
+
+.avatar-icon {
+	.ant-avatar-string {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 100%;
+		height: 100%;
+	}
+}
+
+.avatar-upload {
+	position: relative;
+	width: 110px;
+	margin: auto;
+
+	.ant-btn {
+		position: absolute;
+		bottom: -8px;
+		right: -8px;
+		width: 25px;
+		height: 25px;
+		min-width: auto;
+		padding: 0;
+		font-size: 8px;
+		border-radius: 8px;
+
+		svg {
+			margin: 0;
+		}
+	}
+}
+
+// / Template's avatar styles.

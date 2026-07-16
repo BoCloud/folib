@@ -1,0 +1,24 @@
+// _quill.scss
+// 
+// Template's quill styles.
+// 
+
+.ql-toolbar.ql-snow {
+	line-height: 1.6;
+}
+.ql-toolbar.ql-snow {
+	border-color: $color-gray-5 !important;
+	border-radius: 4px 4px 0 0;
+}
+.ql-container.ql-snow {
+	border-color: $color-gray-5 !important;
+	border-radius: 0 0 4px 4px;
+}
+.ql-toolbar {
+	margin-top: 4px;
+}
+.tags-field .ant-form-item-control {
+	line-height: 33px;
+}
+
+// / Template's quill styles.

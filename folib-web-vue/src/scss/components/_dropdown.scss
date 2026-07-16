@@ -1,0 +1,45 @@
+// _dropdown.scss
+// 
+// Template's dropdown styles.
+// 
+
+.ant-dropdown-menu-item > .anticon:first-child, .ant-dropdown-menu-submenu-title > .anticon:first-child, .ant-dropdown-menu-item > span > .anticon:first-child, .ant-dropdown-menu-submenu-title > span > .anticon:first-child {
+    vertical-align: -1px;
+}
+
+.ant-dropdown-menu-item, .ant-dropdown-menu-submenu-title {
+    padding: 6px 15px;
+    color: $color-gray-8;
+}
+
+.ant-dropdown-menu-item-disabled, .ant-dropdown-menu-submenu-title-disabled {
+    color: rgba(0, 0, 0, 0.25);
+}
+
+.ant-dropdown-menu-item:hover, .ant-dropdown-menu-submenu-title:hover {
+    background-color: $color-gray-3;
+}
+
+.ant-btn.ant-dropdown-trigger svg {
+	margin-right: 0;
+}
+
+.ant-menu-submenu-popup {
+    border-radius: 8px;
+
+	&.ant-menu-submenu > .ant-menu {
+		border-radius: 8px;
+
+		> .ant-menu-item.ant-menu-item-active:last-child {
+			border-radius: 0px 0px 8px 8px;
+		}
+	}
+}
+
+.layout-dashboard-rtl {
+	.ant-dropdown-menu {
+		text-align: right;
+	}
+}
+
+// / Template's dropdown styles.

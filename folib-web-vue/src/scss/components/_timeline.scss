@@ -1,0 +1,91 @@
+// _timeline.scss
+// 
+// Template's timeline styles.
+// 
+
+.ant-timeline-item-content {
+    margin: 0 0 0 33px;
+	font-size: 14px;
+    top: -4px;
+	font-weight: $fw-semibold;
+	color: $color-gray-12;
+	small {
+		display: block;
+		font-size: 12px;
+		font-weight: $fw-bold;
+		color: $color-gray-7;
+		margin: 0;
+	}
+	p {
+		color: $color-gray-7;
+		font-weight: $fw-regular;
+		margin-top: 10px;
+	}
+	.ant-tag-warning {
+		color: #70620a;
+	}
+}
+
+.ant-timeline-item-pending .ant-timeline-item-content {
+	font-size: 14px;
+	font-weight: $fw-semibold;
+	color: $color-gray-12;
+}
+
+.ant-timeline-item-pending .ant-timeline-item-head {
+	border-color: $color-gray-4;
+}
+
+.ant-timeline-item-head {
+    width: 15px;
+    height: 15px;
+    border-width: 3px;
+}
+
+.ant-timeline-item-tail {
+    left: 7px;
+}
+
+@each $name, $value in $colors {
+	.ant-timeline-item-head-#{$name} {
+		color: $value;
+		border-color: $value;
+	}
+}
+
+.ant-tag-white {
+	color: $color-gray-12;
+}
+
+.ant-timeline-item-last > .ant-timeline-item-tail {
+	display: block;
+}
+
+.ant-timeline-item-last {
+	padding-bottom: 10px;
+}
+
+.timeline-dark {
+	.ant-timeline-item-head {
+		background-color: $color-gray-10;
+	}
+	.ant-timeline-item-content {
+		color: $color-gray-1;
+		small,
+		p {
+			color: $color-gray-5;
+		}
+	}
+}
+
+.layout-dashboard-rtl {
+	.ant-timeline-item-tail {
+		right: 6.5px;
+		left: auto;
+	}
+	.ant-timeline-item-content {
+		margin: 0 33px 0 0;
+	}
+}
+
+// / Template's timeline styles.

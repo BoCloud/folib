@@ -23,7 +23,7 @@ import com.folib.resource.ConfigurationResourceResolver;
 import com.folib.security.certificates.KeyStoreManager;
 import com.folib.services.TrustStoreService;
 
-import javax.annotation.PostConstruct;
+import jakarta.annotation.PostConstruct;
 import jakarta.inject.Inject;
 import java.io.IOException;
 import java.net.InetAddress;

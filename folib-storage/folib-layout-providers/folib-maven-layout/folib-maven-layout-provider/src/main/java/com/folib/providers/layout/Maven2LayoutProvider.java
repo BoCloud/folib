@@ -31,7 +31,7 @@ import com.folib.artifact.archive.JarArchiveListingFunction;
 import com.folib.artifact.coordinates.MavenCoordinates;
 import com.folib.storage.metadata.MetadataHelper;
 
-import javax.annotation.PostConstruct;
+import jakarta.annotation.PostConstruct;
 import jakarta.inject.Inject;
 import java.io.IOException;
 import java.nio.file.Path;

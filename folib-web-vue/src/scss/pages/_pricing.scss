@@ -1,0 +1,248 @@
+// _pricing.scss
+// 
+// Template's pricing page styles.
+// 
+
+.layout-default.layout-pricing {
+	padding: 11px;
+
+	.ant-layout-header {
+		background-color: $color-gray-1;
+		color: $color-gray-12;
+		box-shadow: none;
+		padding: 20px;
+		margin: -12px -12px 0;
+					
+		@media( min-width: $lg ){
+			background-color: transparent;
+			color: $color-gray-1;
+			margin: 0;
+			padding: 0 20px;
+		}
+
+		.header-brand {
+			padding: 0px;
+			
+			@media( min-width: $lg ){
+			}
+			h6 {
+				color: $color-gray-12;
+					
+				@media( min-width: $lg ){
+					color: $color-gray-1;
+				}
+			}
+		}
+		.header-nav {
+			.fill-muted {
+				fill: $color-gray-1 !important;
+			}
+			a {
+				color: $color-gray-12;
+					
+				@media( min-width: $lg ){
+					color: $color-gray-1;
+				}
+				svg path {
+					fill: $color-gray-12 !important;
+					
+					@media( min-width: $lg ){
+						fill: $color-gray-1 !important;
+					}
+				}
+
+				&.router-link-active {
+					color: $color-gray-12;
+					
+					@media( min-width: $lg ){
+						color: $color-gray-1;
+					}
+					svg path {
+						fill: $color-gray-12;
+					
+						@media( min-width: $lg ){
+							fill: $color-gray-1;
+						}
+					}
+				}
+			}
+			.ant-menu-horizontal {
+				line-height: 26px;
+				padding: 10px 0;
+
+				span {
+					color: $color-gray-12;
+					
+					@media( min-width: $lg ){
+						color: $color-gray-1;
+					}
+				}
+			}
+		}
+		.header-btn .ant-btn-primary {
+			@media( min-width: $lg ){
+				background-color: $color-gray-1;
+				color: $color-gray-12;
+				border: none;
+			}
+		}
+		
+	}
+	.ant-layout-content {
+		padding-top: 0;
+	}
+	.pricing-wrapper {
+		margin-top: -300px;
+
+		.sliding-tab {
+			text-align: center;
+			width: 430px;
+			margin: auto;
+			background: #f8f9fa;
+			border-radius: .75rem;
+			position: relative;
+			padding: 4px;
+
+			ul {
+				display: flex;
+				position: relative;
+				z-index: 2;
+				padding: 0;
+				margin: 0;
+			}
+			li.tab {
+				display: block;
+				flex: 1 1 0;
+				border-radius: .5rem;
+			}
+			a {
+				display: block;
+				padding: .5rem 1rem;
+				font-size: 16px;
+				color: #344767;
+			}
+			.tab-bg {
+				box-shadow: 0 1px 5px 1px #ddd;
+				transition: transform .2s ease;
+				transform: translate3d(0px, 0px, 0px);
+				background: #fff;
+				width: 211px;
+				height: 40px;
+				position: absolute;
+				top: 0;
+				bottom: 0;
+				margin: auto;
+				left: 4px;
+				z-index: 1;
+				border-radius: 8px;
+			}
+		}
+
+		.ant-tabs-nav-scroll {
+
+			.ant-tabs-nav {
+				width: 100%;
+				margin: auto;
+				background: #f8f9fa;
+				border-radius: .75rem;
+				position: relative;
+				display: inline-block;
+
+				>div {
+					display: flex;
+				}
+			}
+
+			.ant-tabs-tab {
+				flex: 1 1 0;
+			}
+		}
+		&.ant-tabs-top .ant-tabs-ink-bar-animated,
+		&.ant-tabs-bottom .ant-tabs-ink-bar-animated {
+			z-index: 0;
+			height: 41px;
+			background-color: #ffffff;
+			border-radius: .5rem;
+			box-shadow: 0 1px 5px 1px #ddd;
+			margin: 7.5px 0;
+		}
+		div.container {
+			max-width: 1320px;
+			margin: 40px auto 0;
+		}
+	}
+
+	.ant-collapse {
+		margin-bottom: 130px;
+
+		.ant-collapse-extra {
+			font-size: 12px;
+		}
+		.ant-collapse-arrow {
+			// display: none;
+		}
+	}
+
+	.ant-collapse > .ant-collapse-item > .ant-collapse-header {
+		font-size: 20px;
+		font-weight: 600;
+		padding: 16px;
+		border-bottom: 1px solid #d9d9d9;
+		color: #67748e;
+		color: $color-gray-8;
+	}
+	.ant-collapse > .ant-collapse-item > .ant-collapse-header .ant-collapse-arrow {
+		font-size: 14px;
+	}
+	.ant-collapse-borderless > .ant-collapse-item {
+		border-bottom: none;
+		margin-bottom: 16px;
+	}
+	.ant-collapse-borderless > .ant-collapse-item > .ant-collapse-content > .ant-collapse-content-box {
+		padding: 16px 16px 0px;
+	}
+}
+
+.pricing-header {
+	height: 550px;
+	margin-top: -120.8px;
+	padding-top: 77.8px;
+	border-radius: 12px;
+	box-shadow: $shadow-1;
+	background-size: cover;
+	background-position: center;
+	text-align: center;
+
+	@media( min-width: $lg ){
+		margin-top: -62.8px;
+	}
+
+	* {
+		color: $color-gray-1;
+	}
+
+	.content {
+		padding-top: 20px;
+		max-width: 480px;
+		margin: auto;
+
+		h1 {
+			font-size: 36px;
+
+			@media( min-width: $md) {
+				font-size: 48px;
+			}
+		}
+	}
+}
+
+.row-clients {
+	margin-bottom: 130px;
+	img {
+		max-width: 100%;
+		opacity: .9;
+		padding: 0 10px;
+	}
+}
+
+// / Template's pricing page styles.

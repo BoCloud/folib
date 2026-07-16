@@ -1,0 +1,347 @@
+// _settings-drawer.scss
+// 
+// Template's settings drawer styles.
+// 
+
+.layout-dashboard {
+	.settings-drawer {
+		.ant-drawer-body {
+			height: 100%;
+			padding: 30px;
+			box-shadow: $shadow-1;
+			overflow: auto;
+		}
+	
+		.btn-close {
+			position: absolute;
+			right: 0;
+			top: 0;
+		}
+		.drawer-content {
+			h6 {
+				font-weight: $fw-semibold;
+				color: $color-gray-12;
+				margin-bottom: 0;
+			}
+			>h6 {
+				font-size: 20px;
+				margin-bottom: 0;
+			}
+			p {
+				color: $color-gray-7;
+			}
+			>hr {
+				margin: 18px 0;
+				border: none;
+				height: 1px;
+				background-color: $color-gray-3;
+			}
+			.sidebar-color {
+				h6 {
+					margin-bottom: 8px;
+				}
+				.ant-btn {
+					width: 20px;
+					height: 20px;
+					margin: 0;
+					padding: 0;
+					border-radius: 4px;
+				}
+				.ant-radio-button-wrapper {
+					width: 20px;
+					height: 20px;
+					margin: 0;
+					padding: 0;
+					border-radius: 5px;
+					margin-right: 4px;
+					border: 2px solid $color-gray-1;
+	
+					&::before {
+						display: none;
+					}
+	
+					&.ant-radio-button-wrapper-checked {
+						border-color: $color-gray-7;
+						box-shadow: none;
+					}
+					@each $name, $value in $colors {
+						&.bg-#{$name}.ant-radio-button-wrapper-checked:not(.ant-radio-button-wrapper-disabled) {
+							background-color: $value;
+						}
+					}
+				}
+			}
+			.sidenav-type {
+				margin-top: 5px;
+				.ant-radio-group {
+					display: flex;
+					flex: 1 0 0;
+					width: 100%;
+				}
+				.ant-radio-button-wrapper {
+					margin-right: 4px;
+					border-radius: 4px;
+					flex-grow: 1;
+					flex-shrink: 0;
+					width: 50%;
+					text-align: center;
+					font-weight: $fw-bold;
+					font-size: 12px;
+	
+					&:not(.ant-radio-button-wrapper-checked) {
+						border: 1px solid $color-gray-7;
+					}
+	
+					&:first-child,
+					&:last-child {
+						border-radius: 4px;
+					}
+	
+					&::before {
+						display: none;
+					}
+				}
+			}
+			.navbar-fixed {
+				margin-top: 20px;
+				h6 {
+					margin-bottom: 5px;
+				}
+			}
+			.download {
+				margin-top: 20px;
+				.ant-btn {
+					margin: 5px 0;
+					height: 40px;
+					border-radius: 6px;
+				}
+			}
+			.github-stars {
+				margin-top: 20px;
+				text-align: center;
+				.ant-btn {
+					margin: 0;
+					color: $color-gray-9;
+					background-color: $color-gray-2;
+					font-weight: $fw-semibold;
+					box-shadow: none;
+					padding: 0 12px;
+	
+					&:last-child {
+						background-color: $color-white;
+					}
+				}
+				.ant-btn svg {
+					fill: $color-gray-9;
+					margin-right: 3px;
+					vertical-align: -3px;
+				}
+				.ant-btn-group .ant-btn + .ant-btn, .ant-btn + .ant-btn-group, .ant-btn-group span + .ant-btn, .ant-btn-group .ant-btn + span, .ant-btn-group > span + span, .ant-btn-group + .ant-btn, .ant-btn-group + .ant-btn-group {
+					margin-left: -1px;
+				}
+			}
+			.sharing {
+				margin-top: 20px;
+				text-align: center;
+				h6 {
+					margin-bottom: 8px;
+				}
+				.ant-btn {
+					height: 40px;
+					padding: 0 20px;
+					border-radius: 6px;
+					svg {
+						margin-right: 6px;
+						vertical-align: middle;
+						fill: $color-gray-1;
+					}
+				}
+			}
+		}
+	}
+}
+
+.settings-drawer {
+	.ant-drawer-body {
+		height: 100%;
+		padding: 30px;
+		box-shadow: $shadow-1;
+		overflow: auto;
+	}
+
+	.btn-close {
+		position: absolute;
+		right: 0;
+		top: 0;
+	}
+	.drawer-content {
+		h6 {
+			font-weight: $fw-semibold;
+			color: $color-gray-12;
+			margin-bottom: 0;
+		}
+		>h6 {
+			font-size: 20px;
+			margin-bottom: 0;
+		}
+		p {
+			color: $color-gray-7;
+		}
+		>hr {
+			margin: 18px 0;
+			border: none;
+			height: 1px;
+			background-color: $color-gray-3;
+		}
+		.sidebar-color {
+			h6 {
+				margin-bottom: 8px;
+			}
+			.ant-btn {
+				width: 20px;
+				height: 20px;
+				margin: 0;
+				padding: 0;
+				border-radius: 4px;
+			}
+			.ant-radio-button-wrapper {
+				width: 20px;
+				height: 20px;
+				margin: 0;
+				padding: 0;
+				border-radius: 5px;
+				margin-right: 4px;
+				border: 2px solid $color-gray-1;
+
+				&::before {
+					display: none;
+				}
+
+				&.ant-radio-button-wrapper-checked {
+					border-color: $color-gray-7;
+					box-shadow: none;
+				}
+				@each $name, $value in $colors {
+					&.bg-#{$name}.ant-radio-button-wrapper-checked:not(.ant-radio-button-wrapper-disabled) {
+						background-color: $value;
+					}
+				}
+			}
+		}
+		.sidenav-type {
+			margin-top: 5px;
+			.ant-radio-group {
+				display: flex;
+				flex: 1 0 0;
+				width: 100%;
+			}
+			.ant-radio-button-wrapper {
+				margin-right: 4px;
+				border-radius: 4px;
+				flex-grow: 1;
+				flex-shrink: 0;
+				width: 50%;
+				text-align: center;
+				font-weight: $fw-bold;
+				font-size: 12px;
+
+				&:not(.ant-radio-button-wrapper-checked) {
+					border: 1px solid $color-gray-7;
+				}
+
+				&:first-child,
+				&:last-child {
+					border-radius: 4px;
+				}
+
+				&::before {
+					display: none;
+				}
+			}
+		}
+		.navbar-fixed {
+			margin-top: 20px;
+			h6 {
+				margin-bottom: 5px;
+			}
+		}
+		.download {
+			margin-top: 20px;
+			.ant-btn {
+				margin: 5px 0;
+				height: 40px;
+				border-radius: 6px;
+			}
+		}
+		.github-stars {
+			margin-top: 20px;
+			text-align: center;
+			.ant-btn {
+				margin: 0;
+				color: $color-gray-9;
+				background-color: $color-gray-2;
+				font-weight: $fw-semibold;
+				box-shadow: none;
+				padding: 0 12px;
+
+				&:last-child {
+					background-color: $color-white;
+				}
+			}
+			.ant-btn svg {
+				fill: $color-gray-9;
+				margin-right: 3px;
+				vertical-align: -3px;
+			}
+			.ant-btn-group .ant-btn + .ant-btn, .ant-btn + .ant-btn-group, .ant-btn-group span + .ant-btn, .ant-btn-group .ant-btn + span, .ant-btn-group > span + span, .ant-btn-group + .ant-btn, .ant-btn-group + .ant-btn-group {
+				margin-left: -1px;
+			}
+		}
+		.sharing {
+			margin-top: 20px;
+			text-align: center;
+			h6 {
+				margin-bottom: 8px;
+			}
+			.ant-btn {
+				height: 40px;
+				padding: 0 20px;
+				border-radius: 6px;
+				svg {
+					margin-right: 6px;
+					vertical-align: middle;
+					fill: $color-gray-1;
+				}
+			}
+		}
+	}
+}
+
+.layout-dashboard-rtl {
+	.settings-drawer.settings-drawer-rtl {
+		left: 0;
+		direction: ltr;
+	
+		.btn-close {
+			position: absolute;
+			right: auto;
+			left: 0;
+			top: 0;
+		}
+	
+		.drawer-content {
+			.github-stars {
+				.ant-btn-group .ant-btn + .ant-btn, .ant-btn + .ant-btn-group, .ant-btn-group span + .ant-btn, .ant-btn-group .ant-btn + span, .ant-btn-group > span + span, .ant-btn-group + .ant-btn, .ant-btn-group + .ant-btn-group {
+					margin-right: -1px;
+					margin-left: 0;
+				}
+			}
+		}
+	}
+	.ant-drawer-left .ant-drawer-content-wrapper {
+		left: 0;
+		direction: rtl;
+	}
+}
+
+// / Template's settings drawer styles.

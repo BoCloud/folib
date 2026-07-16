@@ -1,0 +1,66 @@
+// _chart.scss
+// 
+// Template's charts styles.
+// 
+
+.dashboard-bar-chart {
+	height: 100%;
+	canvas {
+		border-radius: 8px;
+		box-shadow: $shadow-2;
+	}
+	.card-title {
+		margin-top: 24px;
+		h6 {
+			font-weight: $fw-bold;
+			margin-bottom: 0;
+		}
+		p {
+			font-weight: $fw-semibold;
+			color: $color-gray-7;
+		}
+		span {
+			font-weight: $fw-bold;
+			margin-left: 5px;
+		}
+	}
+	.card-content {
+		p {
+		}
+	}
+	.card-footer {
+		h4 {
+			font-weight: $fw-bold;
+			margin-bottom: 0;
+		}
+		span {
+			font-weight: $fw-semibold;
+		}
+	}
+}
+
+.dashboard-bar-line {
+	height: 100%;
+	.ant-card-extra {
+		.ant-badge {
+			display: block;
+		}
+		.ant-badge-status-dot {
+			width: 20px;
+			height: 4px;
+			border-radius: 5px;
+		}
+		.ant-badge-status-text {
+			font-weight: $fw-semibold;
+			color: $color-gray-7;
+		}
+	}
+}
+
+.crm-bar-line {
+	.ant-card-head-title {
+		padding-bottom: 0;
+	}
+}
+
+// / Template's charts styles.

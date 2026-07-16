@@ -39,7 +39,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -74,6 +74,9 @@ public class DebianIncrementalIndexer {
 
     @Resource
     private ArtifactManagementService artifactManagementService;
+
+    @Resource
+    private ArtifactorySearch artifactorySearch;
 
     @Async
     public void index(Repository repository, Set<DebianIndexEvent> indexEvents) {
@@ -121,7 +124,7 @@ public class DebianIncrementalIndexer {
         events.addAll(result);
     }
 
-    private void createIndexEventsForExistingArchitectures(List<Path> componentArtifacts, final DebianIndexEvent event, final Set<DebianIndexEvent> result) {
+    private void createIndexEventsForExistingArchitectures(List<Artifact> componentArtifacts, final DebianIndexEvent event, final Set<DebianIndexEvent> result) {
         componentArtifacts.stream().map(DebianUtils::getArchitectureFromPath)
                 .map(arch -> new DebianIndexEvent(event, arch)).forEach(result::add);
     }
@@ -168,7 +171,7 @@ public class DebianIncrementalIndexer {
     private void addEventsForComponent(Repository repo, String distribution, String component, List<DebianIndexEvent> componentEvents, Set<DebianIndexEvent> result) {
         Set<String> forcedArchitectures = Sets.newHashSet("amd64","arm64");
         try {
-            List<Path> componentArtifacts = getPackagesByDistAndComp(distribution, component, repo);
+            List<Artifact> componentArtifacts = artifactorySearch.findByDistributionAndComponent(distribution, component, repo);
             componentEvents.forEach((componentEvent) -> {
                 this.createIndexEventsForExistingArchitectures(componentArtifacts, componentEvent, result);
             });
@@ -273,20 +276,5 @@ public class DebianIncrementalIndexer {
         RepositoryPath root = repoPath.getRoot();
         String relativize = root.relativize(repoPath).toString();
         return relativize;
-    }
-
-    List<Path> getPackagesByDistAndComp(String distribution, String component, Repository repo) {
-        String prefix=DebianConstant.PACKAGE_PREFIX+File.separator+distribution+File.separator+component;
-        RepositoryPath rootPath = resolver.resolve(repo, prefix);
-        if(Files.exists(rootPath)) {
-            try (Stream<Path> stream = Files.walk(rootPath)) {
-                return stream.filter(Files::isRegularFile).filter(path -> path.getFileName().toString().equals("Packages")).collect(Collectors.toList());
-            } catch (Exception e) {
-                log.info("getAllPackages failed", e);
-                return null;
-            }
-        }else {
-            return Collections.emptyList();
-        }
     }
 }

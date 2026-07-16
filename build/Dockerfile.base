@@ -1,0 +1,15 @@
+FROM public.folib.com/public-project/docker/openjdk:17-jdk-slim-buster
+
+ENV DEBIAN_FRONTEND=noninteractive
+COPY build/sources.list /etc/apt/sources.list
+RUN apt-get clean && \
+    apt-get update && \
+    apt-get -y install tini vim net-tools inetutils-ping tzdata telnet curl fontconfig fonts-dejavu-core && \
+    apt-get clean &&\
+    ln -snf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \
+    echo "Asia/Shanghai" > /etc/timezone && \
+    rm -rf /var/lib/apt/lists/*
+
+ENTRYPOINT ["/usr/bin/tini", "--"]
+
+CMD ["bash"]

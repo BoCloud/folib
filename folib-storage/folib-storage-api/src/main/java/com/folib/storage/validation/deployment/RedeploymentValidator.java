@@ -28,7 +28,7 @@ import com.folib.storage.repository.Repository;
 import com.folib.storage.validation.artifact.ArtifactCoordinatesValidatorRegistry;
 import com.folib.storage.validation.artifact.version.VersionValidationException;
 
-import javax.annotation.PostConstruct;
+import jakarta.annotation.PostConstruct;
 import jakarta.inject.Inject;
 import java.io.IOException;
 

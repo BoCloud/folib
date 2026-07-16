@@ -1,0 +1,177 @@
+// _table.scss
+// 
+// Template's tables styles.
+// 
+
+.ant-table-thead > tr > th {
+	color: $color-gray-7;
+	font-weight: $fw-bold;
+	background-color: transparent;
+	font-size: 12px;
+}
+
+.ant-table-thead > tr > th, .ant-table-tbody > tr > td {
+	padding: 16px 25px;
+}
+
+.ant-table-tbody > tr:last-child > td {
+	border-bottom: 0;
+}
+
+.ant-table-tbody > tr > td h6 {
+	font-size: 14px;
+	font-weight: $fw-semibold;
+	color: $color-gray-12;
+}
+
+.ant-table-tbody .ant-progress-bg {
+	height: 3px !important;
+}
+
+.ant-table-tbody .ant-progress {
+    line-height: 3px;
+	margin-top: 3px;
+    display: block;
+}
+
+.ant-table-thead > tr.ant-table-row-hover:not(.ant-table-expanded-row):not(.ant-table-row-selected) > td, .ant-table-tbody > tr.ant-table-row-hover:not(.ant-table-expanded-row):not(.ant-table-row-selected) > td, .ant-table-thead > tr:hover:not(.ant-table-expanded-row):not(.ant-table-row-selected) > td, .ant-table-tbody > tr:hover:not(.ant-table-expanded-row):not(.ant-table-row-selected) > td {
+	background-color: rgba(0, 0, 0, 0.03);
+}
+
+.table-upload-btn {
+	margin: 20px;
+	margin-top: 10px;
+	.ant-btn {
+		box-shadow: none;
+		font-weight: $fw-semibold;
+
+		&:hover svg path,
+		&:focus svg path,
+		&:active svg path {
+			fill: $color-primary;
+		}
+	}
+	svg {
+		vertical-align: middle;
+		margin-right: 5px;
+		path {
+			transition: all 0.3s cubic-bezier(0.645, 0.045, 0.355, 1);
+		}
+	}
+}
+
+.ant-table-body {
+    overflow: auto;
+
+	@media(min-width: $xl) {
+		overflow: visible;
+	}
+
+	.btn-edit {
+		font-weight: $fw-semibold;
+		color: $color-muted;
+	}
+}
+
+.table-avatar-info {
+	display: flex;
+
+	.ant-avatar {
+		margin-right: 20px;
+	}
+	.avatar-info {
+		h6 {
+			font-size: 14px;
+			line-height: 14px;
+			margin-bottom: 3px;
+		}
+		p {
+			font-size: 14px;
+			font-weight: $fw-regular;
+			color: $color-gray-7;
+		}
+		>* {
+			margin: 0;
+		}
+	}
+}
+
+.table-settings-notifications {
+	width: 100%;
+	p {
+		color: $color-gray-12;
+		margin-bottom: 2px;
+	}
+	small {
+		color: $color-muted;
+		font-size: 12px;
+	}
+
+	tbody>tr>td,
+	thead>tr>th {
+		padding: 8px 4px;
+		border-bottom: 1px solid #e9ecef;
+	}
+
+	thead>tr>th {
+		font-size: 16px;
+		color: $color-muted;
+		font-weight: $fw-regular;
+		padding: 12px 4px;
+	}
+
+	tbody>tr:last-child>td {
+		border-bottom: none;
+	}
+}
+
+.layout-dashboard-rtl {
+	.ant-table table {
+		text-align: right;
+	}
+	.table-upload-btn svg {
+		vertical-align: middle;
+		margin-left: 5px;
+		margin-right: 0;
+	}
+}
+
+.table-invoice {
+	width: 100%;
+	p {
+		color: $color-gray-12;
+		margin-bottom: 2px;
+	}
+	small {
+		color: $color-muted;
+		font-size: 12px;
+	}
+
+	tbody>tr>td,
+	thead>tr>th {
+		padding: 8px 4px;
+		border-bottom: 1px solid #e9ecef;
+		font-size: 16px;
+	}
+
+	thead>tr>th {
+		font-size: 16px;
+		color: $color-muted;
+		font-weight: $fw-regular;
+		padding: 12px 4px;
+	}
+
+	tbody>tr:last-child>td {
+		border-bottom: none;
+	}
+	tfoot>tr>th {
+		border-bottom: 1px solid #e9ecef;
+	}
+}
+
+.ant-table-pagination.ant-pagination {
+	margin-right: 25px;
+	margin-left: 25px;
+}
+
+// / Template's tables styles.

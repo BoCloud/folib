@@ -25,7 +25,7 @@ import com.folib.repository.P2RepositoryFeatures;
 import com.folib.repository.P2RepositoryStrategy;
 import com.folib.artifact.coordinates.P2Coordinates;
 
-import javax.annotation.PostConstruct;
+import jakarta.annotation.PostConstruct;
 import javax.inject.Inject;
 import java.io.IOException;
 import java.util.Set;

@@ -1,0 +1,98 @@
+// _photoswipe.scss
+// 
+// Template's photoswipe styles.
+// 
+
+.pswp__img {
+	border-radius: 12px !important ;
+}
+
+.pswp__button--fs,
+.pswp__button--share,
+.pswp__button--close {
+	background-image: none !important ;
+    width: auto !important ;
+    height: auto !important ;
+    float: none !important ;
+    font-weight: 700 !important ;
+    line-height: 1.4 !important ;
+    text-align: center !important ;
+    vertical-align: middle !important ;
+    cursor: pointer !important ;
+    user-select: none !important ;
+    border: 1px solid transparent !important ;
+    font-size: .75rem !important ;
+    border-radius: .5rem !important ;
+    transition: all .15s ease-in !important ;
+    margin-bottom: 1rem !important ;
+    letter-spacing: -.025rem !important ;
+    box-shadow: 0 4px 7px -1px rgba(0, 0, 0, .11), 0 2px 4px -1px rgba(0, 0, 0, .7) !important ;
+    text-transform: uppercase !important ;
+    padding: .5rem 2rem !important ;
+    font-size: .75rem !important ;
+    border-radius: .5rem !important ;
+    color: #000 !important ;
+    background-color: #fff !important ;
+    border-color: #fff !important ;
+    opacity: 1 !important ;
+	margin-right: 5px !important ;
+	margin-left: 5px !important ;
+}
+
+.pswp__button {
+    display: inline-block !important ;
+}
+
+.pswp__counter {
+    text-align: center !important ;
+    right: 0 !important ;
+}
+
+.pswp__top-bar {
+    height: 94px !important ;
+    width: 100% !important ;
+    padding-top: 40px !important ;
+}
+
+.pswp__button--fs::before {
+	content: "Full Screen" !important ;
+}
+
+.pswp__button--share::before {
+	content: "Share" !important ;
+}
+
+.pswp__button--close::before {
+	content: "Close (Esc)" !important ;
+}
+
+.pswp__button--zoom,
+.pswp__button--share {
+	display: none !important ;
+}
+
+.pswp--supports-fs .pswp__button--fs {
+    display: inline-block !important ;
+}
+
+.pswp__top-bar {
+	text-align: center !important ;
+}
+
+.pswp__container, .pswp__zoom-wrap {
+    top: 20px !important ;
+}
+
+.pswp__ui--fit .pswp__caption, .pswp__ui--fit .pswp__top-bar {
+    background-color: transparent !important ;
+}
+
+.pswp__ui--idle .pswp__button--arrow--left, .pswp__ui--idle .pswp__button--arrow--right, .pswp__ui--idle .pswp__top-bar {
+    opacity: 1 !important ;
+}
+
+.pswp__ui--hidden .pswp__button--arrow--left, .pswp__ui--hidden .pswp__button--arrow--right, .pswp__ui--hidden .pswp__caption, .pswp__ui--hidden .pswp__top-bar {
+    opacity: 1 !important ;
+}
+
+// / Template's photoswipe styles.

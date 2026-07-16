@@ -25,7 +25,7 @@ import com.folib.users.service.impl.YamlUserService.Yaml;
 
 import java.io.IOException;
 
-import javax.annotation.PostConstruct;
+import jakarta.annotation.PostConstruct;
 import javax.inject.Inject;
 
 import org.springframework.context.annotation.ComponentScan;

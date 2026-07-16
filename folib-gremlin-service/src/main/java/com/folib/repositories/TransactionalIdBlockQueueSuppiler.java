@@ -28,8 +28,8 @@ import org.neo4j.ogm.driver.Driver;
 import org.neo4j.ogm.session.Session;
 import org.neo4j.ogm.session.SessionFactory;
 import org.opencypher.gremlin.neo4j.ogm.GremlinGraphDriver;
+import com.folib.gremlin.tx.GremlinSessionTransactionManager;
 import org.springframework.core.InfrastructureProxy;
-import org.springframework.data.neo4j.transaction.SessionHolder;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.folib.db.server.janusgraph.TransactionalVertexIDAssigner;
@@ -69,9 +69,10 @@ public class TransactionalIdBlockQueueSuppiler implements Supplier<IdBlockQueueS
     @Override
     public IdBlockQueueSession get()
     {
-        SessionHolder sessionHolder = (SessionHolder) TransactionSynchronizationManager.getResource(this);
-        return Optional.ofNullable(sessionHolder)
-                       .map(SessionHolder::getSession)
+        GremlinSessionTransactionManager.SessionHolder holder =
+                (GremlinSessionTransactionManager.SessionHolder) TransactionSynchronizationManager.getResource(this);
+        return Optional.ofNullable(holder)
+                       .map(GremlinSessionTransactionManager.SessionHolder::getSession)
                        .map(IdBlockQueueSession.class::cast)
                        .orElse(null);
     }

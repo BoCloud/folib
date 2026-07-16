@@ -20,7 +20,7 @@ package com.folib.dependency.snippet;
 
 import com.folib.providers.AbstractMappedProviderRegistryWithNestedMap;
 
-import javax.annotation.PostConstruct;
+import jakarta.annotation.PostConstruct;
 import java.util.TreeMap;
 
 import org.slf4j.Logger;

@@ -27,8 +27,9 @@ import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.cassandra.CassandraAutoConfiguration;
-import org.springframework.boot.autoconfigure.data.neo4j.Neo4jDataAutoConfiguration;
+import org.springframework.boot.autoconfigure.data.web.SpringDataWebAutoConfiguration;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
+import org.springframework.boot.autoconfigure.neo4j.Neo4jAutoConfiguration;
 import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
 import org.springframework.boot.context.metrics.buffering.BufferingApplicationStartup;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -40,8 +41,9 @@ import org.springframework.scheduling.annotation.EnableAsync;
  */
 @SpringBootApplication(exclude = {DataSourceAutoConfiguration.class,
         HibernateJpaAutoConfiguration.class,
-        Neo4jDataAutoConfiguration.class,
-        CassandraAutoConfiguration.class})
+        Neo4jAutoConfiguration.class,
+        CassandraAutoConfiguration.class,
+        SpringDataWebAutoConfiguration.class})
 @Import(WebConfig.class)
 @MapperScan(basePackages = {"com.folib.scanner.mapper", "com.folib.mapper"})
 @EnableAsync
