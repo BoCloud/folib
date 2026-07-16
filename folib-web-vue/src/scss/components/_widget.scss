@@ -1,0 +1,131 @@
+// _widget.scss
+// 
+// Template's widgets styles.
+// 
+
+// Widget Type 1
+.widget-1 {
+	border-radius: 12px;
+	box-shadow: $shadow-1;
+
+	.ant-card-body {
+		padding: 16px;
+		position: relative;
+	}
+	.ant-statistic {
+		margin-right: 50px;
+	}
+	.ant-statistic-title {
+		font-family: $f-family;
+		font-weight: $fw-semibold;
+		color: $color-gray-7;
+		font-size: 14px;
+	}
+	.ant-statistic-content {
+		font-family: $f-family;
+		font-weight: $fw-bold;
+		color: inherit;
+		font-size: 30px;
+		line-height: 30px;
+	}
+	.ant-statistic-content-prefix,
+	.ant-statistic-content-value {
+		color: $color-gray-12;
+	}
+	.ant-statistic-content-prefix {
+		margin-right: 0;
+	}
+	.ant-statistic-content-suffix {
+		font-family: $f-family;
+		font-weight: $fw-bold;
+		font-size: 14px;
+		margin-left: 10px;
+	}
+	.icon {
+		width: 48px;
+		height: 48px;
+		position: absolute;
+		top: 0;
+		bottom: 0;
+		right: 16px;
+		margin: auto;
+		background-color: $color-primary;
+		border-radius: 8px;
+		box-shadow: $shadow-2;
+		display: flex;
+		justify-content: center;
+		align-items: center;
+	}
+	.icon svg path {
+		fill: $color-white;
+	}
+}
+// / Widget Type 1
+
+// Widget Type 2
+.widget-2 {
+	border: none;
+
+	.ant-card-body {
+		padding: 0;
+	}
+	.ant-statistic-title {
+		text-align: center;
+		padding: 16px;
+
+		h6 {
+			font-weight: $fw-semibold;
+		}
+
+		p {
+			font-size: 12px;
+			font-weight: $fw-semibold;
+			margin-bottom: 0;
+		}
+	}
+	.ant-statistic-content {
+		font-family: $f-family;
+		font-weight: $fw-semibold;
+		font-size: 20px;
+		padding: 12px 16px;
+		border-top: 1px solid $color-gray-3;
+		text-align: center;
+	}
+	.ant-statistic-content-prefix {
+		margin-right: 0;
+	}
+	.icon {
+		width: 64px;
+		height: 64px;
+		margin: auto;
+		background-color: $color-primary;
+		border-radius: 8px;
+		box-shadow: $shadow-2;
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		margin-bottom: 16px;
+
+		img {
+			width: 30px;
+		}
+	}
+}
+// / Widget Type 2
+
+.layout-dashboard-rtl {
+	.widget-1 .icon {
+		left: 16px;
+		right: auto;
+	}
+	.widget-1 .ant-statistic {
+		margin-left: 50px;
+		margin-right: 0;
+	}
+	.widget-1 .ant-statistic-content-suffix {
+		margin-right: 10px;
+		margin-left: 0;
+	}
+}
+
+// / Template's widgets styles.

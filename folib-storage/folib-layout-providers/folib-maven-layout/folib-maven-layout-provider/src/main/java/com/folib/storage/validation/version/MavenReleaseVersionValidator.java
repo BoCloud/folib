@@ -24,7 +24,7 @@ import com.folib.storage.validation.artifact.version.VersionValidationException;
 import com.folib.storage.repository.Repository;
 import com.folib.storage.repository.RepositoryPolicyEnum;
 
-import javax.annotation.PostConstruct;
+import jakarta.annotation.PostConstruct;
 import jakarta.inject.Inject;
 
 import org.slf4j.Logger;

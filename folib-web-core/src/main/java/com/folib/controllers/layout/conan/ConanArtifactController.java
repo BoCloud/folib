@@ -476,8 +476,6 @@ public class ConanArtifactController extends BaseArtifactController {
             HttpServletResponse response) throws Exception {
         String targetUrl = getTargetUrl(request.getRequestURI(), "/v2/conans/");
         String artifactPath = String.format("%s/%s/%s/%s/%s/package", user, name, version, channel, revisionId);
-        // bugfix: Response from remote is not json, but 'application/json;charset=UTF-8'.
-        response.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE);
         return ResponseEntity.ok(conanService.revisionsSearch(repository, artifactPath, targetUrl));
     }
 

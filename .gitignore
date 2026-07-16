@@ -44,7 +44,7 @@ lib/*
 !folib-security/folib-authentication-registry/src/test/resources/webapp/WEB-INF/lib/folib-example-authentication-provider-1.0-SNAPSHOT.jar
 !folib-storage/folib-storage-layout-providers/folib-storage-maven-layout/folib-storage-maven-layout-provider/src/test/resources/artifacts/properties-injector-1.7.jar
 !folib-storage/folib-storage-layout-providers/folib-storage-maven-layout/folib-storage-maven-layout-provider/src/test/resources/artifacts/slf4j-log4j12-1.7.26.jar
-
+*.sh
 .idea
 /folib/
 /folib-data/

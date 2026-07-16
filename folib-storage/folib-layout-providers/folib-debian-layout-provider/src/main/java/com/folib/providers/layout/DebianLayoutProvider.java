@@ -33,7 +33,7 @@ import org.apache.commons.codec.digest.MessageDigestAlgorithms;
 import org.apache.commons.lang3.BooleanUtils;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.PostConstruct;
+import jakarta.annotation.PostConstruct;
 import javax.inject.Inject;
 import java.io.IOException;
 import java.time.Instant;

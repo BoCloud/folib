@@ -42,7 +42,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import javax.activation.MimetypesFileTypeMap;
+import jakarta.activation.MimetypesFileTypeMap;
 import javax.inject.Inject;
 import jakarta.servlet.http.HttpServletRequest;
 import java.io.IOException;

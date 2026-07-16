@@ -1,0 +1,145 @@
+// _fullcalendar.scss
+// 
+// FullCalendar styles.
+// 
+
+.calendar-head {
+	display: flex;
+	align-items: center;
+	
+	>div {
+		padding: 0 25px;
+		position: relative;
+
+		&:first-child::before {
+			content: '';
+			position: absolute;
+			background-color: #333333;
+			opacity: .2;
+			width: 1px;
+			right: 0;
+			top: 10px;
+			bottom: 10px;
+			margin: auto;
+		}
+	}
+}
+
+.fc-theme-standard .fc-scrollgrid,
+.fc-scrollgrid {
+	border: none !important ;
+}
+
+.fc-theme-standard td,
+.fc-theme-standard th {
+	border-color: $color-gray-4 !important ;
+}
+
+.fc-theme-standard thead tr th {
+	border-right: none !important ;
+	border-left: none !important ;
+}
+
+.fc-theme-standard td {
+	&:last-child {
+		border-right: none !important ;
+	}
+}
+
+.fc-theme-standard tr {
+	&:last-child td {
+		border-bottom: none !important ;
+	}
+}
+
+.fc-h-event {
+  	border: none !important ;
+}
+
+.fc-daygrid-block-event .fc-event-time,
+.fc-daygrid-block-event .fc-event-title {
+	font-weight: $fw-semibold !important ;
+	padding: 0.2rem 0.3rem !important ;
+}
+
+.fc .fc-daygrid-body-natural .fc-daygrid-day-events {
+  	margin-bottom: 0 !important ;
+}
+
+.fc .fc-col-header-cell-cushion {
+	font-size: 14px !important ;
+	font-weight: $fw-semibold !important ;
+	color: $color-gray-5 !important ;
+}
+
+.fc .fc-daygrid-day-number {
+	color: $color-gray-7 !important ;
+	font-size: 14px !important ;
+	font-weight: $fw-semibold !important ;
+	width: 100% !important ;
+	text-align: center !important ;
+}
+
+.fc .fc-toolbar-title {
+  	font-size: 18px !important ;
+}
+
+.fc .fc-button {
+	font-size: 14px !important ;
+	padding-top: 0.25rem !important ;
+	box-shadow: $shadow-2  !important ;
+	transition: all 0.15s ease-in !important ;
+
+	.fc-icon {
+		font-size: 14px !important ;
+	}
+}
+
+.fc .fc-button-primary {
+	background-color: $color-secondary !important ;
+	border-color: $color-secondary !important ;
+
+	&:hover,
+	&:focus,
+	&:not(:disabled):active,
+	&:not(:disabled):active:focus {
+		transform: scale(1.02) !important ;
+		box-shadow: 0 3px 5px -1px rgba(0, 0, 0, 0.09), 0 2px 3px -1px rgba(0, 0, 0, 0.07) !important ;
+		background-color: $color-secondary !important ;
+		border-color: $color-secondary !important ;
+	}
+}
+
+.fc .fc-header-toolbar.fc-toolbar {
+	.fc-button-primary {
+		background-color: $color-white !important ;
+		border-color: $color-white !important ;
+		color: $color-primary !important ;
+		box-shadow: $shadow-2 !important ;
+	
+		&:hover,
+		&:focus,
+		&:not(:disabled):active,
+		&:not(:disabled):active:focus {
+			transform: scale(1.02) !important ;
+			box-shadow: 0 3px 5px -1px rgba(0, 0, 0, 0.09), 0 2px 3px -1px rgba(0, 0, 0, 0.07) !important ;
+			background-color: $color-white !important ;
+			border-color: $color-white !important ;
+			color: $color-primary !important ;
+		}
+	}
+}
+
+.fc-event.fc-daygrid-event {
+	border-radius: 0.35rem !important ;
+}
+
+.fc-daygrid-event {
+    font-size: 13.6px !important ;
+}
+
+.fc-h-event.text-dark .fc-event-main {
+	color: $color-dark;
+}
+
+// / FullCalendar styles.

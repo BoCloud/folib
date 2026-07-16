@@ -1,0 +1,37 @@
+// _sign-in.scss
+// 
+// Template's sign in page styles.
+// 
+
+.sign-in {
+    padding: 0px 20px;
+	.col-img img {
+		width: 100%;
+		max-width: 800px;
+		margin: auto !important;
+		display: block;
+
+		@media( min-width: $lg){
+			margin: 0;
+		}
+	}
+	@media (max-width: $md) {
+		.col-img{
+			display: none !important;
+		}
+
+	}
+	.col-form .ant-switch {
+		margin-right: 5px;
+	}
+	.ant-form-item-label {
+		line-height: 28px;
+	}
+	.ant-form-item label {
+		font-size: 13px;
+		font-weight: $fw-semibold;
+		color: $color-gray-12;
+	}
+}
+
+// / Template's sign in page styles.

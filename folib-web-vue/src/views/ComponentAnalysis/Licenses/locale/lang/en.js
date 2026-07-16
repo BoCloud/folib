@@ -1,0 +1,18 @@
+export default {
+    'EnterLicenseNameQuery': 'Enter the license name query',
+    'EnterLicenseQuery': 'Enter the license query',
+    'Name': 'Name',
+    'LicenseNumber': 'License number',
+    'Overview': 'Overview',
+    'LicenseName': 'License Name',
+    'SPDXLicenseID': 'SPDX license ID',
+    'OSIAuthorized': 'OSI authorized',
+    'FreeSoftware': 'Free software',
+    'Abandon': 'Abandon',
+    'CustomLicenses': 'Custom licenses',
+    'remark': 'remark',
+    'originalLicenseText': 'License text (original)',
+    'ChineseLicenseText': 'License text (Chinese)',
+    'Template': 'Template',
+    'SourceHeader': 'Source header',
+}

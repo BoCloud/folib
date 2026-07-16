@@ -22,7 +22,7 @@ import com.folib.artifact.coordinates.ArtifactCoordinates;
 import com.folib.domain.GenericCoordinatesEntity;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 

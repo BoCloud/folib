@@ -21,7 +21,7 @@ package com.folib.scanner.analysis;
 import com.folib.providers.io.RepositoryPath;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 

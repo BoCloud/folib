@@ -1,0 +1,9 @@
+#!/bin/bash
+
+mvn clean install -Plog-file-debug
+
+cd target/
+tar -zxf *gz
+cd folib-distribution-*/folib-*/
+./bin/folib/ start
+tail -n 500 -F logs/* ../folib-data/logs/*

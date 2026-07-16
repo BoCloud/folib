@@ -1,0 +1,270 @@
+// _sign-up.scss
+// 
+// Template's sign up pages styles.
+// 
+
+// Default Sign Up styling
+.layout-default.layout-sign-up {
+	padding: 11px;
+
+	.ant-layout-header {
+		background-color: $color-gray-1;
+		color: $color-gray-12;
+		box-shadow: none;
+		padding: 20px;
+		margin: -12px -12px 0;
+		position: relative;
+		z-index: 9;
+					
+		@media( min-width: $lg ){
+			background-color: transparent;
+			color: $color-gray-1;
+			margin: 0;
+			padding: 0 20px;
+		}
+
+		.header-brand {
+			padding: 0px;
+			
+			@media( min-width: $lg ){
+			}
+			h6 {
+				color: $color-gray-12;
+					
+				@media( min-width: $lg ){
+					color: $color-gray-1;
+				}
+			}
+		}
+		.header-nav {
+			.submenu-title-wrapper {
+				color: $color-gray-12;
+					
+				@media( min-width: $lg ){
+					color: $color-gray-1;
+				}
+				svg path {
+					fill: $color-gray-12 !important;
+					
+					@media( min-width: $lg ){
+						fill: $color-gray-1 !important;
+					}
+				}
+			}
+			.ant-menu-horizontal {
+				line-height: 26px;
+				padding: 10px 0;
+
+				span {
+					color: $color-gray-12;
+					
+					@media( min-width: $lg ){
+						color: $color-gray-1;
+					}
+				}
+			}
+		}
+		.header-btn .ant-btn-primary {
+			@media( min-width: $lg ){
+				background-color: $color-gray-1;
+				color: $color-gray-12;
+				border: none;
+			}
+		}
+		
+	}
+	.ant-layout-content {
+		padding-top: 0;
+	}
+}
+
+// Sign Up header
+.sign-up-header {
+	height: 550px;
+	margin-top: -120.8px;
+	padding-top: 137.8px;
+	border-radius: 12px;
+	box-shadow: $shadow-1;
+	background-size: cover;
+	background-position: center;
+	text-align: center;
+	position: relative;
+
+	&::before {
+		display: block;
+		content: "";
+		position: absolute;
+		top: 0;
+		bottom: 0;
+		left: 0;
+		right: 0;
+		margin: auto;
+		background-color: #000000;
+		opacity: 0.3;
+		border-radius: 12px;
+	}
+
+	@media( min-width: $lg ){
+		margin-top: -62.8px;
+	}
+
+	* {
+		color: $color-gray-1;
+	}
+
+	.content {
+		padding-top: 40px;
+		max-width: 480px;
+		margin: auto;
+		position: relative;
+
+		h1 {
+			font-size: 36px;
+
+			@media( min-width: $md) {
+				font-size: 48px;
+			}
+		}
+	}
+}
+
+// Sign Up Cover page styling
+.layout-sign-up-cover {
+	@media (min-width: $lg) {
+		overflow: hidden;
+
+		.ant-layout-header {
+			position: fixed;
+			z-index: 9;
+			left: 130px;
+			right: 130px;
+			margin: 16px 0 0;
+			border-radius: 50px;
+			-webkit-backdrop-filter: saturate(200%) blur(30px);
+			backdrop-filter: saturate(200%) blur(30px);
+			background-color: hsla(0,0%,100%,.8);
+			box-shadow: 0 .25rem .375rem -.0625rem hsla(0,0%,8%,.12),0 .125rem .25rem -.0625rem hsla(0,0%,8%,.07);
+		}
+	}
+
+    background-color: $color-gray-2;
+
+	.ant-layout-content {
+		padding-top: 0;
+	}
+	.row-main {
+		height: auto;
+		min-height: auto;
+	}
+	.sign-in {
+		position: relative;
+		padding-top: 150px;
+	}
+	.col-img {
+		display: flex;
+		position: absolute;
+		top: 0;
+		right: 0;
+		height: 100%;
+		flex-direction: column;
+		justify-content: center;
+		margin-top: auto;
+		margin-bottom: auto;
+		padding-right: 0;
+		text-align: center;
+
+		> div img {
+			padding-top: 150px;
+		}
+
+		>div {
+			display: none;
+
+			@media (min-width: $md) {
+				display: block;
+			}
+
+		}
+	}
+
+	@media (min-width: $md) {
+		.ant-layout-footer {
+			padding: 35px 50px;
+		}
+	}
+}
+
+// Sign Up Illustration page styling
+.layout-sign-up-illustration {
+	@media (min-width: $lg) {
+		overflow: hidden;
+
+		.ant-layout-header {
+			position: fixed;
+			z-index: 9;
+			left: 130px;
+			right: 130px;
+			margin: 16px 0 0;
+			border-radius: 50px;
+			-webkit-backdrop-filter: saturate(200%) blur(30px);
+			backdrop-filter: saturate(200%) blur(30px);
+			background-color: hsla(0,0%,100%,.8);
+			box-shadow: 0 .25rem .375rem -.0625rem hsla(0,0%,8%,.12),0 .125rem .25rem -.0625rem hsla(0,0%,8%,.07);
+		}
+	}
+	
+	.row-main {
+		height: calc(100vh - 20px);
+		min-height: 650px;
+	}
+
+    background-color: #ffffff;
+
+	.ant-layout-content {
+		// padding-top: 100px;
+	}
+
+	.col-img {
+		display: flex;
+		position: absolute;
+		top: 0;
+		right: 0;
+		height: 100%;
+		flex-direction: column;
+		justify-content: center;
+		margin-top: auto;
+		margin-bottom: auto;
+		padding-right: 0;
+		text-align: center;
+
+		> div {
+			display: flex;
+			position: relative;
+			height: 100%;
+			flex-direction: column;
+			justify-content: center;
+			margin: 4px;
+			padding-right: 100px;
+			padding-left: 100px;
+			background-color: $color-primary;
+			border-radius: 12px;
+		}
+		img.pattern {
+			position: absolute;
+			left: 0;
+			opacity: .4;
+			width: auto;
+			max-width: none;
+		}
+	}
+	.ant-form-item-label {
+		line-height: 28px;
+	}
+	.ant-form-item label {
+		font-size: 13px;
+		font-weight: $fw-semibold;
+		color: $color-gray-12;
+	}
+}
+
+// / Template's sign up pages styles.

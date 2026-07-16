@@ -8,7 +8,7 @@
     <parent>
         <groupId>com.folib</groupId>
         <artifactId>folib-server</artifactId>
-        <version>3.0-SNAPSHOT</version>
+        <version>3.0-RC2</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -393,7 +393,7 @@
         <dependency>
             <groupId>mysql</groupId>
             <artifactId>mysql-connector-java</artifactId>
-            <version>8.0.20</version>
+            <version>8.0.33</version>
         </dependency>
 
         <dependency>
@@ -510,7 +510,7 @@
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.module</groupId>
-            <artifactId>jackson-module-jaxb-annotations</artifactId>
+            <artifactId>jackson-module-jakarta-xmlbind-annotations</artifactId>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.jaxrs</groupId>
@@ -536,11 +536,6 @@
             <artifactId>jakarta.xml.bind-api</artifactId>
             <groupId>jakarta.xml.bind</groupId>
             <version>4.0.1</version>
-        </dependency>
-        <dependency>
-            <groupId>javax.xml.bind</groupId>
-            <artifactId>jaxb-api</artifactId>
-            <version>2.3.1</version>
         </dependency>
 
         <dependency>
@@ -646,20 +641,25 @@
 
 
         <dependency>
-            <groupId>javax.interceptor</groupId>
-            <artifactId>javax.interceptor-api</artifactId>
-            <version>1.2</version>
+            <groupId>jakarta.interceptor</groupId>
+            <artifactId>jakarta.interceptor-api</artifactId>
+            <version>2.1.0</version>
         </dependency>
 
         <dependency>
-            <groupId>com.sun.xml.bind</groupId>
-            <artifactId>jaxb-impl</artifactId>
-            <version>2.3.3</version>
+            <groupId>org.glassfish.jaxb</groupId>
+            <artifactId>jaxb-runtime</artifactId>
         </dependency>
         <dependency>
             <groupId>com.alibaba</groupId>
             <artifactId>easyexcel</artifactId>
             <version>3.1.1</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.apache.poi</groupId>
+                    <artifactId>poi-ooxml-schemas</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -668,22 +668,22 @@
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpmime</artifactId>
-            <version>4.5.13</version>
+            <version>4.5.14</version>
         </dependency>
 <!--        <dependency>-->
 <!--            <groupId>org.glassfish.jersey.media</groupId>-->
 <!--            <artifactId>jersey-media-multipart</artifactId>-->
-<!--            <version>2.32</version>-->
+<!--            <version>2.42</version>-->
 <!--        </dependency>-->
         <dependency>
             <groupId>org.glassfish.jersey.core</groupId>
             <artifactId>jersey-common</artifactId>
-            <version>2.32</version>
+            <version>2.42</version>
         </dependency>
         <dependency>
             <groupId>org.glassfish.jersey.containers</groupId>
             <artifactId>jersey-container-servlet-core</artifactId>
-            <version>2.32</version>
+            <version>2.42</version>
             <exclusions>
                 <exclusion>
                     <groupId>javax.validation</groupId>
@@ -694,7 +694,7 @@
         <dependency>
             <groupId>org.glassfish.jersey.media</groupId>
             <artifactId>jersey-media-jaxb</artifactId>
-            <version>2.32</version>
+            <version>2.42</version>
         </dependency>
         <dependency>
             <groupId>org.glassfish.jersey.media</groupId>
@@ -713,32 +713,32 @@
         <dependency>
             <groupId>org.glassfish.jersey.ext</groupId>
             <artifactId>jersey-bean-validation</artifactId>
-            <version>2.32</version>
+            <version>2.42</version>
         </dependency>
         <dependency>
             <groupId>org.glassfish.jersey.core</groupId>
             <artifactId>jersey-client</artifactId>
-            <version>2.32</version>
+            <version>2.42</version>
         </dependency>
         <dependency>
             <groupId>org.glassfish.jersey.core</groupId>
             <artifactId>jersey-server</artifactId>
-            <version>2.32</version>
+            <version>2.42</version>
         </dependency>
         <dependency>
             <groupId>org.glassfish.jersey.media</groupId>
             <artifactId>jersey-media-multipart</artifactId>
-            <version>2.32</version>
+            <version>2.42</version>
         </dependency>
         <dependency>
             <groupId>org.glassfish.jersey.connectors</groupId>
             <artifactId>jersey-apache-connector</artifactId>
-            <version>2.32</version>
+            <version>2.42</version>
         </dependency>
         <dependency>
             <groupId>org.glassfish.jersey.inject</groupId>
             <artifactId>jersey-hk2</artifactId>
-            <version>2.32</version>
+            <version>2.42</version>
         </dependency>
         <dependency>
             <groupId>org.springframework</groupId>
@@ -844,12 +844,12 @@
         <dependency>
             <groupId>com.fasterxml.jackson.datatype</groupId>
             <artifactId>jackson-datatype-guava</artifactId>
-            <version>2.15.4</version>
+            <version>2.17.2</version>
         </dependency>
         <dependency>
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
-            <version>2.1.214</version> <!-- Use latest stable version -->
+            <version>2.2.224</version>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>

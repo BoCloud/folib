@@ -1,0 +1,46 @@
+// _badge.scss
+// 
+// Template's badge styles.
+// 
+
+.layout-dashboard {
+	.header-control {
+		.ant-scroll-number-only > p.ant-scroll-number-only-unit {
+			height: 18px;
+			margin: 0;
+			font-size: 10px;
+			font-weight: $fw-semibold;
+		}
+		.ant-badge-count {
+			min-width: 18px;
+			height: 18px;
+			line-height: 18px;
+			background-color: $color-danger;
+		}
+		.ant-scroll-number-only {
+			height: 18px;
+		}
+		.ant-badge {
+			margin: 0 7px;
+			.ant-dropdown-link {
+				padding: 0;
+				margin: 0;
+			}
+		}
+	}
+}
+
+.layout-dashboard-rtl {
+	.ant-badge-count, .ant-badge-dot, .ant-badge .ant-scroll-number-custom-component {
+		left: 0;
+		right: auto;
+		transform: translate(-50%, -50%);
+	}
+
+	.ant-badge-status-text {
+		margin-right: 8px;
+		margin-left: 0;
+	}
+}
+
+// / Template's badge styles.

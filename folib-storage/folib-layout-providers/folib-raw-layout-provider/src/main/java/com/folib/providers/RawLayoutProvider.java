@@ -22,7 +22,7 @@ package com.folib.providers;
 import java.io.IOException;
 import java.util.Set;
 
-import javax.annotation.PostConstruct;
+import jakarta.annotation.PostConstruct;
 import javax.inject.Inject;
 
 import com.folib.artifact.coordinates.RawCoordinates;

@@ -1,0 +1,34 @@
+// _notifications.scss
+// 
+// Template's notifications styles.
+//
+
+.ant-notification-notice {
+	border-radius: 8px;
+}
+
+@each $name, $value in $colors {
+	.ant-notification-#{$name} {
+		background-color: $value;
+		color: #ffffff;
+
+		.ant-notification-notice-message,
+		.ant-notification-close-x {
+			color: #ffffff;
+		}
+		.ant-notification-notice-description {
+			opacity: 0.9;
+		}
+	}
+}
+
+.ant-notification-warning {
+	color: #333333;
+
+	.ant-notification-notice-message,
+	.ant-notification-close-x {
+		color: #333333;
+	}
+}
+
+// / Template's notifications styles.

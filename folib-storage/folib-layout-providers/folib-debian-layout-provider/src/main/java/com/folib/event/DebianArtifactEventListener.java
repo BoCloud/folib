@@ -48,7 +48,7 @@ public class DebianArtifactEventListener {
         }
         //  删除事件更新索引
         if (event.getType() == ArtifactEventTypeEnum.EVENT_ARTIFACT_PATH_DELETED.getType() || event.getType() == ArtifactEventTypeEnum.EVENT_ARTIFACT_DIRECTORY_PATH_DELETED.getType()) {
-            if (event.getPath().getPath().endsWith(DebianConstant.DEFAULT_EXTENSION)) {
+            if (event.getPath().getPath().startsWith(DebianConstant.DEB_PREFIX)) {
                 debianIncrementalIndexer.removeByPath(repository, event.getPath().getPath());
             }
         }

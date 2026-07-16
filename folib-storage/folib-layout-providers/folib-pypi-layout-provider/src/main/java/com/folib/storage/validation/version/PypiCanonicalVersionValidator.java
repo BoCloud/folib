@@ -23,7 +23,7 @@ import com.folib.storage.validation.artifact.ArtifactCoordinatesValidatorRegistr
 import com.folib.storage.validation.artifact.version.VersionValidationException;
 import com.folib.storage.repository.Repository;
 
-import javax.annotation.PostConstruct;
+import jakarta.annotation.PostConstruct;
 import java.util.function.BiPredicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;

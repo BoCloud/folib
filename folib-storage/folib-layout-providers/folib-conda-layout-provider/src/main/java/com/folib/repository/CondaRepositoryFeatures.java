@@ -5,7 +5,7 @@ import com.folib.storage.validation.artifact.version.GenericSnapshotVersionValid
 import com.folib.storage.validation.deployment.RedeploymentValidator;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.PostConstruct;
+import jakarta.annotation.PostConstruct;
 import javax.inject.Inject;
 import java.util.Arrays;
 import java.util.LinkedHashSet;

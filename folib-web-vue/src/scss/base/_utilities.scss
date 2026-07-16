@@ -1,0 +1,296 @@
+// _utilities.scss
+// 
+// Template's utility classes and helpers.
+// 
+
+// Base Colors
+$colors: (
+	"primary": $color-primary,
+	"secondary": $color-secondary,
+	"success": $color-success,
+	"warning": $color-warning,
+	"danger": $color-danger,
+	"dark": $color-dark,
+	"white": $color-white,
+	"muted": $color-muted,
+) ;
+
+@each $name, $value in $colors {
+	.bg-#{$name} {
+		background-color: $value !important;
+	}
+	.text-#{$name} {
+		color: $value !important;
+	}
+	.border-#{$name} {
+		border-color: $value;
+	}
+	.fill-#{$name} {
+		fill: $value;
+	}
+	.badge-dot-#{$name} .ant-badge-status-dot {
+		background-color: $value;
+	}
+	.ant-tag-#{$name} {
+		background-color: $value;
+		color: #ffffff;
+		border: none;
+	}
+}
+
+// Overriding the dark text color.
+.text-dark {
+	color: #142738;
+}
+// / Base Colors
+
+
+// Neutral Colors
+$neutral-colors: (
+	"gray-1": $color-gray-1,
+	"gray-2": $color-gray-2,
+	"gray-3": $color-gray-3,
+	"gray-4": $color-gray-4,
+	"gray-5": $color-gray-5,
+	"gray-6": $color-gray-6,
+	"gray-7": $color-gray-7,
+	"gray-8": $color-gray-8,
+	"gray-9": $color-gray-9,
+	"gray-10": $color-gray-10,
+	"gray-11": $color-gray-11,
+	"gray-12": $color-gray-12,
+	"muted": $color-muted,
+) ;
+
+@each $name, $value in $neutral-colors {
+	.bg-#{$name} {
+		background-color: $value !important;
+	}
+	.text-#{$name} {
+		color: $value !important;
+	}
+	.border-#{$name} {
+		border-color: $value !important;
+	}
+	.fill-#{$name} {
+		fill: $value !important;
+	}
+}
+// / Neutral Colors
+
+
+// Gradient Colors
+$theme-gradient-colors: (
+	"primary":    ($primary-gradient, $primary-gradient-state),
+	"secondary":  ($secondary-gradient, $secondary-gradient-state),
+	"success":    ($success-gradient, $success-gradient-state),
+	"info":       ($info-gradient, $info-gradient-state),
+	"warning":    ($warning-gradient, $warning-gradient-state),
+	"danger":     ($danger-gradient, $danger-gradient-state),
+	"light":      ($light-gradient, $light-gradient-state),
+	"dark":       ($dark-gradient, $dark-gradient-state)
+) !default;
+
+@mixin gradient-directional($start-color: $gray-700, $end-color: $gray-800, $deg: 45deg) {
+  	background-image: linear-gradient($deg, $start-color, $end-color);
+}
+@each $prop, $value in $theme-gradient-colors {
+	.bg-gradient-#{$prop} {
+		@include gradient-directional(nth($value, 1) 0%, nth($value, -1) 100%, $deg: 310deg);
+	}
+}
+// / Gradient Colors
+
+
+// Font
+.font-regular {
+	font-weight: $fw-regular !important;
+}
+.font-semibold {
+	font-weight: $fw-semibold !important;
+}
+.font-bold {
+	font-weight: $fw-bold !important;
+}
+.text-sm {
+	font-size: 12px;
+}
+.text-md {
+	font-size: 14px;
+}
+.text-lg {
+	font-size: 16px;
+}
+.text-right {
+	text-align: right;
+}
+.text-left {
+	text-align: left;
+}
+.text-center {
+	text-align: center;
+}
+// / Font
+
+
+// Margin & Padding
+@for $i from 0 through 10 {
+	$j: $i * 5;
+	.mt-#{$j} {
+		margin-top: #{$j}px !important;
+	}
+	.mb-#{$j} {
+		margin-bottom: #{$j}px !important;
+	}
+	.ml-#{$j} {
+		margin-left: #{$j}px !important;
+	}
+	.mr-#{$j} {
+		margin-right: #{$j}px !important;
+	}
+	.my-#{$j} {
+		@extend .mt-#{$j};
+		@extend .mb-#{$j};
+	}
+	.mx-#{$j} {
+		@extend .ml-#{$j};
+		@extend .mr-#{$j};
+	}
+	.m-#{$j} {
+		@extend .my-#{$j};
+		@extend .mx-#{$j};
+	}
+}
+.mt-auto {
+	margin-top: auto !important;
+}
+.mb-auto {
+	margin-bottom: auto !important;
+}
+.ml-auto {
+	margin-left: auto !important;
+}
+.mr-auto {
+	margin-right: auto !important;
+}
+.m-auto {
+	@extend .mt-auto;
+	@extend .mb-auto;
+	@extend .ml-auto;
+	@extend .mr-auto;
+}
+.mx-auto {
+	@extend .ml-auto;
+	@extend .mr-auto;
+}
+.my-auto {
+	@extend .mt-auto;
+	@extend .mb-auto;
+}
+.mb-24 {
+	margin-bottom: 24px;
+}
+
+@for $i from 0 through 10 {
+	$j: $i * 5;
+	.pt-#{$j} {
+		padding-top: #{$j}px !important;
+	}
+	.pb-#{$j} {
+		padding-bottom: #{$j}px !important;
+	}
+	.pl-#{$j} {
+		padding-left: #{$j}px !important;
+	}
+	.pr-#{$j} {
+		padding-right: #{$j}px !important;
+	}
+	.py-#{$j} {
+		@extend .pt-#{$j};
+		@extend .pb-#{$j};
+	}
+	.px-#{$j} {
+		@extend .pl-#{$j};
+		@extend .pr-#{$j};
+	}
+	.p-#{$j} {
+		@extend .py-#{$j};
+		@extend .px-#{$j};
+	}
+}
+// / Margin & Padding
+
+
+// Display
+.d-inline {
+	display: inline-block;
+}
+.d-flex {
+	display: flex;
+}
+.d-none {
+	display: none;
+}
+// / Display
+
+
+// Height
+.h-full {
+	height: 100%;
+}
+.h-auto {
+	height: auto;
+}
+// / Height
+
+
+// Shadows
+$shadows: (
+	0: $shadow-0,
+	1: $shadow-1,
+	2: $shadow-2,
+	3: $shadow-3,
+) ;
+
+@each $name, $value in $shadows {
+	.shadow-#{$name} {
+		box-shadow: $value !important;
+	}
+}
+// / Shadows
+
+
+// Other utility stylings
+.img-contain {
+	max-width: 100%;
+}
+// / Other utility stylings
+
+// RTL
+.layout-dashboard-rtl {
+	.text-right {
+		text-align: left;
+	}
+	.text-left {
+		text-align: right;
+	}
+
+	@for $i from 0 through 10 {
+		$j: $i * 5;
+		.ml-#{$j} {
+			margin-right: #{$j}px !important;
+		}
+		.mr-#{$j} {
+			margin-left: #{$j}px !important;
+		}
+		.pl-#{$j} {
+			padding-right: #{$j}px !important;
+		}
+		.pr-#{$j} {
+			padding-left: #{$j}px !important;
+		}
+	}
+}
+// / RTL
+
+// / Template's utility classes and helpers.

@@ -23,7 +23,7 @@ import com.folib.storage.repository.Repository;
 import com.folib.storage.validation.ArtifactCoordinatesValidator;
 import com.folib.storage.validation.artifact.ArtifactCoordinatesValidatorRegistry;
 
-import javax.annotation.PostConstruct;
+import jakarta.annotation.PostConstruct;
 import jakarta.inject.Inject;
 
 import org.apache.commons.lang.StringUtils;

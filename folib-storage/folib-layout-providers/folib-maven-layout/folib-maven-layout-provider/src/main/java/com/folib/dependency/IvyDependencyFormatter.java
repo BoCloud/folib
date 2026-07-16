@@ -25,7 +25,7 @@ import com.folib.providers.layout.AbstractLayoutProvider;
 import com.folib.providers.layout.Maven2LayoutProvider;
 import com.folib.artifact.coordinates.MavenCoordinates;
 
-import javax.annotation.PostConstruct;
+import jakarta.annotation.PostConstruct;
 import javax.inject.Inject;
 
 import org.slf4j.Logger;

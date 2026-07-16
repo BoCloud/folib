@@ -83,12 +83,12 @@
         <dependency>
             <groupId>org.springframework.security</groupId>
             <artifactId>spring-security-core</artifactId>
-            <version>6.2.8</version>
+            <version>6.4.4</version>
         </dependency>
         <dependency>
             <groupId>org.glassfish.jersey.core</groupId>
             <artifactId>jersey-common</artifactId>
-            <version>2.32</version>
+            <version>2.42</version>
             <exclusions>
                 <exclusion>
                     <artifactId>jakarta.ws.rs-api</artifactId>
@@ -99,7 +99,7 @@
         <dependency>
             <groupId>org.glassfish.jersey.containers</groupId>
             <artifactId>jersey-container-servlet-core</artifactId>
-            <version>2.32</version>
+            <version>2.42</version>
             <exclusions>
                 <exclusion>
                     <artifactId>jakarta.ws.rs-api</artifactId>
@@ -110,7 +110,7 @@
         <dependency>
             <groupId>org.glassfish.jersey.core</groupId>
             <artifactId>jersey-client</artifactId>
-            <version>2.32</version>
+            <version>2.42</version>
             <exclusions>
                 <exclusion>
                     <artifactId>jakarta.ws.rs-api</artifactId>
@@ -121,7 +121,7 @@
         <dependency>
             <groupId>org.glassfish.jersey.connectors</groupId>
             <artifactId>jersey-apache-connector</artifactId>
-            <version>2.32</version>
+            <version>2.42</version>
             <exclusions>
                 <exclusion>
                     <artifactId>jakarta.ws.rs-api</artifactId>
@@ -132,17 +132,17 @@
         <dependency>
             <groupId>org.glassfish.jersey.inject</groupId>
             <artifactId>jersey-hk2</artifactId>
-            <version>2.32</version>
+            <version>2.42</version>
         </dependency>
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpclient</artifactId>
-            <version>4.5</version>
+            <version>4.5.14</version>
         </dependency>
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>fluent-hc</artifactId>
-            <version>4.5</version>
+            <version>4.5.14</version>
         </dependency>
 
         <!-- Logging -->
@@ -159,7 +159,7 @@
         <dependency>
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
-            <version>1.2.3</version>
+            <version>1.5.18</version>
         </dependency>
 
         <dependency>
@@ -176,7 +176,7 @@
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-webmvc</artifactId>
-            <version>6.1.15</version>
+            <version>6.2.5</version>
         </dependency>
         <dependency>
             <artifactId>jakarta.xml.bind-api</artifactId>

@@ -21,7 +21,7 @@ package com.folib.providers.repository;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import javax.annotation.PostConstruct;
+import jakarta.annotation.PostConstruct;
 import jakarta.inject.Inject;
 
 import com.folib.providers.AbstractMappedProviderRegistry;

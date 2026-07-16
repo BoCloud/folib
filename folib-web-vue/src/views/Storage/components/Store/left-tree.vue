@@ -1,0 +1,341 @@
+/**
+功能：
+作者：张佳宁
+日期：
+**/
+<template>
+    <div ref="container" class="left_tree_container">
+        <div class="cover-box" v-if="isDragging"></div>
+        <div ref="tree_container_sty" class="tree_container_sty" :style="{ height: topHeight + 'px' }">
+            <vue-easy-tree
+                :props="{
+                    label: 'name',
+                    children: 'children',
+                    isLeaf: 'isLeaf'
+                }"
+                lazy
+                :data="treeData"
+                class="leftTree"
+                :height="`${topHeight}px`"
+                node-key="artifactPath"
+                icon-class="el-icon-arrow-right"
+                :load="(treeNode, resolve) => onLoadData(treeNode,resolve, false)"
+                @node-click="(data)=>treeSelect(data,false)"
+                @node-contextmenu="(event, data) => onRightClick(event, data, false)"
+                @node-expand="(data, treeNode) => onExpand(data, treeNode, false)"
+                :selectedKeys="selectedKeys"
+                :expandedKeys="expandedKeys"
+            >
+                <template slot-scope="{data,node}">
+                    <div class="title_box">
+                        <span>
+                            <a-icon v-if="node.loading && !node.expanded" type="loading" :style="{color: '#1890ff'}"/>
+                            <a-icon class="tree_icon" style="margin-left: 5px;"
+                                    v-if="data.type === 'dir' || data.type === 'DIR'"
+                                    :type="node.expanded ? 'folder-open' : 'folder'" />
+                            <a-icon class="tree_icon" style="margin-left: 8px;" v-else :style="data.type === 'recycle'? 'color:#393b3e':''"
+                                    :type="getIconType(data.name, data.type)"></a-icon>
+                            <span class="tree_title" :style="data.type === 'recycle'? 'color:#393b3e':''">
+                                {{ data.name }}
+                            </span>
+                        </span>
+                    </div>
+                </template>
+            </vue-easy-tree>
+        </div>
+<!--        <div class="line-box" :class="isDragging ? 'line-drag' : ''" @mousedown="startDragging"></div>
+        <div ref="tree_container_sty" class="tree_container_sty recycle" :style="{ height: bottomHeight + 'px' }">
+            <vue-easy-tree
+                :props="{
+                    label: 'name',
+                    children: 'children',
+                    isLeaf: 'isLeaf'
+                }"
+                lazy
+                :data="trashData"
+                class="leftTree"
+                :height="`${bottomHeight}px`"
+                node-key="artifactPath"
+                :load="(treeNode,resolve) => onLoadData(treeNode, resolve, true)"
+                @node-click="(data)=>treeSelect(data,true)"
+                @node-contextmenu="(event, data) => onRightClick(event, data, true)"
+                @node-expand="(data,node) => onExpand(data,node, true)"
+                @node-collapse="(data,node) => onCollapse(data,node, true)"
+                :selectedKeys="selectRecycleKeys"
+                :expandedKeys="expandedRecycleKeys"
+            >
+                <template slot-scope="{data,node}">
+                    <div class="title_box">
+                        <span>
+                            <a-icon v-if="node.loading && !node.expanded" type="loading" :style="{color: '#1890ff'}"/>
+                            <a-icon class="tree_icon" style="margin-left: 5px;"
+                                    v-if="data.type === 'dir' || data.type === 'DIR'"
+                                    :type="node.expanded ? 'folder-open' : 'folder'" />
+                            <a-icon class="tree_icon" style="margin-left: 8px;" v-else :style="data.type === 'recycle'? 'color:#393b3e':''"
+                                    :type="getIconType(data.name, data.type)"></a-icon>
+                            <span class="tree_title" :style="data.type === 'recycle'? 'color:#393b3e':''">
+                                {{ data.title || data.name }}
+                            </span>
+                        </span>
+                    </div>
+                </template>
+            </vue-easy-tree>
+        </div>-->
+    </div>
+</template>
+
+<script>
+import VueEasyTree from "@wchbrad/vue-easy-tree"
+import "@wchbrad/vue-easy-tree/src/assets/index.scss"
+export default {
+    components: {
+        VueEasyTree
+    },
+    props: ['trashData', 'treeData'],
+    data() {
+        return {
+            topHeight: 500, // 初始顶部 div 的高度 (容器高度 - 底部高度 - 分隔条高度)
+            bottomHeight: 40, // 初始底部 div 的高度
+            isDragging: false, // 是否正在拖拽
+            containerHeight: 0, // 容器的总高度
+            expandedKeys:[],
+            selectedKeys:[],
+            expandedRecycleKeys:[],
+            selectRecycleKeys:[]
+        }
+    },
+    computed: {
+        getIconType() {
+            return (name, type) => {
+                const _name = name.toLowerCase()
+                const _type = type.toLowerCase()
+                let icon = ''
+                if (_type === 'file') {
+                    icon = 'file'
+                }
+                if (_name.indexOf('.png') !== -1) {
+                    icon = 'file-image'
+                }
+                if (_name.indexOf('.zip') !== -1) {
+                    icon = 'file-zip'
+                }
+                if (_name.indexOf('.md') !== -1) {
+                    icon = 'file-markdown'
+                }
+                if (_name.indexOf('.pdf') !== -1) {
+                    icon = 'file-pdf'
+                }
+                if(_type === 'recycle'){
+                    icon = 'delete'
+                }
+                return icon
+            }
+        },
+    },
+    watch: {
+        trashData: {
+            handler(val) {
+                // console.log(val);
+                // console.log(this.treeData);
+            },
+            deep: true
+        }
+    },
+    mounted() {
+        this.$nextTick(() => {
+            this.getPosition()
+        })
+    },
+    methods: {
+        onLoadData(treeNode,resolve, isTrashView) {
+            treeNode.loading = true
+            this.$emit('onLoadData', treeNode, isTrashView, resolve);
+        },
+        onExpand(data, node, key){
+            this.$emit('closeContextMenu')
+            if(key && data.name === '.trash'){ // 回收站打开
+                this.expandedRecycleKeys = ['.trash']
+                this.getPosition(320)
+            }
+        },
+        onCollapse(data, node, key){
+            this.$emit('closeContextMenu')
+            if(key && data.name === '.trash'){ // 回收站关闭
+                this.expandedRecycleKeys = []
+                this.getPosition(40)
+            }
+        },
+        treeSelect(data, type) {
+            this.$emit('closeContextMenu')
+            if(type){
+                if (data.name === '.trash') {
+                    if(this.expandedRecycleKeys.length){
+                        this.expandedRecycleKeys = []
+                        this.getPosition(300)
+                    }else{
+                        this.expandedRecycleKeys = ['.trash']
+                        this.getPosition()
+                    }
+                }
+                this.selectRecycleKeys = []
+                this.selectedKeys = []
+            }else{
+                this.selectedKeys = []
+                this.selectRecycleKeys = []
+            }
+            this.$emit('treeSelect',data, type)
+        },
+        onRightClick(event, data, isTrashView) {
+            this.$emit('onRightClick',event, data, isTrashView)
+        },
+        startDragging(event) {
+            event.preventDefault()
+            this.isDragging = true
+            document.addEventListener("mousemove", this.onMouseMove)
+            document.addEventListener("mouseup", this.stopDragging)
+        },
+        onMouseMove(event) {
+            if (!this.isDragging) return
+
+            const containerRect = this.$el.getBoundingClientRect()
+            const offsetY = event.clientY - containerRect.top
+
+            // 限制顶部和底部高度不能小于 40px
+            const newTopHeight = Math.max(40, offsetY)
+            const newBottomHeight = Math.max(
+                40,
+                this.containerHeight - newTopHeight - 5 // 计算底部 div 高度
+            )
+
+            // 如果顶部和底部高度都满足条件，则更新高度
+            if (newTopHeight + newBottomHeight + 5 === this.containerHeight) {
+                this.topHeight = newTopHeight;
+                this.bottomHeight = newBottomHeight;
+            }
+        },
+        stopDragging() {
+            this.isDragging = false
+            document.removeEventListener("mousemove", this.onMouseMove);
+            document.removeEventListener("mouseup", this.stopDragging);
+        },
+        getPosition(bottomHeight = 40) {
+            if(bottomHeight > this.bottomHeight || bottomHeight == 40){
+                this.bottomHeight = bottomHeight
+            }
+            this.containerHeight = this.$refs.container.clientHeight - 5
+            this.topHeight = this.containerHeight - this.bottomHeight - 5
+        },
+    }
+}
+</script>
+<style lang="scss">
+.left_tree_container {
+    position: relative;
+    height: calc(100vh - 287px);
+    display: flex;
+    flex-direction: column;
+
+    .cover-box {
+        height: 100%;
+        width: 100%;
+        position: absolute;
+        cursor: s-resize;
+        left: 0;
+        top: 0;
+        z-index: 10;
+    }
+
+    .line-box {
+        position: relative;
+        z-index: 11;
+        height: 5px;
+        transition: all 0.5s;
+        background: transparent;
+        transition-delay: 0.2s;
+        border-bottom: 1px solid #ccc;
+        cursor: s-resize;
+
+        &:hover {
+            border-bottom: 1px solid transparent;
+            background: #1890ff;
+        }
+
+        &.line-drag {
+            border-bottom: 1px solid transparent;
+            background: #1890ff;
+        }
+    }
+}
+
+.recycle {
+    margin-top: 5px;
+}
+
+.tree_container_sty {
+    margin-left: 12px;
+    margin-right: 12px;
+    padding-top: 0px;
+    overflow: hidden;
+
+    &:hover {
+        overflow: auto;
+    }
+}
+</style>
+<style lang="less" scoped>
+@import url('./left-tree.less');
+</style>
+<style lang="scss" scoped>
+.title_box {
+    width: 100%;
+    display: flex;
+    align-items: center
+}
+
+.tree_title {
+    margin-left: 5px;
+    font-size: 16px;
+    color: #67748e;
+}
+</style>
+<style lang="scss">
+.leftTree.ant-tree li {
+    padding: 2px 0px !important;
+}
+
+.leftTree .ant-tree-node-content-wrapper {
+    width: 95% !important;
+    height: 32px !important;
+    line-height: 32px !important;
+    border-radius: 8px !important;
+}
+
+.leftTree .ant-tree-switcher_close,
+.ant-tree-switcher_open {
+    height: 32px !important;
+    line-height: 32px !important;
+}
+
+.tree_container {
+    margin-left: 12px;
+    margin-right: 12px;
+    padding-top: 0px;
+    overflow: hidden;
+
+    &:hover {
+        overflow: auto;
+    }
+}
+
+.leftTree .ant-tree-switcher-noop {
+    display: none !important;
+}
+
+.leftTree .tree_icon {
+    font-size: 16px;
+    font-weight: 500;
+}
+.el-icon-arrow-right:before {
+    content: "\e6e0";
+}
+</style>

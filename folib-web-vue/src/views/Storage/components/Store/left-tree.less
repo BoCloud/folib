@@ -1,0 +1,220 @@
+// .tree-with-lines{
+
+// 功能：a-tree添加连接线
+// 作者：张佳宁
+// 使用：a-tree想要使用该样式，直接引入改样式即可，a-tree的show-line设置为true
+// 日期：
+
+/deep/ .ant-tree {
+    position: relative;
+
+    /deep/ &::before {
+        content: '';
+        width: 1px;
+        height: 100%;
+        height: calc(100% - 35px);
+        position: absolute;
+        border-left: 1px solid #a1abc0;
+        left: -6px;
+        top: 18px;
+    }
+
+    /deep/ .ant-tree-treenode-switcher-open,
+    /deep/ .ant-tree-treenode-switcher-close {
+        position: relative;
+    }
+
+    >li:first-child:nth-last-child(1)::after {
+        border: 0;
+    }
+}
+
+/deep/ .ant-tree-treenode-switcher-close::after,
+/deep/ .ant-tree-treenode-switcher-open::after {
+    content: '';
+    width: 8px;
+    height: 5px;
+    position: absolute;
+    border-left: 1px solid #a1abc0;
+    border-bottom: 1px solid #a1abc0;
+    left: -6px;
+    top: 18px;
+}
+
+/deep/ .ant-tree>li:last-child::after {
+    content: '';
+    width: 8px;
+    height: 100%;
+    border-top: 1px solid #a1abc0;
+    background-color: #fff;
+    position: absolute;
+    left: -6px;
+    top: 18px;
+}
+
+/deep/ .ant-tree-treenode-switcher-close::before {
+    border: 0 !important;
+}
+
+/deep/.ant-tree-child-tree.ant-tree-child-tree-open>li:first-child {
+    padding-top: 4px;
+}
+
+/deep/.ant-tree.ant-tree-show-line li:not(:last-child)::before {
+    height: calc(100% - 50px);
+    border-left: 1px solid #a1abc0;
+}
+
+/deep/.ant-tree>.ant-tree-treenode-switcher-close {
+    &::after {
+        display: none;
+    }
+}
+
+/deep/.ant-tree>.ant-tree-treenode-switcher-open {
+    &::after {
+        display: none;
+    }
+}
+
+.last-menu-line() {
+    position: absolute;
+    left: 12px;
+    width: 1px;
+    height: 100%;
+    margin: 22px 0 0;
+    border-left: 1px solid #a1abc0;
+    content: ' ';
+}
+
+ul.ant-tree.icon-tree /deep/li {
+    &>.ant-tree-checkbox {
+        margin-left: 24px;
+
+        &+.ant-tree-node-content-wrapper>.ant-tree-title {
+            >i:nth-child(1) {
+                position: absolute;
+                left: -42px;
+                top: 5px;
+            }
+        }
+    }
+}
+
+ul.ant-tree /deep/li {
+    position: relative;
+
+    &:nth-last-child(1) {
+        /deep/&.ant-tree-treenode-switcher-open::before {
+            .last-menu-line;
+            height: calc(100% - 47px);
+        }
+    }
+
+    &:before {
+        position: absolute;
+        left: 12px;
+        width: 1px;
+        height: 100%;
+        height: calc(100% - 47px);
+        margin: 22px 0 0;
+        border-left: 1px solid #a1abc0;
+        content: ' ';
+    }
+
+    .ant-tree-node-content-wrapper {
+        padding: 0;
+        position: relative;
+    }
+
+    ul.ant-tree-child-tree.ant-tree-child-tree-open>li {
+        &::after {
+            content: '';
+            position: absolute;
+            width: 8px;
+            height: 6px;
+            border-left: 1px solid #a1abc0;
+            border-bottom: 1px solid #a1abc0;
+            border-bottom-left-radius: 6px;
+            background: transparent;
+            top: 11.5px;
+            left: -6px;
+            margin: 0;
+        }
+
+        &:nth-last-child(1) {
+            &.ant-tree-treenode-switcher-open::before {
+                .last-menu-line;
+                height: calc(100% - 47px);
+            }
+        }
+    }
+
+    span.ant-tree-switcher {
+        background: rgba(0, 0, 0, 0);
+    }
+}
+
+div ul.ant-tree /deep/li.ant-tree-treenode-switcher-open {
+    >ul.ant-tree-child-tree-open>li:nth-last-child(1)>ul::before {
+        content: '';
+        width: 1px;
+        height: 100%;
+        position: absolute;
+        background: #fff;
+        left: -6px;
+        top: 16px;
+    }
+
+    >ul.ant-tree-child-tree-open>li:nth-last-child(1)>span {
+        &.ant-tree-node-content-wrapper::before {
+            content: '';
+            width: 1px;
+            position: absolute;
+            background: #fff;
+            left: -30px;
+            top: 13px;
+            height: calc(100% + 10px);
+        }
+
+        &.ant-tree-checkbox+.ant-tree-node-content-wrapper::before {
+            top: 13px;
+            left: -52px;
+        }
+    }
+
+    >.ant-tree-node-content-wrapper-normal::before {
+        content: '';
+        width: 1px;
+        height: 100%;
+        position: absolute;
+        background: #fff;
+        left: -12px;
+        top: 16px;
+    }
+}
+
+.leftTree /deep/.ant-tree-switcher_close {
+    background: url(./images/arrow.svg) no-repeat 100% 100% !important;
+    background-position: center !important;
+    transform: rotate(0deg) !important;
+
+    .anticon-loading{
+        background: #fff !important;
+    }
+}
+.leftTree /deep/.ant-tree-switcher_open {
+    background: url(./images/arrow.svg) no-repeat 100% 100% !important;
+    background-position: center !important;
+    transform: rotate(90deg) !important;
+
+    .anticon-loading{
+        background: #fff !important;
+    }
+}
+.leftTree /deep/.ant-tree-switcher-icon {
+    display: none !important; 
+    opacity: 0;
+}
+
+// }
