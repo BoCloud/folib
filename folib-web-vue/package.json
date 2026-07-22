@@ -38,7 +38,7 @@
     "lodash": "^4.17.25",
     "moment": "^2.29.2",
     "prismjs": "^1.30.0",
-    "marked": "^15.0.0",
+    "marked": "^4.3.0",
     "spark-md5": "^3.0.2",
     "store": "^2.0.12",
     "sweetalert2": "^11.22.4",
@@ -83,7 +83,7 @@
     "ip": "^2.0.1",
     "ejs": "^3.1.10",
     "loader-utils": "^1.4.2",
-    "webpack-dev-middleware": "^5.3.4",
+    "webpack-dev-middleware": "^3.7.3",
     "qs": "^6.13.0",
     "cross-spawn": "^7.0.5",
     "body-parser": "^1.20.3",
@@ -91,6 +91,11 @@
     "express": "^4.21.2",
     "shell-quote": "^1.8.2",
     "canvg": "^3.0.11",
-    "@babel/traverse": "^7.24.0"
+    "@babel/traverse": "^7.24.0",
+    "@vue/compiler-sfc": "3.5.39",
+    "@vue/compiler-core": "3.5.39",
+    "@vue/compiler-dom": "3.5.39",
+    "@vue/compiler-ssr": "3.5.39",
+    "@vue/shared": "3.5.39"
   }
 }
