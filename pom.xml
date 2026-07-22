@@ -9,7 +9,7 @@
         <groupId>com.folib</groupId>
         <artifactId>folib-parent</artifactId>
         <version>3.0-RC2</version>
-        <relativePath>folib-parent/pom.xml</relativePath>
+        <relativePath/>
     </parent>
     <artifactId>folib-server</artifactId>
     <version>3.0-RC2</version>
