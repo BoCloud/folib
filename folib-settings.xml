@@ -3,12 +3,12 @@
           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
           xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0 http://maven.apache.org/xsd/settings-1.0.0.xsd">
     <!--本地依赖位置按照实际情况进行修改-->
-    <localRepository>/Users/xuxinping/maven/repository-oss</localRepository>
+    <localRepository>/Users/xiangyang/repository/maven</localRepository>
     <mirrors>
         <mirror>
             <id>folib-oss-maven</id>
             <name>maven</name>
-            <url>http://public.folib.com/storages/oss/maven</url>
+            <url>https://public.bocloud.com.cn/storages/oss/maven</url>
             <mirrorOf>central</mirrorOf>
         </mirror>
     </mirrors>
@@ -31,7 +31,7 @@
             <repositories>
                 <repository>
                     <id>central</id>
-                    <url>https://public.folib.com/storages/oss/maven</url>
+                    <url>https://public.bocloud.com.cn/storages/oss/maven</url>
                     <snapshots>
                         <enabled>true</enabled>
                     </snapshots>
@@ -49,6 +49,11 @@
     <servers>
         <server>
             <id>folib-oss-local</id>
+            <username>folib</username>
+            <password>folib@v587</password>
+        </server>
+        <server>
+            <id>folib-oss-maven</id>
             <username>folib</username>
             <password>folib@v587</password>
         </server>

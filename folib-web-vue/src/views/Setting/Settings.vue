@@ -2153,11 +2153,11 @@ export default {
   scale: (1.3);
 }
 
-/deep/ .ant-card-extra {
+::v-deep.ant-card-extra {
   display: flex;
 }
 
-/deep/ .ant-descriptions-item > span {
+::v-deep.ant-descriptions-item > span {
   line-break: anywhere;
 }
 </style>
