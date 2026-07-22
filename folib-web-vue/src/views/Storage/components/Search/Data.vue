@@ -318,7 +318,9 @@ import { highlight, languages } from "prismjs/components/prism-core";
 import "prismjs/components/prism-clike";
 import "prismjs/components/prism-javascript";
 import "prismjs/themes/prism-tomorrow.css";
-import QuillEditor from "@/components/QuillEditor.vue";
+import "quill/dist/quill.core.css";
+import "quill/dist/quill.snow.css";
+import { quillEditor } from "vue-quill-editor";
 import { hasRole, isAdmin, isAnonymous, isLogin } from "@/utils/permission";
 import { getProjectsVulnerabilities } from "@/api/projects.js"
 import ChartPolicyViolationBreakdown from "../../../ComponentAnalysis/Projects/Components/ChartPolicyViolationBreakdown.vue"
@@ -336,7 +338,7 @@ export default {
   ],
   components: {
     PrismEditor,
-    QuillEditor,
+    quillEditor,
     ChartPolicyViolationBreakdown,
   },
   data() {
