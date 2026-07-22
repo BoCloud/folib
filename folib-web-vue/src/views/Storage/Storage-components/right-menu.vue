@@ -170,7 +170,7 @@ export default {
     border-radius: 4px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 
-    /deep/ .ant-menu-item {
+    ::v-deep.ant-menu-item {
         margin: 0;
         height: 35px;
         line-height: 35px;
