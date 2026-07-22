@@ -172,9 +172,7 @@ import { highlight, languages } from "prismjs/components/prism-core";
 import "prismjs/components/prism-clike";
 import "prismjs/components/prism-javascript";
 import "prismjs/themes/prism-tomorrow.css";
-import "quill/dist/quill.core.css";
-import "quill/dist/quill.snow.css";
-import { quillEditor } from "vue-quill-editor";
+import QuillEditor from "@/components/QuillEditor.vue";
 export default {
   props: [
     "showMetadataHandler",
@@ -188,7 +186,7 @@ export default {
   ],
   components: {
     PrismEditor,
-    quillEditor,
+    QuillEditor,
   },
   data() {
     return {

@@ -137,9 +137,7 @@ import "prismjs/components/prism-javascript";
 import "prismjs/themes/prism-tomorrow.css";
 import SearchBox from "@/components/Tools/SearchBox";
 import zhCN from "ant-design-vue/es/locale/zh_CN";
-import "quill/dist/quill.core.css";
-import "quill/dist/quill.snow.css";
-import { quillEditor } from "vue-quill-editor";
+import QuillEditor from "@/components/QuillEditor.vue";
 import Store from "./components/Store/index.vue";
 import Safe from "./components/Safe/index.vue";
 import SettingsDrawer from "./components/Repository/SettingsDrawer.vue";
@@ -155,7 +153,7 @@ export default {
     PrismEditor,
     SearchBox,
     Vulnerability,
-    quillEditor,
+    QuillEditor,
     Store,
     Safe,
     SettingsDrawer,
